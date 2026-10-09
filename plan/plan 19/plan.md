@@ -86,3 +86,18 @@ None (queries and a preference for year basis; add the preference to backup).
 
 - Default year basis for an India-focused app: calendar year as in the requirement's example (recommended default) with financial year as an option.
 - Whether the trackers replace the current Analysis overview or sit beside it (recommended: beside it).
+
+## Outcome (2026-10-09)
+
+Built without Plans 7 and 17 (no More screen, no savings goals). Decisions: the year is the Indian financial year (April to March) only, with no switch, so no new preference and nothing new in backups; the trackers sit beside the existing Analysis overview behind an Overview | Month | Year switch; expenses count expense and credit-card spends, income counts income, money lent and borrowed is shown on its own; Home, the Analysis overview and the Budgets screen were left as they were.
+
+- No database change. One new narrow query (`TransactionDao.observeTrackerRows`: amount, type, date, currency, category, account for income / expense / credit-card rows) instead of per-month SQL sums, because amounts are stored as text and the money maths stays in `BigDecimal`. A year is one query.
+- `PeriodRules` is the one place that says what counts as income and expense for the trackers; `GetPeriodSummaryUseCase` loads and converts (one exchange rate per currency); `PeriodCalculator`, `CategoryBudgetCalculator`, `MonthActivityCalculator` and `FinancialYear` are plain Kotlin with tests.
+- Month view: summary with change against last month, Category / Budget / Spent / Left table (over-budget rows in red, dash where there is no limit, totals row), overall budget usage, where-it-went chart, by-account table, lending, recurring payments (created, still to come, waiting, skipped) and bills (paid, unpaid). Rows open the category, account, bills and recurring screens. Month picker covers 36 months.
+- Year view: month table (April first, future months dashed, tap a month to open it), year summary with lent and borrowed, and eight charts: income, expenses, savings, cash flow, top categories, lending, borrowing and net worth (from the Plan 18 snapshots). Tap a bar for the full amount. Year picker covers ten years.
+- Routes `MonthlyTracker(year, month)` and `YearlyTracker(startYear)`; the Home monthly summary card now opens the Month tracker.
+- Budget for a month = active expense budgets whose period overlaps it, except yearly ones; their limits are added per category.
+- Hide-totals follows the narrowed rule: summary totals, the totals rows, budget usage and net worth are masked; table rows, accounts and chart readouts (except net worth) stay visible.
+- Known differences between screens, by choice: the Categories tab counts expense only (no credit-card spends) and Home counts money lent as an expense, so a month can differ slightly from the tracker when those exist.
+- Not done: calendar-year option (not selected); account detail and bills do not open on the exact month; a budget with an account filter still compares against all spending in the category.
+- 43 new tests; the full run passes (437). Installed on the phone, launches without a crash; screens not yet checked by hand.

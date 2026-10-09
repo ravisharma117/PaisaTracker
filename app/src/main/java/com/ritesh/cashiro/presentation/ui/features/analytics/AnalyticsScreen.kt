@@ -122,7 +122,9 @@ fun SharedTransitionScope.AnalyticsScreen(
     analyticsViewModel: AnalyticsViewModel = hiltViewModel(),
     onNavigateToTransactions: (category: String?, merchant: String?, period: String?, currency: String?) -> Unit = { _, _, _, _ -> },
     animatedContentScope: AnimatedContentScope? = null,
-    blurEffects: Boolean
+    blurEffects: Boolean,
+    /** The Overview | Month | Year switch, shown above the filters. */
+    modeSwitch: @Composable () -> Unit = {}
 ) {
     val uiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val selectedPeriod by analyticsViewModel.selectedPeriod.collectAsStateWithLifecycle()
@@ -185,6 +187,12 @@ fun SharedTransitionScope.AnalyticsScreen(
                     bottom = Dimensions.Padding.content + 80.dp
                 ),
             ) {
+                item(key = "mode-switch") {
+                    Box(modifier = Modifier.padding(horizontal = Dimensions.Padding.content, vertical = Spacing.sm)) {
+                        modeSwitch()
+                    }
+                }
+
                 // Filters (Period and Type)
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {

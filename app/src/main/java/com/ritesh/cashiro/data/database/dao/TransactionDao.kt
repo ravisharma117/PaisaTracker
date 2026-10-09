@@ -3,11 +3,27 @@ package com.ritesh.cashiro.data.database.dao
 import androidx.room.*
 import com.ritesh.cashiro.data.database.entity.TransactionEntity
 import com.ritesh.cashiro.data.database.entity.TransactionType
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
+
+    /**
+     * Only the columns the Month and Year trackers need, for income, expense and credit-card
+     * transactions in the range. Narrow rows keep a whole year cheap to load.
+     */
+    @Query(
+            """
+        SELECT amount, transaction_type, date_time, currency, category, bank_name, account_number
+        FROM transactions
+        WHERE is_deleted = 0
+        AND transaction_type IN ('INCOME', 'EXPENSE', 'CREDIT')
+        AND date_time BETWEEN :startDate AND :endDate
+    """
+    )
+    fun observeTrackerRows(startDate: LocalDateTime, endDate: LocalDateTime): Flow<List<TrackerRow>>
 
     @Query("SELECT * FROM transactions WHERE is_deleted = 0 ORDER BY date_time DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
@@ -335,3 +351,14 @@ interface TransactionDao {
         currency: String
     ): List<TransactionEntity>
 }
+
+/** One transaction reduced to what the trackers add up. */
+data class TrackerRow(
+        @ColumnInfo(name = "amount") val amount: BigDecimal,
+        @ColumnInfo(name = "transaction_type") val type: TransactionType,
+        @ColumnInfo(name = "date_time") val dateTime: LocalDateTime,
+        @ColumnInfo(name = "currency") val currency: String,
+        @ColumnInfo(name = "category") val category: String?,
+        @ColumnInfo(name = "bank_name") val bankName: String?,
+        @ColumnInfo(name = "account_number") val accountNumber: String?
+)

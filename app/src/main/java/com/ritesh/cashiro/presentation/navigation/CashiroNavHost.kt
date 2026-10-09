@@ -77,7 +77,9 @@ import com.ritesh.cashiro.presentation.ui.features.accounts.AccountDetailScreen
 import com.ritesh.cashiro.presentation.ui.features.accounts.AddAccountScreen
 import com.ritesh.cashiro.presentation.ui.features.accounts.ManageAccountsScreen
 import com.ritesh.cashiro.presentation.ui.features.add.AddScreen
-import com.ritesh.cashiro.presentation.ui.features.analytics.AnalyticsScreen
+import com.ritesh.cashiro.presentation.ui.features.analytics.AnalysisHost
+import com.ritesh.cashiro.presentation.ui.features.tracker.MonthlyTrackerScreen
+import com.ritesh.cashiro.presentation.ui.features.tracker.YearlyTrackerScreen
 import com.ritesh.cashiro.presentation.ui.features.budgets.BudgetDetailScreen
 import com.ritesh.cashiro.presentation.ui.features.budgets.BudgetHistoryScreen
 import com.ritesh.cashiro.presentation.ui.features.budgets.BudgetsScreen
@@ -251,6 +253,10 @@ fun CashiroNavHost(
                         },
                         onNavigateToLendBorrow = { filter -> navController.safeNavigate(LendBorrow(filter)) },
                         onNavigateToAnalytics = { navController.safeNavigate(Analytics) },
+                        onNavigateToMonthlyTracker = {
+                            val now = java.time.YearMonth.now()
+                            navController.safeNavigate(MonthlyTracker(now.year, now.monthValue))
+                        },
                         onNavigateToNetWorth = { navController.safeNavigate(NetWorth) },
                         onNavigateToRecurring = { navController.safeNavigate(RecurringTransactions) },
                         onTransactionClick = { transactionId, key ->
@@ -268,7 +274,7 @@ fun CashiroNavHost(
                     popEnterTransition = CashiroTransitions.verticalSlidePopEnter,
                     popExitTransition = CashiroTransitions.verticalSlidePopExit
                 ) {
-                    AnalyticsScreen(
+                    AnalysisHost(
                         onNavigateToTransactions = { category, merchant, period, currency ->
                             val month = when (period) {
                                 TimePeriod.THIS_MONTH.name -> java.time.YearMonth.now()
@@ -291,8 +297,48 @@ fun CashiroNavHost(
                                 )
                             }
                         },
+                        onOpenCategory = { name, month ->
+                            navController.safeNavigate(CategoryDetail(name, month.year, month.monthValue))
+                        },
+                        onOpenAccount = { bank, last4 -> navController.safeNavigate(AccountDetail(bank, last4)) },
+                        onOpenBills = { navController.safeNavigate(Subscriptions) },
+                        onOpenRecurring = { navController.safeNavigate(RecurringTransactions) },
+                        onOpenMonth = { month -> navController.safeNavigate(MonthlyTracker(month.year, month.monthValue)) },
                         animatedContentScope = this@composable,
                         blurEffects = themeUiState.blurEffects,
+                    )
+                }
+
+                composable<MonthlyTracker>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) { backStackEntry ->
+                    val route = backStackEntry.toRoute<MonthlyTracker>()
+                    MonthlyTrackerScreen(
+                        initialMonth = java.time.YearMonth.of(route.year, route.month.coerceIn(1, 12)),
+                        onNavigateBack = { navController.safePopBackStack() },
+                        onOpenCategory = { name, month ->
+                            navController.safeNavigate(CategoryDetail(name, month.year, month.monthValue))
+                        },
+                        onOpenAccount = { bank, last4 -> navController.safeNavigate(AccountDetail(bank, last4)) },
+                        onOpenBills = { navController.safeNavigate(Subscriptions) },
+                        onOpenRecurring = { navController.safeNavigate(RecurringTransactions) }
+                    )
+                }
+
+                composable<YearlyTracker>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) { backStackEntry ->
+                    val route = backStackEntry.toRoute<YearlyTracker>()
+                    YearlyTrackerScreen(
+                        initialStartYear = route.startYear,
+                        onNavigateBack = { navController.safePopBackStack() },
+                        onOpenMonth = { month -> navController.safeNavigate(MonthlyTracker(month.year, month.monthValue)) }
                     )
                 }
 
