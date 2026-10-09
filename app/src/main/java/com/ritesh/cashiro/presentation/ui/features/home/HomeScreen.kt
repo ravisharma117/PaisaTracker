@@ -168,6 +168,7 @@ fun SharedTransitionScope.HomeScreen(
     onNavigateToBudgetHistory: (Long) -> Unit = {},
     onNavigateToLendBorrow: (String?) -> Unit = { _ -> },
     onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToMonthlyTracker: () -> Unit = {},
     onNavigateToNetWorth: () -> Unit = {},
     onNavigateToRecurring: () -> Unit = {},
     onTransactionClick: (Long, String) -> Unit = { _, _ -> },
@@ -457,7 +458,7 @@ fun SharedTransitionScope.HomeScreen(
                                         income = uiState.currentMonthIncome,
                                         expenses = uiState.currentMonthExpenses,
                                         currency = uiState.selectedCurrency,
-                                        onClick = onNavigateToAnalytics,
+                                        onClick = onNavigateToMonthlyTracker,
                                         modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
                                     )
                                 }

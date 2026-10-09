@@ -200,6 +200,12 @@ data class Transactions(
 
 @Serializable object Analytics
 
+/** The Month tracker for one month (1-12). */
+@Serializable data class MonthlyTracker(val year: Int, val month: Int)
+
+/** The Year tracker for the financial year that starts in [startYear] (April of that year). */
+@Serializable data class YearlyTracker(val startYear: Int)
+
 @Serializable object Chat
 
 @Serializable data class TransactionDetail(val transactionId: Long, val sharedElementKey: String? = null)
