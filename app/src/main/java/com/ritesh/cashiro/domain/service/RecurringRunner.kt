@@ -32,7 +32,9 @@ class RecurringRunner @Inject constructor(
     private val subscriptionDao: SubscriptionDao,
     private val lendDao: LendBorrowDao,
     private val subscriptions: SubscriptionRepository,
-    private val preferences: UserPreferencesRepository
+    private val preferences: UserPreferencesRepository,
+    private val netWorth: NetWorthService,
+    private val currencyRepository: com.ritesh.cashiro.data.repository.CurrencyRepository
 ) {
     private val mutex = Mutex()
     private val processor = RecurringProcessor(dao, ::createTransaction)
@@ -48,6 +50,9 @@ class RecurringRunner @Inject constructor(
             .mapNotNull { it.toLongOrNull() }.toSet()
         notifier.showBills(billReminders.process(now, enabled, disabled))
         notifier.showLendReminders(lendReminders.process(now, preferences.lendRemindersEnabled.first()))
+
+        // Keeps the net worth trend current whenever the app has work to do or is opened
+        runCatching { netWorth.refreshSnapshots(currencyRepository.effectiveBaseCurrencyCode.first(), now.toLocalDate()) }
 
         scheduler.reschedule(now)
     }

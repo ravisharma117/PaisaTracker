@@ -626,6 +626,7 @@ class AccountBalanceRepositoryTest {
         override fun getAllLatestBalances(): Flow<List<AccountBalanceEntity>> = flowOf(latestBalances.values.toList())
 
         override fun getAllBalances(): Flow<List<AccountBalanceEntity>> = flowOf(latestBalances.values.toList())
+        override suspend fun getAllBalancesList(): List<AccountBalanceEntity> = latestBalances.values.toList()
 
         override suspend fun deleteAllBalances() = Unit
 

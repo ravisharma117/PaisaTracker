@@ -236,6 +236,18 @@ class BackupExporter @Inject constructor(
         } else emptyList()
         val recurringOccurrences = if (config.includeTransactionalData) recurringDao.getAllOccurrences() else emptyList()
         val billPayments = if (config.includeTransactionalData) database.billPaymentDao().getAll() else emptyList()
+        val netWorthDao = database.netWorthDao()
+        val netWorthItems = if (config.includeTransactionalData) {
+            netWorthDao.getAllItems().map { item ->
+                when (config.privacy) {
+                    ExportPrivacy.FULL -> item
+                    ExportPrivacy.MASKED -> item.copy(notes = null)
+                    ExportPrivacy.ANONYMOUS -> item.copy(name = "Holding", notes = null)
+                }
+            }
+        } else emptyList()
+        val netWorthValues = if (config.includeTransactionalData) netWorthDao.getAllValues() else emptyList()
+        val netWorthSnapshots = if (config.includeTransactionalData) netWorthDao.getAllSnapshots() else emptyList()
         val repaymentSuggestions = if (config.includeTransactionalData && config.privacy == ExportPrivacy.FULL) {
             database.repaymentSuggestionDao().getPending()
         } else emptyList()
@@ -278,7 +290,10 @@ class BackupExporter @Inject constructor(
                 recurringTransactions = recurringTransactions,
                 recurringOccurrences = recurringOccurrences,
                 billPayments = billPayments,
-                repaymentSuggestions = repaymentSuggestions
+                repaymentSuggestions = repaymentSuggestions,
+                netWorthItems = netWorthItems,
+                netWorthItemValues = netWorthValues,
+                netWorthSnapshots = netWorthSnapshots
             ),
             preferences = PreferencesSnapshot(
                 theme = ThemePreferences(

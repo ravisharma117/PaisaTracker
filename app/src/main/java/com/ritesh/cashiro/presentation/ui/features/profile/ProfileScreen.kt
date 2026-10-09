@@ -114,6 +114,7 @@ import java.math.BigDecimal
 fun SharedTransitionScope.ProfileScreen(
     onNavigateBack: () -> Unit,
     onNavigateToContacts: () -> Unit,
+    onNavigateToNetWorth: () -> Unit = {},
     onNavigateToPerson: (Long) -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null,
     profileViewModel: ProfileViewModel = hiltViewModel()
@@ -165,6 +166,7 @@ fun SharedTransitionScope.ProfileScreen(
                 bottom = innerPadding.calculateBottomPadding()
             ),
             onNavigateToContacts = onNavigateToContacts,
+            onNavigateToNetWorth = onNavigateToNetWorth,
             onNavigateToPerson = onNavigateToPerson,
             onAddPerson = { profileViewModel.showAddPersonSheet(true) },
             animatedContentScope = animatedContentScope
@@ -218,6 +220,7 @@ fun SharedTransitionScope.ProfileContent(
     listState: LazyListState,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onNavigateToContacts: () -> Unit,
+    onNavigateToNetWorth: () -> Unit = {},
     onNavigateToPerson: (Long) -> Unit = {},
     onAddPerson: () -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null
@@ -279,6 +282,7 @@ fun SharedTransitionScope.ProfileContent(
                     expense = state.totalExpense,
                     activeSubscriptions = state.activeSubscriptions,
                     baseCurrency = state.baseCurrency,
+                    onNetWorthClick = onNavigateToNetWorth,
                     modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
                 )
             }
@@ -474,6 +478,7 @@ fun FinancialOverviewCard(
     expense: BigDecimal,
     activeSubscriptions: Int,
     baseCurrency: String,
+    onNetWorthClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -505,7 +510,7 @@ fun FinancialOverviewCard(
                     icon = Icons.Rounded.AccountBalance,
                     color = green_light,
                     iconColor = green_dark,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).clickable(onClick = onNetWorthClick)
                 )
                 FinancialItem(
                     label = stringResource(R.string.upcoming),

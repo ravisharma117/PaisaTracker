@@ -125,6 +125,7 @@ fun SettingsScreen(
     onNavigateToWebhooks: () -> Unit = {},
     onNavigateToBudgets: () -> Unit = {},
     onNavigateToRecurring: () -> Unit = {},
+    onNavigateToNetWorth: () -> Unit = {},
     onNavigateToLendBorrow: () -> Unit = {},
     onNavigateToDataPrivacy: () -> Unit = {},
     onNavigateToCloudBackup: () -> Unit = {},
@@ -600,6 +601,51 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { onNavigateToLendBorrow() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Net worth
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.net_worth),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.nw_settings_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = green_light,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.AccountBalance,
+                                    contentDescription = null,
+                                    tint = green_dark
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToNetWorth() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
                     )

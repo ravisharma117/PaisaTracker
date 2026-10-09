@@ -185,6 +185,9 @@ class BackupImporter @Inject constructor(
                 database.unrecognizedSmsDao().deleteAll()
                 database.chatDao().deleteAllMessages()
                 database.repaymentSuggestionDao().deleteAll()
+                database.netWorthDao().deleteAllValues()
+                database.netWorthDao().deleteAllItems()
+                database.netWorthDao().deleteAllSnapshots()
                 database.recurringTransactionDao().deleteAllOccurrences()
                 database.recurringTransactionDao().deleteAll()
                 database.budgetDao().deleteAllBudgets()
@@ -267,6 +270,14 @@ class BackupImporter @Inject constructor(
 
                 backup.database.lendBorrowTransactions.forEach { tx ->
                     database.lendBorrowDao().insertTransaction(tx)
+                }
+
+                // Holdings and loans keep their ids, so their value history lines up as saved
+                database.netWorthDao().let { dao ->
+                    backup.database.netWorthItems.forEach { dao.insertItem(it) }
+                    val restoredItemIds = backup.database.netWorthItems.map { it.id }.toSet()
+                    dao.insertValues(backup.database.netWorthItemValues.filter { it.itemId in restoredItemIds })
+                    dao.insertSnapshots(backup.database.netWorthSnapshots)
                 }
 
                 // Pending suggestions whose person came back with the backup
@@ -431,6 +442,12 @@ class BackupImporter @Inject constructor(
                     } ?: tx
                     database.lendBorrowDao().insertTransaction(remappedTx)
                 }
+
+                importNetWorthWithMerge(
+                    backup.database.netWorthItems,
+                    backup.database.netWorthItemValues,
+                    backup.database.netWorthSnapshots
+                )
 
                 importRecurringWithMerge(
                     backup.database.recurringTransactions,
@@ -685,6 +702,28 @@ class BackupImporter @Inject constructor(
                 occurrence.copy(id = 0, recurringId = newScheduleId, transactionId = newTransactionId)
             )
         }
+    }
+
+    /**
+     * Adds the backup's holdings next to the existing ones. A holding with the same name and type
+     * is not added twice. New ones get fresh ids and their value history follows. A month that
+     * already has a snapshot keeps the one it has.
+     */
+    private suspend fun importNetWorthWithMerge(
+        items: List<com.ritesh.cashiro.data.database.entity.NetWorthItemEntity>,
+        values: List<com.ritesh.cashiro.data.database.entity.NetWorthItemValueEntity>,
+        snapshots: List<com.ritesh.cashiro.data.database.entity.NetWorthSnapshotEntity>
+    ) {
+        val dao = database.netWorthDao()
+        val existing = dao.getAllItems()
+        val idMap = mutableMapOf<Long, Long>()
+        items.forEach { incoming ->
+            val match = existing.firstOrNull { it.name == incoming.name && it.type == incoming.type }
+            if (match == null) idMap[incoming.id] = dao.insertItem(incoming.copy(id = 0))
+        }
+        dao.insertValues(values.mapNotNull { v -> idMap[v.itemId]?.let { v.copy(id = 0, itemId = it) } })
+        val haveMonths = dao.getAllSnapshots().map { it.yearMonth }.toSet()
+        dao.insertSnapshots(snapshots.filter { it.yearMonth !in haveMonths }.map { it.copy(id = 0) })
     }
 
     private suspend fun importBudgetsWithMerge(

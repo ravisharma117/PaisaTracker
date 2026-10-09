@@ -87,9 +87,12 @@ import com.ritesh.cashiro.data.database.entity.WebhookProfileEntity
             com.ritesh.cashiro.data.database.entity.RecurringTransactionEntity::class,
             com.ritesh.cashiro.data.database.entity.RecurringOccurrenceEntity::class,
             com.ritesh.cashiro.data.database.entity.BillPaymentEntity::class,
-            com.ritesh.cashiro.data.database.entity.RepaymentSuggestionEntity::class
+            com.ritesh.cashiro.data.database.entity.RepaymentSuggestionEntity::class,
+            com.ritesh.cashiro.data.database.entity.NetWorthItemEntity::class,
+            com.ritesh.cashiro.data.database.entity.NetWorthItemValueEntity::class,
+            com.ritesh.cashiro.data.database.entity.NetWorthSnapshotEntity::class
         ],
-        version = 65,
+        version = 66,
     exportSchema = true,
     autoMigrations =
         [
@@ -140,6 +143,7 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun recurringTransactionDao(): com.ritesh.cashiro.data.database.dao.RecurringTransactionDao
     abstract fun billPaymentDao(): com.ritesh.cashiro.data.database.dao.BillPaymentDao
     abstract fun repaymentSuggestionDao(): com.ritesh.cashiro.data.database.dao.RepaymentSuggestionDao
+    abstract fun netWorthDao(): com.ritesh.cashiro.data.database.dao.NetWorthDao
 
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -674,6 +678,19 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_65_66 =
+            object : Migration(65, 66) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Net worth items, their value history and monthly snapshots (copied from the exported schema 66)
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `net_worth_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL DEFAULT 'INR', `current_value` TEXT NOT NULL, `as_of_date` TEXT NOT NULL, `notes` TEXT, `annual_rate_percent` TEXT, `emi_amount` TEXT, `emi_day` INTEGER, `is_active` INTEGER NOT NULL DEFAULT 1, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_net_worth_items_type` ON `net_worth_items` (`type`)")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `net_worth_item_values` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `item_id` INTEGER NOT NULL, `value` TEXT NOT NULL, `date` TEXT NOT NULL, FOREIGN KEY(`item_id`) REFERENCES `net_worth_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_net_worth_item_values_item_id_date` ON `net_worth_item_values` (`item_id`, `date`)")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `net_worth_snapshots` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `year_month` TEXT NOT NULL, `assets` TEXT NOT NULL, `liabilities` TEXT NOT NULL, `net_worth` TEXT NOT NULL, `currency` TEXT NOT NULL DEFAULT 'INR', `is_estimate` INTEGER NOT NULL DEFAULT 0, `captured_at` TEXT NOT NULL)")
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_net_worth_snapshots_year_month` ON `net_worth_snapshots` (`year_month`)")
                 }
             }
 

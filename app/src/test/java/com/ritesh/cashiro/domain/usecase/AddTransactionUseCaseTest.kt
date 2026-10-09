@@ -541,6 +541,7 @@ class AddTransactionUseCaseTest {
         override fun getLatestBalanceFlow(bankName: String, accountLast4: String): Flow<AccountBalanceEntity?> = flowOf(null)
         override fun getAllLatestBalances(): Flow<List<AccountBalanceEntity>> = flowOf(emptyList())
         override fun getAllBalances(): Flow<List<AccountBalanceEntity>> = flowOf(emptyList())
+        override suspend fun getAllBalancesList(): List<AccountBalanceEntity> = emptyList()
         override suspend fun deleteAllBalances() = Unit
         override suspend fun deleteSampleBalances() = Unit
         override fun getCurrentMonthLatestBalances(): Flow<List<AccountBalanceEntity>> = flowOf(emptyList())

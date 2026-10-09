@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,6 +78,8 @@ fun BalanceCard(
     dateRangeLabel: String = "",
     availableCurrenciesCount: Int = 0,
     onCurrencyClick: () -> Unit = {},
+    /** When set, tapping the card opens this; the arrow at the bottom still expands it. */
+    onOpenNetWorth: (() -> Unit)? = null,
     blurEffects: Boolean,
     hazeState: HazeState = remember { HazeState() }
 ) {
@@ -116,7 +119,7 @@ fun BalanceCard(
                 containerColor = if (blurEffects) MaterialTheme.colorScheme.surfaceContainerLow.copy(0.5f)
                 else MaterialTheme.colorScheme.surfaceContainerLow
             ),
-            onClick = { isExpanded = !isExpanded }
+            onClick = { if (onOpenNetWorth != null) onOpenNetWorth() else isExpanded = !isExpanded }
         ) {
             Column(
                 modifier = Modifier
@@ -336,6 +339,14 @@ fun BalanceCard(
                 .height(28.dp)
                 .width(40.dp)
                 .rotate(rotation)
+                .then(
+                    if (onOpenNetWorth != null) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { isExpanded = !isExpanded }
+                    } else Modifier
+                )
         )
     }
 }

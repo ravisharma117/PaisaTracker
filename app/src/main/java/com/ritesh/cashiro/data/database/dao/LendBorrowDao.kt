@@ -23,6 +23,9 @@ interface LendBorrowDao {
     @Query("SELECT * FROM lend_borrow_persons WHERE is_archived = 0 ORDER BY name ASC")
     suspend fun getActivePersonsList(): List<LendBorrowPersonEntity>
 
+    @Query("SELECT * FROM lend_borrow_persons ORDER BY name ASC")
+    suspend fun getAllPersonsList(): List<LendBorrowPersonEntity>
+
     @Query("SELECT * FROM lend_borrow_transactions ORDER BY date DESC")
     suspend fun getAllTransactionsList(): List<LendBorrowTransactionEntity>
 

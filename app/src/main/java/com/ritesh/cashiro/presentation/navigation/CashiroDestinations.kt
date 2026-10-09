@@ -194,6 +194,8 @@ data class Transactions(
 
 @Serializable object RecurringTransactions
 
+@Serializable object NetWorth
+
 @Serializable data class CategoryDetail(val categoryName: String, val year: Int, val month: Int)
 
 @Serializable object Analytics

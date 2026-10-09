@@ -29,6 +29,7 @@ private class FakeLendDao : LendBorrowDao {
     override fun getActivePersons(): Flow<List<LendBorrowPersonEntity>> = flowOf(persons.values.filter { !it.isArchived })
     override fun getAllPersons(): Flow<List<LendBorrowPersonEntity>> = flowOf(persons.values.toList())
     override suspend fun getActivePersonsList() = persons.values.filter { !it.isArchived }.sortedBy { it.name }
+    override suspend fun getAllPersonsList() = persons.values.sortedBy { it.name }
     override suspend fun getAllTransactionsList() = entries.values.sortedByDescending { it.date }
     override suspend fun getUnsettledWithDueDate() = entries.values.filter { !it.isSettled && it.dueDate != null }
     override suspend fun updateReminderMarks(id: Long, pre: LocalDate?, due: LocalDate?, overdue: LocalDate?) {

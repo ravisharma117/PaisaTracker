@@ -279,6 +279,9 @@ abstract class AccountBalanceDao {
     
     @Query("SELECT * FROM account_balances ORDER BY timestamp DESC")
     abstract fun getAllBalances(): Flow<List<AccountBalanceEntity>>
+
+    @Query("SELECT * FROM account_balances ORDER BY timestamp ASC")
+    abstract suspend fun getAllBalancesList(): List<AccountBalanceEntity>
     
     @Query("DELETE FROM account_balances")
     abstract suspend fun deleteAllBalances()
