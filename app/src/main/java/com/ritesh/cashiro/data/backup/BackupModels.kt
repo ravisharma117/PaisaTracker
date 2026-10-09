@@ -159,7 +159,17 @@ data class DatabaseSnapshot(
 
     // Pending repayment suggestions only; settled and ignored ones are history
     @SerializedName("repayment_suggestions")
-    val repaymentSuggestions: List<com.ritesh.cashiro.data.database.entity.RepaymentSuggestionEntity> = emptyList()
+    val repaymentSuggestions: List<com.ritesh.cashiro.data.database.entity.RepaymentSuggestionEntity> = emptyList(),
+
+    // Absent in backups made before net worth tracking existed
+    @SerializedName("net_worth_items")
+    val netWorthItems: List<com.ritesh.cashiro.data.database.entity.NetWorthItemEntity> = emptyList(),
+
+    @SerializedName("net_worth_item_values")
+    val netWorthItemValues: List<com.ritesh.cashiro.data.database.entity.NetWorthItemValueEntity> = emptyList(),
+
+    @SerializedName("net_worth_snapshots")
+    val netWorthSnapshots: List<com.ritesh.cashiro.data.database.entity.NetWorthSnapshotEntity> = emptyList()
 )
 
 data class WebhookProfileBackup(

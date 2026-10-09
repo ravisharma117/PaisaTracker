@@ -72,3 +72,18 @@ Plan 3 (account types; cash as an asset), Plan 17 (to settle how goal savings re
 
 - Whether investments are entered as manual holdings with a value (recommended for this plan) or derived from `INVESTMENT` transactions. Derived totals show money put in, not current value.
 - Whether loans need a repayment schedule (EMI) here. Recommended: balance only; an EMI can be a recurring transaction from Plan 11.
+
+## Outcome (2026-10-09)
+
+Built without Plans 7 and 17 (no More screen, no savings goals). Decisions: manual holdings with a current value for investments; loans with rate, tenure and an EMI schedule whose balance is an estimate the user can overwrite with the real figure; past months rebuilt as estimates; the Home number stays accounts only, and tapping that card opens the full Net Worth screen.
+
+- Database version 66: `net_worth_items` (holdings and loans, with rate, EMI and EMI day for loans), `net_worth_item_values` (every value a holding has had), `net_worth_snapshots` (one per month, flagged when estimated).
+- One calculation (`NetWorthCalculator`, fed by `NetWorthHistory.breakdownAt`) for today and every past month. Assets: bank, cash, wallets, investments, money lent, other assets. Liabilities: credit cards, overdrafts, money borrowed, loans, other debts. Credit cards are subtracted, never added.
+- Profile now uses it too. It used to add credit-card balances as if they were assets, so Profile and Home disagreed; that is fixed.
+- `LoanMath`: EMI from amount, rate and months; each payment covers the month's interest first. Typing in the real remaining balance restarts the schedule from that day and keeps the old value in the history.
+- Net Worth screen: headline, change since last month and over the year, monthly (12 months) and yearly trend with lighter bars for estimates, assets and liabilities grouped with subtotals, add / edit / delete for holdings and loans. Every figure follows the hide-totals setting.
+- Opened from the Home balance card (the arrow at the bottom of the card still expands it), the Profile net worth tile, and a Settings row.
+- Snapshots refresh whenever the app opens or an alarm fires. A past month that was captured before it ended is rebuilt from month-end records as an estimate.
+- Backups carry holdings, value history and snapshots; a merge import does not duplicate a holding with the same name and type.
+- Not done: EMI payments do not create transactions by themselves (link a Recurring schedule for that); savings goals are not part of net worth because Plan 17 is skipped; an archived (hidden) holding is not shown in past months.
+- 39 new tests. Not yet checked on a phone.

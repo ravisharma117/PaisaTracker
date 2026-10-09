@@ -168,6 +168,7 @@ fun SharedTransitionScope.HomeScreen(
     onNavigateToBudgetHistory: (Long) -> Unit = {},
     onNavigateToLendBorrow: (String?) -> Unit = { _ -> },
     onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToNetWorth: () -> Unit = {},
     onNavigateToRecurring: () -> Unit = {},
     onTransactionClick: (Long, String) -> Unit = { _, _ -> },
     onFullResyncClick: () -> Unit = {},
@@ -444,6 +445,7 @@ fun SharedTransitionScope.HomeScreen(
                                         onCurrencySelected = {
                                             homeViewModel.selectCurrency(it)
                                         },
+                                        onOpenNetWorth = onNavigateToNetWorth,
                                         blurEffects = blurEffects && uiState.showBannerImage,
                                         hazeState = hazeStateBanner
                                     )
@@ -1187,6 +1189,7 @@ private fun UpcomingSubscriptionsCard(
 private fun NetworthSummaryCards(
     uiState: HomeUiState,
     onCurrencySelected: (String) -> Unit = {},
+    onOpenNetWorth: (() -> Unit)? = null,
     blurEffects: Boolean,
     hazeState: HazeState = remember { HazeState() },
 ) {
@@ -1247,6 +1250,7 @@ private fun NetworthSummaryCards(
             thisYearValue = CurrencyFormatter.formatTotal(uiState.currentYearTotal, uiState.selectedCurrency),
             availableCurrenciesCount = uiState.availableCurrencies.size,
             onCurrencyClick = { showCurrencySheet = true },
+            onOpenNetWorth = onOpenNetWorth,
             blurEffects = blurEffects,
             hazeState = hazeState,
             modifier = Modifier.padding(

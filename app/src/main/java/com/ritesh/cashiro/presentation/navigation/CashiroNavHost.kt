@@ -91,6 +91,7 @@ import com.ritesh.cashiro.presentation.ui.features.home.HomeViewModel
 import com.ritesh.cashiro.presentation.ui.features.lendborrow.LendBorrowScreen
 import com.ritesh.cashiro.presentation.ui.features.lendborrow.PersonDetailScreen
 import com.ritesh.cashiro.presentation.ui.features.onboarding.OnBoardingScreen
+import com.ritesh.cashiro.presentation.ui.features.networth.NetWorthScreen
 import com.ritesh.cashiro.presentation.ui.features.profile.ProfileScreen
 import com.ritesh.cashiro.presentation.ui.features.recurring.RecurringTransactionsScreen
 import com.ritesh.cashiro.presentation.ui.features.settings.SettingsScreen
@@ -250,6 +251,7 @@ fun CashiroNavHost(
                         },
                         onNavigateToLendBorrow = { filter -> navController.safeNavigate(LendBorrow(filter)) },
                         onNavigateToAnalytics = { navController.safeNavigate(Analytics) },
+                        onNavigateToNetWorth = { navController.safeNavigate(NetWorth) },
                         onNavigateToRecurring = { navController.safeNavigate(RecurringTransactions) },
                         onTransactionClick = { transactionId, key ->
                             navController.safeNavigate(TransactionDetail(transactionId, key))
@@ -328,6 +330,7 @@ fun CashiroNavHost(
                         onNavigateToBudgets = { navController.safeNavigate(Budgets()) },
                         onNavigateToLendBorrow = { navController.safeNavigate(LendBorrow()) },
                         onNavigateToRecurring = { navController.safeNavigate(RecurringTransactions) },
+                        onNavigateToNetWorth = { navController.safeNavigate(NetWorth) },
                         onNavigateToDataPrivacy = { navController.safeNavigate(DataPrivacy) },
                         onNavigateToCloudBackup = { navController.safeNavigate(CloudBackup) },
                         onNavigateToAbout = { navController.safeNavigate(About) },
@@ -456,6 +459,7 @@ fun CashiroNavHost(
                     ProfileScreen(
                         onNavigateBack = { navController.safePopBackStack() },
                         onNavigateToContacts = { navController.safeNavigate(Contacts()) },
+                        onNavigateToNetWorth = { navController.safeNavigate(NetWorth) },
                         onNavigateToPerson = { personId ->
                             navController.safeNavigate(
                                 PersonDetail(personId, "person_avatar_$personId")
@@ -521,6 +525,15 @@ fun CashiroNavHost(
                             navController.safeNavigate(CategoryDetail(name, month.year, month.monthValue))
                         }
                     )
+                }
+
+                composable<NetWorth>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) {
+                    NetWorthScreen(onNavigateBack = { navController.safePopBackStack() })
                 }
 
                 composable<RecurringTransactions>(

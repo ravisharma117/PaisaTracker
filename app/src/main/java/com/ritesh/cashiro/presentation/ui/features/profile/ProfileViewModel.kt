@@ -37,6 +37,7 @@ constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val currencyRepository: CurrencyRepository,
     private val currencyConversionService: CurrencyConversionService,
+    private val netWorthService: com.ritesh.cashiro.domain.service.NetWorthService,
     private val getLendBorrowPersonsUseCase: GetLendBorrowPersonsUseCase,
     private val addEditPersonUseCase: AddEditLendBorrowPersonUseCase,
     val attachmentService: AttachmentService
@@ -98,30 +99,11 @@ constructor(
     }
 
     private fun observeNetWorth() {
-        combine(
-            accountBalanceRepository.getAllLatestBalances(),
-            currencyRepository.effectiveBaseCurrencyCode,
-            currencyConversionService.rateChangeTrigger
-        ) { allBalances, baseCurrency, _ ->
-            if (allBalances.isEmpty()) return@combine BigDecimal.ZERO
-
-            var total = BigDecimal.ZERO
-            for (account in allBalances) {
-                val amt = if (account.currency == baseCurrency) {
-                    account.balance
-                } else {
-                    currencyConversionService.convertAmount(
-                        amount = account.balance,
-                        fromCurrency = account.currency,
-                        toCurrency = baseCurrency
-                    )
-                }
-                total = total.add(amt)
-            }
-            total
-        }.onEach { total ->
-            _state.update { it.copy(netWorth = total) }
-        }.launchIn(viewModelScope)
+        // The same calculation as the Net Worth screen: assets minus liabilities, with credit
+        // cards, money borrowed and loans taken away
+        netWorthService.observeCurrent(currencyRepository.effectiveBaseCurrencyCode)
+            .onEach { breakdown -> _state.update { it.copy(netWorth = breakdown.netWorth) } }
+            .launchIn(viewModelScope)
     }
 
     private data class MonthlyTotals(val income: BigDecimal, val expense: BigDecimal)
