@@ -82,14 +82,14 @@ object Constants {
     object Links {
         /** The NAX IT Solutions API that mails PIN recovery codes. */
         const val API_BASE_URL = "https://naxits-api.netlify.app"
-        const val GITHUB_URL = "https://github.com/ravisharma117/Cashiro"
+        const val GITHUB_URL = "https://github.com/ravisharma117/PaisaTracker"
         const val UPSTREAM_GITHUB_URL = "https://github.com/ritesh-kanwar/Cashiro"
         const val NEW_ISSUE_URL = "$GITHUB_URL/issues/new"
-        const val WEBSITE_URL = "https://ritesh-kanwar.github.io/cashiro.showcase"
-        const val PRIVACY_POLICY_URL = "$GITHUB_URL/blob/main/PRIVACY.md"
-        const val TERMS_OF_SERVICE_URL = "https://ritesh-kanwar.github.io/cashiro.showcase/terms"
-        const val FAQ_URL = "https://ritesh-kanwar.github.io/cashiro.showcase/faq"
-        const val GUIDE_URL = "https://ritesh-kanwar.github.io/cashiro.showcase/guides"
+        const val WEBSITE_URL = "https://naxits.com/paisaiq"
+        const val PRIVACY_POLICY_URL = "$WEBSITE_URL/privacy"
+        const val TERMS_OF_SERVICE_URL = "$WEBSITE_URL/terms"
+        const val FAQ_URL = "$WEBSITE_URL/faq"
+        const val GUIDE_URL = "$WEBSITE_URL/guides"
         const val REPORT_BUG_URL = "$NEW_ISSUE_URL/choose"
     }
     object Device {
