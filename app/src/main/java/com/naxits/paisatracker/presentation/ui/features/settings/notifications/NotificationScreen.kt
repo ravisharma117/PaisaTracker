@@ -2,6 +2,8 @@ package com.naxits.paisatracker.presentation.ui.features.settings.notifications
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -120,6 +122,7 @@ fun NotificationScreen(
 
     val context = LocalContext.current
     var isNotificationAccessGranted by remember { mutableStateOf(isNotificationListenerEnabled(context)) }
+    val showRestrictedSettingsHint = remember { mayHitRestrictedSettings(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -181,7 +184,8 @@ fun NotificationScreen(
             },
             text = {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                    modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
                     Text(
                         text = stringResource(R.string.notification_access_required_desc),
@@ -216,6 +220,42 @@ fun NotificationScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                             Text("3.", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Text(stringResource(R.string.step_3), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+
+                    if (showRestrictedSettingsHint) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(0.4f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(Spacing.md)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.restricted_settings_title),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(R.string.restricted_settings_desc),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            // Dialog stays open so 'Open Settings' is still there on return
+                            TextButton(
+                                onClick = {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null)
+                                        )
+                                    )
+                                }
+                            ) {
+                                Text(stringResource(R.string.open_app_info))
+                            }
                         }
                     }
                 }
@@ -580,4 +620,14 @@ private fun isNotificationListenerEnabled(context: Context): Boolean {
         "enabled_notification_listeners"
     )
     return flat?.contains(packageName) == true
+}
+
+// Android 13+ greys out notification access for sideloaded apps ("Restricted settings").
+// There is no public API to query that state, so assume any non-Play install may hit it.
+private fun mayHitRestrictedSettings(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+    val installer = runCatching {
+        context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+    }.getOrNull()
+    return installer != "com.android.vending"
 }
