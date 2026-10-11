@@ -237,7 +237,8 @@ fun TransactionTabContent(
             EntryCountingSelector(
                 transactionType = uiState.transactionType,
                 excludeFromIncome = uiState.excludeFromIncome,
-                onExcludeFromIncomeChange = { viewModel.updateExcludeFromIncome(it) },
+                isCashEntry = uiState.isCashEntry,
+                onCountingChange = { exclude, cash -> viewModel.updateEntryCounting(exclude, cash) },
                 onAccountToAccount = { viewModel.updateTransactionType(TransactionType.TRANSFER) }
             )
             // Date and Time Selection

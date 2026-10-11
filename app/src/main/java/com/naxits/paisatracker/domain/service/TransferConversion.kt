@@ -1,6 +1,25 @@
 package com.naxits.paisatracker.domain.service
 
+import com.naxits.paisatracker.data.database.entity.TransactionEntity
+import com.naxits.paisatracker.data.database.entity.TransactionType
+import com.naxits.paisatracker.domain.model.CashAccount
 import java.math.BigDecimal
+
+/** What an entry marked "Cash" does to the Cash balance, on top of its own account. */
+object CashEntryRules {
+
+    /**
+     * Income adds its amount to Cash and an expense takes it away. An entry that is not marked,
+     * or that already sits in the Cash account, changes nothing here.
+     */
+    fun effect(transaction: TransactionEntity): BigDecimal = when {
+        !transaction.isCashEntry -> BigDecimal.ZERO
+        CashAccount.isCash(transaction.bankName, transaction.accountNumber) -> BigDecimal.ZERO
+        transaction.transactionType == TransactionType.INCOME -> transaction.amount
+        transaction.transactionType == TransactionType.EXPENSE -> transaction.amount.negate()
+        else -> BigDecimal.ZERO
+    }
+}
 
 /**
  * Balance arithmetic for turning an income or expense entry into an account-to-account transfer,

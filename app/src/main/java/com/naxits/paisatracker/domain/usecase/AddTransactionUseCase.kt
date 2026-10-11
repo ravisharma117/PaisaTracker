@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.domain.usecase
 
+import com.naxits.paisatracker.domain.service.CashEntryRules
 import com.naxits.paisatracker.utils.SubscriptionUtils
 
 import com.naxits.paisatracker.data.database.entity.SubscriptionEntity
@@ -40,7 +41,8 @@ constructor(
             billingCycle: String? = null,
             createSubscription: Boolean = true,
             attachments: String = "",
-            excludeFromIncome: Boolean = false
+            excludeFromIncome: Boolean = false,
+            isCashEntry: Boolean = false
     ): Long {
         // Generate a unique hash for manual transactions
         val transactionHash =
@@ -70,11 +72,16 @@ constructor(
                         currency = currency,
                         billingCycle = billingCycle,
                         attachments = attachments,
-                        excludeFromIncome = excludeFromIncome && type == TransactionType.INCOME
+                        excludeFromIncome = excludeFromIncome && type == TransactionType.INCOME,
+                        isCashEntry = isCashEntry &&
+                                (type == TransactionType.INCOME || type == TransactionType.EXPENSE)
                 )
 
         // Insert the transaction
         val transactionId = transactionRepository.insertTransaction(transaction)
+
+        // An entry marked "Cash" also moves the Cash balance
+        accountBalanceRepository.adjustCashBalance(CashEntryRules.effect(transaction), currency)
 
         // Update account balances based on transaction type
         if (bankName != null && accountLast4 != null) {

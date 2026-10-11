@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.profile
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import android.content.Context
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
@@ -139,7 +140,7 @@ constructor(
                 }
                 if (txn.countsAsIncome || txn.transactionType == TransactionType.BORROWED) {
                     income = income.add(amt)
-                } else if (txn.transactionType == TransactionType.EXPENSE || txn.transactionType == TransactionType.LENT) {
+                } else if (txn.countsAsExpense || txn.transactionType == TransactionType.LENT) {
                     expense = expense.add(amt)
                 }
             }

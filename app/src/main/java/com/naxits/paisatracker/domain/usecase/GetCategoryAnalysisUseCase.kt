@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.domain.usecase
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.countsAsIncome
@@ -64,9 +65,9 @@ class GetCategoryAnalysisUseCase @Inject constructor(
                 }
             }
 
-    /** Income marked as "Not income" is not analysed as income. */
+    /** Entries the user kept out of the reports are not analysed. */
     private fun TransactionEntity.isOf(kind: CategoryKind): Boolean =
-        if (kind == CategoryKind.INCOME) countsAsIncome else transactionType == kind.type
+        if (kind == CategoryKind.INCOME) countsAsIncome else countsAsExpense
 
     private suspend fun TransactionEntity.toEntry(base: String): SpendEntry = SpendEntry(
         category = category ?: UNCATEGORISED,

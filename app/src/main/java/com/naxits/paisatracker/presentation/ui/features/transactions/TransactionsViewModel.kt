@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
@@ -174,7 +175,7 @@ class TransactionsViewModel @Inject constructor(
             val valAmount = state.convertedAmounts[tx.id] ?: tx.amount
             when (tx.transactionType) {
                 TransactionType.INCOME -> if (tx.countsAsIncome) income += valAmount
-                TransactionType.EXPENSE -> expenses += valAmount
+                TransactionType.EXPENSE -> if (tx.countsAsExpense) expenses += valAmount
                 TransactionType.CREDIT -> credit += valAmount
                 TransactionType.TRANSFER -> transfer += valAmount
                 TransactionType.INVESTMENT -> investment += valAmount
@@ -978,7 +979,7 @@ class TransactionsViewModel @Inject constructor(
                 .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
 
             val expenses = currencyTransactions
-                .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+                .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
                 .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
 
             val credit = currencyTransactions

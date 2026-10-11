@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.data.repository
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.database.dao.BudgetDao
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.BudgetCategoryLimitEntity
@@ -185,7 +186,7 @@ class BudgetRepository @Inject constructor(
             
         // Filter by budget type
         transactions = if (budget.budgetType == BudgetType.EXPENSE) {
-            transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+            transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
         } else {
             transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
         }
@@ -300,7 +301,7 @@ class BudgetRepository @Inject constructor(
 
         // Filter by budget type
         transactions = if (budget.budgetType == BudgetType.EXPENSE) {
-            transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+            transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
         } else {
             transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
         }
@@ -389,7 +390,7 @@ class BudgetRepository @Inject constructor(
                 
                 // Filter by budget type
                 filtered = if (budget.budgetType == BudgetType.EXPENSE) {
-                    filtered.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+                    filtered.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
                 } else {
                     filtered.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                 }

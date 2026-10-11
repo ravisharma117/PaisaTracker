@@ -2,7 +2,10 @@ package com.naxits.paisatracker.domain.service
 
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.database.entity.countsAsIncome
+import com.naxits.paisatracker.data.database.entity.isLeftOutOfReports
+import com.naxits.paisatracker.domain.model.CashAccount
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
@@ -33,6 +36,37 @@ class IncomeCountingTest {
         TransactionType.entries.filter { it != TransactionType.INCOME }.forEach {
             assertFalse(entry(it).countsAsIncome, "$it must not count as income")
         }
+    }
+
+    @Test
+    fun `entries marked as cash stay out of income and expenses`() {
+        val income = entry(TransactionType.INCOME).copy(isCashEntry = true)
+        val expense = entry(TransactionType.EXPENSE).copy(isCashEntry = true)
+
+        assertFalse(income.countsAsIncome)
+        assertFalse(expense.countsAsExpense)
+        assertTrue(income.isLeftOutOfReports)
+        assertTrue(expense.isLeftOutOfReports)
+        assertTrue(entry(TransactionType.EXPENSE).countsAsExpense)
+        assertFalse(entry(TransactionType.EXPENSE).isLeftOutOfReports)
+    }
+
+    @Test
+    fun `cash entry adds income to cash and takes an expense away`() {
+        assertEquals(BigDecimal("100"), CashEntryRules.effect(entry(TransactionType.INCOME).copy(isCashEntry = true)))
+        assertEquals(BigDecimal("-100"), CashEntryRules.effect(entry(TransactionType.EXPENSE).copy(isCashEntry = true)))
+    }
+
+    @Test
+    fun `cash is untouched when the entry is not marked or already sits in cash`() {
+        assertEquals(BigDecimal.ZERO, CashEntryRules.effect(entry(TransactionType.INCOME)))
+        val inCash = entry(TransactionType.EXPENSE).copy(
+            isCashEntry = true,
+            bankName = CashAccount.BANK_NAME,
+            accountNumber = CashAccount.WALLET_LAST4
+        )
+        assertEquals(BigDecimal.ZERO, CashEntryRules.effect(inCash))
+        assertEquals(BigDecimal.ZERO, CashEntryRules.effect(entry(TransactionType.TRANSFER).copy(isCashEntry = true)))
     }
 
     @Test

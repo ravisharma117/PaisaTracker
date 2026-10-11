@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.accounts
 
+import com.naxits.paisatracker.data.database.entity.isLeftOutOfReports
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -125,7 +126,9 @@ class AccountDetailViewModel @Inject constructor(
                         transaction.amount
                     }
 
-                    if (transaction.countsAsIncome || transaction.transactionType == TransactionType.BORROWED) {
+                    if (transaction.isLeftOutOfReports) {
+                        // Kept out of the reports by the user
+                    } else if (transaction.countsAsIncome || transaction.transactionType == TransactionType.BORROWED) {
                         totalIncome += convertedAmount
                     } else if (transaction.transactionType == TransactionType.TRANSFER) {
                         val isSender = transaction.bankName == bankName && 

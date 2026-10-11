@@ -51,6 +51,27 @@ class AccountBalanceRepository @Inject constructor(
     }
 
     /**
+     * Moves the Cash balance by [delta], creating the Cash account if needed. Used for entries
+     * marked "Cash", which change Cash on top of their own account.
+     */
+    suspend fun adjustCashBalance(delta: BigDecimal, currency: String) {
+        if (delta.signum() == 0) return
+        val cash = ensureCashAccount(currency)
+        // Stay strictly after the latest Cash row, which may have been created just now
+        val now = LocalDateTime.now()
+        val timestamp = if (now.isAfter(cash.timestamp)) now else cash.timestamp.plusNanos(1_000_000)
+        insertBalance(
+            cash.copy(
+                id = 0,
+                balance = cash.balance.add(delta),
+                timestamp = timestamp,
+                transactionId = null,
+                sourceType = "CASH_ENTRY"
+            )
+        )
+    }
+
+    /**
      * Keeps the Cash account in the given currency, creating the account if needed.
      */
     suspend fun syncCashCurrency(currency: String) {

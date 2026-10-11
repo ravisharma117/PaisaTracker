@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.data.repository
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.dao.SubscriptionDao
 import com.naxits.paisatracker.data.database.dao.TransactionDao
@@ -83,7 +84,7 @@ class AiContextRepository @Inject constructor(
         transactions.forEach { transaction ->
             when (transaction.transactionType) {
                 TransactionType.INCOME -> if (transaction.countsAsIncome) totalIncome = totalIncome.add(transaction.amount)
-                TransactionType.EXPENSE -> totalExpense = totalExpense.add(transaction.amount)
+                TransactionType.EXPENSE -> if (transaction.countsAsExpense) totalExpense = totalExpense.add(transaction.amount)
                 TransactionType.CREDIT -> totalExpense = totalExpense.add(transaction.amount) // Credit counts as expense
                 TransactionType.TRANSFER -> {} // Transfers don't affect income/expense totals
                 TransactionType.INVESTMENT -> {} // Investments are asset reallocation, not expenses
@@ -172,7 +173,7 @@ class AiContextRepository @Inject constructor(
         var totalExpense = BigDecimal.ZERO
         
         transactions
-            .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+            .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
             .forEach { transaction ->
                 val category = transaction.category ?: "Miscellaneous"
                 categoryMap.getOrPut(category) { mutableListOf() }.add(transaction.amount)
@@ -250,7 +251,7 @@ class AiContextRepository @Inject constructor(
             endOfMonth.atTime(23, 59, 59)
         )
         
-        val expenses = transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+        val expenses = transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
         
         // Calculate average daily spending
         var totalExpense = BigDecimal.ZERO

@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.data.database.entity.isLeftOutOfReports
 import com.naxits.paisatracker.domain.model.CashAccount
 import android.content.Intent
 import android.graphics.Bitmap
@@ -1398,7 +1399,8 @@ private fun EditableTransactionHeader(
             EntryCountingSelector(
                 transactionType = transaction.transactionType,
                 excludeFromIncome = transaction.excludeFromIncome,
-                onExcludeFromIncomeChange = { viewModel.updateExcludeFromIncome(it) },
+                isCashEntry = transaction.isCashEntry,
+                onCountingChange = { exclude, cash -> viewModel.updateEntryCounting(exclude, cash) },
                 onAccountToAccount = { viewModel.markAccountToAccount() }
             )
 
@@ -2935,9 +2937,12 @@ private fun TransactionReceipt(
                     color = amountColor
                 )
 
-                if (transaction.transactionType == TransactionType.INCOME && transaction.excludeFromIncome) {
+                if (transaction.isLeftOutOfReports) {
                     Text(
-                        text = stringResource(R.string.entry_counting_not_income),
+                        text = stringResource(
+                            if (transaction.isCashEntry) R.string.entry_counting_cash
+                            else R.string.entry_counting_not_income
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

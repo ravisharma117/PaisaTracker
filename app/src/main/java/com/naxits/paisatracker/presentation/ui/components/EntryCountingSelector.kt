@@ -22,15 +22,16 @@ import com.naxits.paisatracker.data.database.entity.TransactionType
 
 /**
  * Lets an income or expense entry be kept out of the reports: an income can be marked
- * "Not income", and either type can be turned into an account-to-account transfer.
- * Shows nothing for other transaction types.
+ * "Not income", and either type can be marked "Cash" or turned into an account-to-account
+ * transfer. Shows nothing for other transaction types.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EntryCountingSelector(
     transactionType: TransactionType,
     excludeFromIncome: Boolean,
-    onExcludeFromIncomeChange: (Boolean) -> Unit,
+    isCashEntry: Boolean,
+    onCountingChange: (excludeFromIncome: Boolean, isCashEntry: Boolean) -> Unit,
     onAccountToAccount: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -53,16 +54,21 @@ fun EntryCountingSelector(
         ) {
             CountingChip(
                 label = stringResource(if (isIncome) R.string.type_income else R.string.type_expense),
-                selected = !isIncome || !excludeFromIncome,
-                onClick = { if (isIncome) onExcludeFromIncomeChange(false) }
+                selected = !isCashEntry && !(isIncome && excludeFromIncome),
+                onClick = { onCountingChange(false, false) }
             )
             if (isIncome) {
                 CountingChip(
                     label = stringResource(R.string.entry_counting_not_income),
-                    selected = excludeFromIncome,
-                    onClick = { onExcludeFromIncomeChange(true) }
+                    selected = excludeFromIncome && !isCashEntry,
+                    onClick = { onCountingChange(true, false) }
                 )
             }
+            CountingChip(
+                label = stringResource(R.string.entry_counting_cash),
+                selected = isCashEntry,
+                onClick = { onCountingChange(false, true) }
+            )
             CountingChip(
                 label = stringResource(R.string.entry_counting_account_to_account),
                 selected = false,

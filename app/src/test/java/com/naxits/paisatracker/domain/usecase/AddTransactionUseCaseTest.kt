@@ -11,6 +11,7 @@ import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.data.repository.AccountBalanceRepository
 import com.naxits.paisatracker.data.repository.SubscriptionRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
+import com.naxits.paisatracker.domain.model.CashAccount
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
@@ -143,6 +144,56 @@ class AddTransactionUseCaseTest {
 
         assertEquals(BigDecimal("15000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
         assertTrue(transactionDao!!.insertedTransactions.last().excludeFromIncome)
+    }
+
+    @Test
+    fun `cash entries move the Cash balance as well as their own account`() = runTest {
+        val balanceDao = FakeAccountBalanceDao()
+        val useCase = createUseCase(balanceDao)
+
+        balanceDao.seedBalance(
+            AccountBalanceEntity(
+                bankName = testBank,
+                accountLast4 = testLast4,
+                balance = BigDecimal("10000"),
+                timestamp = baseTime.minusDays(1)
+            )
+        )
+
+        useCase.execute(
+            amount = BigDecimal("5000"),
+            merchant = "Sale",
+            category = "Income",
+            type = TransactionType.INCOME,
+            date = baseTime,
+            bankName = testBank,
+            accountLast4 = testLast4,
+            currency = testCurrency,
+            isCashEntry = true
+        )
+        assertEquals(BigDecimal("15000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertEquals(
+            BigDecimal("5000"),
+            balanceDao.getLatestBalance(CashAccount.BANK_NAME, CashAccount.WALLET_LAST4)!!.balance
+        )
+
+        useCase.execute(
+            amount = BigDecimal("1200"),
+            merchant = "Shop",
+            category = "Food",
+            type = TransactionType.EXPENSE,
+            date = baseTime.plusHours(1),
+            bankName = testBank,
+            accountLast4 = testLast4,
+            currency = testCurrency,
+            isCashEntry = true
+        )
+        assertEquals(BigDecimal("13800"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertEquals(
+            BigDecimal("3800"),
+            balanceDao.getLatestBalance(CashAccount.BANK_NAME, CashAccount.WALLET_LAST4)!!.balance
+        )
+        assertTrue(transactionDao!!.insertedTransactions.all { it.isCashEntry })
     }
 
     @Test

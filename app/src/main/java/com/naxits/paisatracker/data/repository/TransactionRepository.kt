@@ -1,5 +1,7 @@
 package com.naxits.paisatracker.data.repository
 
+import com.naxits.paisatracker.domain.service.CashEntryRules
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
 import com.naxits.paisatracker.data.database.entity.countsAsIncome
@@ -183,6 +185,7 @@ class TransactionRepository @Inject constructor(
     }
 
     private suspend fun reverseBalanceForDeletion(transaction: TransactionEntity) {
+        accountBalanceRepository.adjustCashBalance(CashEntryRules.effect(transaction).negate(), transaction.currency)
         val bankName = transaction.bankName ?: return
         val accountLast4 = transaction.accountNumber ?: return
         val latestBalance = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
@@ -213,6 +216,7 @@ class TransactionRepository @Inject constructor(
     }
 
     private suspend fun applyBalanceForTransaction(transaction: TransactionEntity) {
+        accountBalanceRepository.adjustCashBalance(CashEntryRules.effect(transaction), transaction.currency)
         val bankName = transaction.bankName ?: return
         val accountLast4 = transaction.accountNumber ?: return
         val latestBalance = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
@@ -284,7 +288,7 @@ class TransactionRepository @Inject constructor(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             val expenses =
-                    transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }.fold(
+                    transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }.fold(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             MonthlyBreakdown(total = income - expenses, income = income, expenses = expenses)
@@ -311,7 +315,7 @@ class TransactionRepository @Inject constructor(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             val expenses =
-                    transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }.fold(
+                    transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }.fold(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             MonthlyBreakdown(total = income - expenses, income = income, expenses = expenses)
@@ -338,7 +342,7 @@ class TransactionRepository @Inject constructor(
                                 }
                 val expenses =
                         currencyTransactions
-                                .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+                                .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
                                 .fold(BigDecimal.ZERO) { acc, transaction ->
                                     acc + transaction.amount
                                 }
@@ -367,7 +371,7 @@ class TransactionRepository @Inject constructor(
                                 }
                 val expenses =
                         currencyTransactions
-                                .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+                                .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
                                 .fold(BigDecimal.ZERO) { acc, transaction ->
                                     acc + transaction.amount
                                 }
@@ -391,7 +395,7 @@ class TransactionRepository @Inject constructor(
                         }
                 val expenses =
                     currencyTransactions
-                        .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+                        .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
                         .fold(BigDecimal.ZERO) { acc, transaction ->
                             acc + transaction.amount
                         }

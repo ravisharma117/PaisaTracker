@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.domain.service.CashEntryRules
 import com.naxits.paisatracker.R
 import com.naxits.paisatracker.domain.service.TransferConversion
 import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
@@ -505,7 +506,13 @@ class TransactionDetailViewModel @Inject constructor(
 
     fun updateTransactionType(type: TransactionType) {
         _uiState.update {
-            it.copy(editableTransaction = it.editableTransaction?.copy(transactionType = type, excludeFromIncome = false))
+            it.copy(
+                editableTransaction = it.editableTransaction?.copy(
+                    transactionType = type,
+                    excludeFromIncome = false,
+                    isCashEntry = false
+                )
+            )
         }
 
         // Auto-select category based on type
@@ -527,9 +534,19 @@ class TransactionDetailViewModel @Inject constructor(
         updateCategory(newCategory)
     }
 
-    /** Marks an income entry as "Not income": it keeps its balance effect but leaves the income totals. */
-    fun updateExcludeFromIncome(exclude: Boolean) {
-        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(excludeFromIncome = exclude)) }
+    /**
+     * How the entry being edited is counted. "Not income" keeps an income out of the income totals;
+     * "Cash" also moves the Cash balance and keeps the entry out of income and expense reports.
+     */
+    fun updateEntryCounting(excludeFromIncome: Boolean, isCashEntry: Boolean) {
+        _uiState.update {
+            it.copy(
+                editableTransaction = it.editableTransaction?.copy(
+                    excludeFromIncome = excludeFromIncome,
+                    isCashEntry = isCashEntry
+                )
+            )
+        }
     }
 
     /**
@@ -545,9 +562,10 @@ class TransactionDetailViewModel @Inject constructor(
                 toAccount = current.accountNumber,
                 bankName = null,
                 accountNumber = null,
-                excludeFromIncome = false
+                excludeFromIncome = false,
+                isCashEntry = false
             )
-            TransactionType.EXPENSE -> current.copy(transactionType = TransactionType.TRANSFER)
+            TransactionType.EXPENSE -> current.copy(transactionType = TransactionType.TRANSFER, isCashEntry = false)
             else -> return
         }
         _uiState.update { it.copy(editableTransaction = converted, accountIconName = null) }
@@ -718,6 +736,12 @@ class TransactionDetailViewModel @Inject constructor(
                 val originalTransaction = state.transaction
                 if (originalTransaction != null) {
                     updateAccountBalances(originalTransaction, normalizedTransaction)
+                    // An entry marked "Cash" also moves the Cash balance
+                    accountBalanceRepository.adjustCashBalance(
+                        CashEntryRules.effect(normalizedTransaction)
+                            .subtract(CashEntryRules.effect(originalTransaction)),
+                        normalizedTransaction.currency
+                    )
                 }
 
                 // Sync with subscriptions if recurring
