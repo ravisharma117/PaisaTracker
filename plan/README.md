@@ -4,7 +4,7 @@ Source requirement: [Cashiro - Expense Tracker](Cashiro%20-%20Expense%20Tracker%
 
 Each folder holds one self-contained `plan.md`. Work them in order; a plan may start once the plans it depends on are merged into `develop`.
 
-In every plan, `$APP` means `app/src/main/java/com/ritesh/cashiro`.
+In every plan, `$APP` means `app/src/main/java/com/naxits/paisatracker`.
 
 ## Status
 
@@ -40,7 +40,7 @@ The requirement assumes upstream Cashiro. The fork already has more than that, s
 | Area | Today |
 | --- | --- |
 | Fork | `origin` is the fork; only `main` exists; no `develop`, no `upstream` remote |
-| Branding | `applicationId` `com.ritesh.cashiro`, app name "Cashiro", 2.1.61-beta (code 94), flavors `fdroid` and `standard` |
+| Branding | `applicationId` `com.naxits.paisatracker`, app name "Cashiro", 2.1.61-beta (code 94), flavors `fdroid` and `standard` |
 | Onboarding | 5 steps (welcome, SMS permission, notification permission, accounts, profile) |
 | Cash | Implicit: hardcoded `"Cash"` / `"wallet"` strings and an `is_wallet` flag |
 | App lock | Biometric / device credential with timeout; no app PIN |

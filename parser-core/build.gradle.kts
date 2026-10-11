@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.ritesh.cashiro"
+group = "com.naxits.paisatracker"
 version = "0.1.0-SNAPSHOT"
 
 // Use root project's Java toolchain; avoid forcing downloads here

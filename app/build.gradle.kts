@@ -12,7 +12,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ritesh.cashiro"
+    namespace = "com.naxits.paisatracker"
     compileSdk = 36
     
     buildFeatures {

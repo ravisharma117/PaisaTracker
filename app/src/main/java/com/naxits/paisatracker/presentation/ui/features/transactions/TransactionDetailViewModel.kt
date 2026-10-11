@@ -1,0 +1,981 @@
+package com.naxits.paisatracker.presentation.ui.features.transactions
+
+import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
+import com.naxits.paisatracker.domain.model.CashAccount
+import com.naxits.paisatracker.utils.SubscriptionUtils
+
+import android.content.Context
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.naxits.paisatracker.data.currency.CurrencyConversionService
+import com.naxits.paisatracker.data.database.entity.CategoryEntity
+import com.naxits.paisatracker.data.repository.CurrencyRepository
+import com.naxits.paisatracker.data.database.entity.TransactionEntity
+import com.naxits.paisatracker.data.database.entity.TransactionType
+import com.naxits.paisatracker.data.database.entity.LendBorrowType
+import com.naxits.paisatracker.data.repository.AccountBalanceRepository
+import com.naxits.paisatracker.data.repository.CategoryRepository
+import com.naxits.paisatracker.data.repository.MerchantMappingRepository
+import com.naxits.paisatracker.data.repository.TransactionRepository
+import com.naxits.paisatracker.data.repository.SubcategoryRepository
+import com.naxits.paisatracker.data.repository.SubscriptionRepository
+import com.naxits.paisatracker.data.preferences.UserPreferencesRepository
+import com.naxits.paisatracker.data.repository.LendBorrowRepository
+import com.naxits.paisatracker.domain.model.LendBorrowPerson
+import com.naxits.paisatracker.domain.model.LendBorrowTransactionItem
+import com.naxits.paisatracker.domain.model.PersonInfo
+import com.naxits.paisatracker.domain.usecase.AddEditLendBorrowPersonUseCase
+import com.naxits.paisatracker.domain.usecase.GetLendBorrowEntryForTransactionUseCase
+import com.naxits.paisatracker.domain.usecase.GetLendBorrowPersonsUseCase
+import com.naxits.paisatracker.domain.usecase.MarkTransactionAsLoanUseCase
+import com.naxits.paisatracker.domain.usecase.UnmarkTransactionAsLoanUseCase
+import com.naxits.paisatracker.data.database.entity.SubscriptionEntity
+import com.naxits.paisatracker.data.database.entity.SubscriptionState
+import com.naxits.paisatracker.data.service.AttachmentService
+import com.naxits.paisatracker.core.Constants
+import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import com.naxits.paisatracker.data.database.entity.SubcategoryEntity
+import com.naxits.paisatracker.utils.CurrencyFormatter
+import com.naxits.paisatracker.utils.DeviceEncryption
+import com.naxits.paisatracker.utils.capitalizeFirst
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.net.URLEncoder
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
+class TransactionDetailViewModel @Inject constructor(
+    private val transactionRepository: TransactionRepository,
+    private val merchantMappingRepository: MerchantMappingRepository,
+    private val categoryRepository: CategoryRepository,
+    private val subcategoryRepository: SubcategoryRepository,
+    private val accountBalanceRepository: AccountBalanceRepository,
+    private val accountOrderUseCase: AccountOrderUseCase,
+    private val subscriptionRepository: SubscriptionRepository,
+    private val currencyConversionService: CurrencyConversionService,
+    private val currencyRepository: CurrencyRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val lendBorrowRepository: LendBorrowRepository,
+    private val getLendBorrowPersonsUseCase: GetLendBorrowPersonsUseCase,
+    private val addEditLendBorrowPersonUseCase: AddEditLendBorrowPersonUseCase,
+    private val getLendBorrowEntryForTransactionUseCase: GetLendBorrowEntryForTransactionUseCase,
+    private val markTransactionAsLoanUseCase: MarkTransactionAsLoanUseCase,
+    private val unmarkTransactionAsLoanUseCase: UnmarkTransactionAsLoanUseCase,
+    val attachmentService: AttachmentService,
+    @ApplicationContext private val context: Context
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(TransactionDetailUiState())
+    val uiState: StateFlow<TransactionDetailUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            userPreferencesRepository.userPreferences.collect { prefs ->
+                _uiState.update { it.copy(
+                    isAmoledMode = prefs.isAmoledMode,
+                    darkThemeConfig = prefs.isDarkThemeEnabled
+                ) }
+            }
+        }
+
+        viewModelScope.launch {
+            combine(
+                lendBorrowRepository.getAllTransactions(),
+                lendBorrowRepository.getPersons()
+            ) { lbTransactions, persons ->
+                val personMap = persons.associateBy { it.id }
+                lbTransactions
+                    .filter { it.transactionId != null }
+                    .associate { lb ->
+                        val person = personMap[lb.personId]
+                        lb.transactionId!! to PersonInfo(
+                            name = person?.name ?: lb.title,
+                            color = person?.color ?: "#4CAF50",
+                            avatar = person?.avatar
+                        )
+                    }
+            }.collect { mapping ->
+                _uiState.update { it.copy(transactionPersonMapping = mapping) }
+            }
+        }
+    }
+
+    // All categories so icon/category lookups stay consistent even when a
+    // transaction's category doesn't belong to its type (e.g. a lend/borrow
+    // wallet transaction typed EXPENSE with an "Income" category).
+    val categories: StateFlow<List<CategoryEntity>> = categoryRepository.getAllCategories()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    // Available accounts for linking (excluding hidden accounts)
+    private val sharedPrefs =
+        context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
+
+    val availableAccounts: StateFlow<List<AccountBalanceEntity>> = accountOrderUseCase.orderedAccounts()
+        .map { balances ->
+            val hiddenAccounts =
+                sharedPrefs.getStringSet("hidden_accounts", emptySet()) ?: emptySet()
+            balances
+                .filter { balance ->
+                    val key = "${balance.bankName}_${balance.accountLast4}"
+                    !hiddenAccounts.contains(key)
+                }
+                .distinctBy { "${it.bankName}_${it.accountLast4}" }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    // People available for linking a transaction to a lend/borrow (loan) record.
+    val persons: StateFlow<List<LendBorrowPerson>> = getLendBorrowPersonsUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun loadLinkedLendBorrow(transactionId: Long) {
+        if (transactionId <= 0L) {
+            _uiState.update {
+                it.copy(
+                    linkedLendBorrow = null,
+                    linkedLoanPersonName = null
+                )
+            }
+            return
+        }
+        viewModelScope.launch {
+            val entry = getLendBorrowEntryForTransactionUseCase(transactionId)
+            var personName: String? = null
+            if (entry != null) {
+                personName = lendBorrowRepository.getPersonName(entry.personId)
+            }
+            _uiState.update {
+                it.copy(
+                    linkedLendBorrow = entry,
+                    linkedLoanPersonName = personName
+                )
+            }
+        }
+    }
+
+    fun showMarkAsLoanSheet() {
+        _uiState.update { it.copy(showMarkAsLoanSheet = true) }
+    }
+
+    fun hideMarkAsLoanSheet() {
+        _uiState.update {
+            it.copy(
+                showMarkAsLoanSheet = false,
+                markAsLoanError = null
+            )
+        }
+    }
+
+    fun addPerson(name: String) {
+        viewModelScope.launch { addEditLendBorrowPersonUseCase.addPerson(name = name) }
+    }
+
+    fun markAsLoan(
+        personId: Long,
+        loanType: LendBorrowType,
+        amount: BigDecimal,
+        title: String
+    ) {
+        viewModelScope.launch {
+            try {
+                val txn = _uiState.value.transaction
+                val txnId = txn?.id ?: 0L
+                markTransactionAsLoanUseCase(
+                    transactionId = txnId,
+                    personId = personId,
+                    type = loanType,
+                    amount = amount,
+                    currency = txn?.currency ?: "",
+                    title = title,
+                    date = txn?.dateTime ?: LocalDateTime.now()
+                )
+                _uiState.update {
+                    it.copy(
+                        showMarkAsLoanSheet = false,
+                        showEditLendBorrowSheet = false,
+                        markAsLoanSuccess = true,
+                        markAsLoanError = null
+                    )
+                }
+                loadLinkedLendBorrow(txnId)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        markAsLoanError = e.localizedMessage ?: "Failed to link loan"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearMarkAsLoanResult() {
+        _uiState.update { it.copy(markAsLoanSuccess = false, markAsLoanError = null) }
+    }
+
+    fun showUnmarkLoanConfirm() {
+        _uiState.update { it.copy(showUnmarkLoanConfirm = true) }
+    }
+
+    fun hideUnmarkLoanConfirm() {
+        _uiState.update { it.copy(showUnmarkLoanConfirm = false) }
+    }
+
+    fun unmarkAsLoan() {
+        viewModelScope.launch {
+            val txn = _uiState.value.transaction
+            val txnId = txn?.id ?: 0L
+            try {
+                unmarkTransactionAsLoanUseCase(txnId)
+                _uiState.update {
+                    it.copy(
+                        showUnmarkLoanConfirm = false,
+                        linkedLendBorrow = null,
+                        linkedLoanPersonName = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        showUnmarkLoanConfirm = false,
+                        markAsLoanError = e.localizedMessage ?: "Failed to unlink loan"
+                    )
+                }
+            }
+        }
+    }
+
+    val selectedAccount: StateFlow<AccountBalanceEntity?> = _uiState.map { state ->
+        val transaction = state.editableTransaction
+        if (transaction == null) return@map null
+        availableAccounts.value.find {
+            it.bankName == transaction.bankName && it.accountLast4 == transaction.accountNumber
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val targetAccount: StateFlow<AccountBalanceEntity?> = _uiState.map { state ->
+        val transaction = state.editableTransaction
+        if (transaction == null) return@map null
+        availableAccounts.value.find { it.accountLast4 == transaction.toAccount }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+
+    val allSubcategories: StateFlow<Map<Long, List<SubcategoryEntity>>> =
+        subcategoryRepository.subcategoriesMap
+
+    // Attachment state for edit mode
+    private val _editableAttachments = MutableStateFlow<List<String>>(emptyList())
+    val editableAttachments: StateFlow<List<String>> = _editableAttachments.asStateFlow()
+
+    fun loadTransaction(transactionId: Long) {
+        viewModelScope.launch {
+            val transaction = transactionRepository.getTransactionById(transactionId)
+            _uiState.update { it.copy(transaction = transaction) }
+            val accountIconName = transaction?.let { txn ->
+                accountBalanceRepository.getLatestBalance(txn.bankName ?: "", txn.accountNumber ?: "")?.iconName
+            }
+            _uiState.update { it.copy(accountIconName = accountIconName) }
+            transaction?.let {
+                determinePrimaryCurrency(it)
+                calculateConvertedAmount(it)
+                findLinkedSubscription(it)
+                loadLinkedLendBorrow(it.id)
+            }
+        }
+    }
+
+    private suspend fun findLinkedSubscription(transaction: TransactionEntity) {
+        if (transaction.isRecurring) {
+            val linked = subscriptionRepository.matchTransactionToSubscription(
+                transaction.merchantName,
+                transaction.amount
+            )
+            _uiState.update { it.copy(subscription = linked) }
+        } else {
+            _uiState.update { it.copy(subscription = null) }
+        }
+    }
+
+    private suspend fun determinePrimaryCurrency(transaction: TransactionEntity) {
+        val effectiveCurrency = currencyRepository.effectiveBaseCurrencyCode.first()
+        _uiState.update { it.copy(primaryCurrency = effectiveCurrency) }
+    }
+
+    private suspend fun calculateConvertedAmount(transaction: TransactionEntity) {
+        val primaryCurrency = _uiState.value.primaryCurrency
+        if (transaction.currency.isNotEmpty() && !transaction.currency.equals(
+                primaryCurrency,
+                ignoreCase = true
+            )
+        ) {
+            // Convert the amount to the primary currency
+            val converted = currencyConversionService.convertAmount(
+                amount = transaction.amount,
+                fromCurrency = transaction.currency,
+                toCurrency = primaryCurrency
+            )
+            _uiState.update { it.copy(convertedAmount = converted) }
+        } else {
+            // No conversion needed if currencies are the same
+            _uiState.update { it.copy(convertedAmount = null) }
+        }
+    }
+
+    fun enterEditMode() {
+        val currentTransaction = _uiState.value.transaction
+        val billingCycle = currentTransaction?.billingCycle
+        
+        var isCustom = false
+        var count = 1
+        var unit = "month"
+        var endDate: LocalDate? = null
+
+        if (billingCycle?.startsWith("custom_") == true) {
+            isCustom = true
+            val parts = billingCycle.split("_")
+            count = parts.getOrNull(1)?.toIntOrNull() ?: 1
+            unit = parts.getOrNull(2) ?: "month"
+            val endDateStr = parts.getOrNull(3)
+            if (endDateStr != null && endDateStr != "forever") {
+                endDate = try { LocalDate.parse(endDateStr) } catch (e: Exception) { null }
+            }
+        }
+
+        _uiState.update { state ->
+            state.copy(
+                editableTransaction = state.transaction?.copy(),
+                isEditMode = true,
+                errorMessage = null,
+                isCustomCycle = isCustom,
+                customCycleCount = count,
+                customCycleUnit = unit,
+                customCycleEndDate = endDate
+            )
+        }
+        // Initialize editable attachments from transaction
+        _uiState.value.transaction?.let { txn ->
+            _editableAttachments.value = attachmentService.parseAttachments(txn.attachments)
+        }
+
+        // Load count of other transactions from same merchant (always, not just for SMS)
+        _uiState.value.transaction?.let { txn ->
+            viewModelScope.launch {
+                val matches = transactionRepository.getTransactionsByMerchantContains(
+                    txn.merchantName,
+                    txn.id
+                )
+                _uiState.update { it.copy(
+                    existingTransactionCount = matches.size,
+                    matchedTransactions = matches,
+                    selectedMatchIds = matches.map { m -> m.id }.toSet()
+                ) }
+            }
+        }
+    }
+
+    fun exitEditMode() {
+        _uiState.update {
+            it.copy(
+                editableTransaction = null,
+                isEditMode = false,
+                errorMessage = null,
+                applyToAllFromMerchant = false,
+                updateExistingTransactions = false,
+                existingTransactionCount = 0
+            )
+        }
+        _editableAttachments.value = emptyList()
+    }
+
+    fun toggleApplyToAllFromMerchant() {
+        _uiState.update { it.copy(applyToAllFromMerchant = !it.applyToAllFromMerchant) }
+    }
+
+    fun toggleUpdateExistingTransactions() {
+        _uiState.update { it.copy(updateExistingTransactions = !it.updateExistingTransactions) }
+    }
+
+    fun showMatchPreviewSheet() {
+        _uiState.update { it.copy(showMatchPreviewSheet = true) }
+    }
+
+    fun hideMatchPreviewSheet() {
+        _uiState.update { it.copy(showMatchPreviewSheet = false) }
+    }
+
+    fun toggleMatchSelection(transactionId: Long) {
+        val current = _uiState.value.selectedMatchIds
+        val updated = if (current.contains(transactionId)) current - transactionId
+                      else current + transactionId
+        _uiState.update { it.copy(selectedMatchIds = updated) }
+    }
+
+    fun selectAllMatches() {
+        val allIds = _uiState.value.matchedTransactions.map { it.id }.toSet()
+        _uiState.update { it.copy(selectedMatchIds = allIds) }
+    }
+
+    fun deselectAllMatches() {
+        _uiState.update { it.copy(selectedMatchIds = emptySet()) }
+    }
+
+    /** Adds a transaction found via the Transactions search screen to the match preview list. */
+    fun addTransactionToMatchList(transaction: TransactionEntity) {
+        val current = _uiState.value.matchedTransactions
+        if (current.any { it.id == transaction.id }) return
+        _uiState.update { state ->
+            state.copy(
+                matchedTransactions = current + transaction,
+                selectedMatchIds = state.selectedMatchIds + transaction.id,
+                matchSearchQuery = "",
+                matchSearchResults = emptyList()
+            )
+        }
+    }
+
+    fun updateMatchSearchQuery(query: String) {
+        _uiState.update { it.copy(matchSearchQuery = query) }
+        if (query.isBlank()) {
+            _uiState.update { it.copy(matchSearchResults = emptyList()) }
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val results = transactionRepository.searchTransactionsList(query)
+                val existingIds = _uiState.value.matchedTransactions.map { it.id }.toSet()
+                val currentId = _uiState.value.transaction?.id ?: -1L
+                val filtered = results.filter { it.id !in existingIds && it.id != currentId }
+                _uiState.update { it.copy(matchSearchResults = filtered) }
+            } catch (e: Exception) {
+                // Ignore search errors
+            }
+        }
+    }
+
+    /** Applies the current editable category to only the user-selected transactions. */
+    fun applyToSelectedMatches() {
+        val state = _uiState.value
+        val category = state.editableTransaction?.category ?: return
+        val ids = state.selectedMatchIds
+        if (ids.isEmpty()) return
+
+        viewModelScope.launch {
+            try {
+                val toUpdate = state.matchedTransactions
+                    .filter { it.id in ids }
+                    .map { it.copy(category = category) }
+                toUpdate.forEach { transactionRepository.updateTransaction(it) }
+                _uiState.update { it.copy(showMatchPreviewSheet = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Failed to update transactions: ${e.message}") }
+            }
+        }
+    }
+
+    fun updateMerchantName(name: String) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(merchantName = name)) }
+        validateMerchantName(name)
+    }
+
+    fun updateAmount(amountStr: String) {
+        val amount = amountStr.toBigDecimalOrNull()
+        if (amount != null && amount > BigDecimal.ZERO) {
+            _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(amount = amount), errorMessage = null) }
+        } else if (amountStr.isNotEmpty()) {
+            _uiState.update { it.copy(errorMessage = "Amount must be a positive number") }
+        }
+    }
+
+    fun updateTransactionType(type: TransactionType) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(transactionType = type)) }
+
+        // Auto-select category based on type
+        val newCategory = when (type) {
+            TransactionType.INCOME -> "Salary"
+            TransactionType.EXPENSE -> "Miscellaneous"
+            TransactionType.CREDIT -> "Credit Bill"
+            TransactionType.TRANSFER -> {
+                val targetAccount = _uiState.value.editableTransaction?.toAccount
+                if (targetAccount == CashAccount.WALLET_LAST4) "Cash Withdrawal" else "Self Transfer"
+            }
+
+            TransactionType.INVESTMENT -> "Investment"
+            TransactionType.BALANCE_UPDATE -> "Miscellaneous"
+            TransactionType.LENT -> "Lent"
+            TransactionType.BORROWED -> "Borrowed"
+        }
+
+        updateCategory(newCategory)
+    }
+
+    fun addAttachment(path: String) {
+        _editableAttachments.update { it + path }
+    }
+
+    fun removeAttachment(path: String) {
+        attachmentService.deleteAttachment(path)
+        _editableAttachments.update { it - path }
+    }
+
+    fun updateCategory(category: String) {
+        _uiState.update { state ->
+            val current = state.editableTransaction
+            state.copy(
+                editableTransaction = current?.copy(
+                    category = category.ifEmpty { "Miscellaneous" },
+                    subcategory = if (current.category != category) null else current.subcategory
+                )
+            )
+        }
+    }
+
+    fun updateSubcategory(subcategory: String?) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(subcategory = subcategory)) }
+    }
+
+    fun updateDateTime(dateTime: LocalDateTime) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(dateTime = dateTime)) }
+    }
+
+    fun updateDescription(description: String?) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(description = if (description.isNullOrEmpty()) null else description)) }
+    }
+
+    fun updateRecurringStatus(isRecurring: Boolean) {
+        _uiState.update { state ->
+            val current = state.editableTransaction
+            state.copy(
+                editableTransaction = current?.copy(
+                    isRecurring = isRecurring,
+                    billingCycle = if (isRecurring) current.billingCycle ?: "Monthly" else null
+                ),
+                isCustomCycle = if (!isRecurring) false else state.isCustomCycle
+            )
+        }
+    }
+
+    fun updateBillingCycle(cycle: String) {
+        _uiState.update { it.copy(
+            editableTransaction = it.editableTransaction?.copy(billingCycle = cycle),
+            isCustomCycle = cycle == "Custom"
+        ) }
+    }
+
+    fun updateSubscriptionCustomCycleCount(count: Int) {
+        _uiState.update { it.copy(customCycleCount = count) }
+    }
+
+    fun updateSubscriptionCustomCycleUnit(unit: String) {
+        _uiState.update { it.copy(customCycleUnit = unit) }
+    }
+
+    fun updateSubscriptionCustomCycleEndDate(date: LocalDate?) {
+        _uiState.update { it.copy(customCycleEndDate = date) }
+    }
+
+    fun updateAccountNumber(accountNumber: String?) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(accountNumber = if (accountNumber.isNullOrEmpty()) null else accountNumber)) }
+    }
+
+    fun updateTransactionAccount(account: AccountBalanceEntity?) {
+        _uiState.update { state ->
+            val current = state.editableTransaction
+            state.copy(
+                editableTransaction = current?.copy(
+                    bankName = account?.bankName ?: "Manual Entry",
+                    accountNumber = account?.accountLast4,
+                    currency = account?.currency ?: current.currency
+                ),
+                accountIconName = account?.iconName // Update the icon name in state too
+            )
+        }
+    }
+
+    fun updateTransactionTargetAccount(account: AccountBalanceEntity?) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(toAccount = account?.accountLast4)) }
+
+        // Update category if type is TRANSFER
+        _uiState.value.editableTransaction?.let { txn ->
+            if (txn.transactionType == TransactionType.TRANSFER) {
+                val newCategory = if (account?.accountLast4 == CashAccount.WALLET_LAST4) {
+                    "Cash Withdrawal"
+                } else {
+                    "Self Transfer"
+                }
+                updateCategory(newCategory)
+            }
+        }
+    }
+
+    fun updateCurrency(currency: String) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(currency = currency)) }
+        // Recalculate converted amount when currency changes
+        _uiState.value.editableTransaction?.let { transaction ->
+            viewModelScope.launch {
+                calculateConvertedAmount(transaction)
+            }
+        }
+    }
+
+    fun saveChanges() {
+        val state = _uiState.value
+        val toSave = state.editableTransaction ?: return
+
+        // Validate before saving
+        if (toSave.merchantName.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Merchant name is required") }
+            return
+        }
+
+        if (toSave.amount <= BigDecimal.ZERO) {
+            _uiState.update { it.copy(errorMessage = "Amount must be positive") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            try {
+                // Handle custom cycle serialization
+                val finalBillingCycle = if (state.isCustomCycle) {
+                    val endDateStr = state.customCycleEndDate?.toString() ?: "forever"
+                    "custom_${state.customCycleCount}_${state.customCycleUnit}_$endDateStr"
+                } else toSave.billingCycle
+
+                // Normalize merchant name before saving
+                val normalizedTransaction = toSave.copy(
+                    merchantName = normalizeMerchantName(toSave.merchantName),
+                    billingCycle = finalBillingCycle,
+                    updatedAt = LocalDateTime.now(),
+                    attachments = attachmentService.joinAttachments(_editableAttachments.value)
+                )
+
+                transactionRepository.updateTransaction(normalizedTransaction)
+
+                // Handle Balance Updates
+                val originalTransaction = state.transaction
+                if (originalTransaction != null) {
+                    updateAccountBalances(originalTransaction, normalizedTransaction)
+                }
+
+                // Sync with subscriptions if recurring
+                syncSubscriptionForTransaction(normalizedTransaction)
+
+                // Save merchant mapping if checkbox is checked
+                if (state.applyToAllFromMerchant) {
+                    merchantMappingRepository.setMapping(
+                        normalizedTransaction.merchantName,
+                        normalizedTransaction.category
+                    )
+                }
+
+                // Update existing transactions if checkbox is checked (fuzzy/contains match)
+                if (state.updateExistingTransactions) {
+                    transactionRepository.updateCategoryAndSubcategoryForMerchantContains(
+                        normalizedTransaction.merchantName,
+                        normalizedTransaction.category,
+                        normalizedTransaction.subcategory
+                    )
+                }
+
+                _uiState.update {
+                    it.copy(
+                        transaction = normalizedTransaction,
+                        saveSuccess = true,
+                        isEditMode = false,
+                        editableTransaction = null,
+                        errorMessage = null,
+                        applyToAllFromMerchant = false,
+                        updateExistingTransactions = false,
+                        existingTransactionCount = 0,
+                        matchedTransactions = emptyList(),
+                        selectedMatchIds = emptySet(),
+                        showMatchPreviewSheet = false
+                    )
+                }
+                findLinkedSubscription(normalizedTransaction) // Refresh linked subscription
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Failed to save changes: ${e.message}") }
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    fun cancelEdit() {
+        exitEditMode()
+    }
+
+    fun clearSaveSuccess() {
+        _uiState.update { it.copy(saveSuccess = false) }
+    }
+
+    private fun validateMerchantName(name: String) {
+        _uiState.update { it.copy(errorMessage = if (name.isBlank()) "Merchant name is required" else null) }
+    }
+
+    /**
+     * Normalizes merchant name to consistent format.
+     * Converts all-caps to proper case, preserves already mixed case.
+     */
+    private fun normalizeMerchantName(name: String): String {
+        val trimmed = name.trim()
+
+        // If it's all uppercase, convert to proper case
+        return if (trimmed == trimmed.uppercase()) {
+            trimmed.lowercase().split(" ").joinToString(" ") { word ->
+                word.capitalizeFirst()
+            }
+        } else {
+            // Already has mixed case, keep as is
+            trimmed
+        }
+    }
+
+    fun getReportUrl(): String {
+        val txn = _uiState.value.transaction ?: return ""
+
+        val smsBody = txn.smsBody ?: "Transaction: ${txn.merchantName} - ${txn.amount}"
+        val sender = txn.smsSender ?: "Unknown Sender"
+        val bank = txn.bankName ?: "Manual"
+
+        val issueTitle = "[Parsing Issue] ${txn.merchantName} - ${txn.amount}"
+        val issueBody = """
+            ### Transaction Details
+            - **Merchant:** ${txn.merchantName}
+            - **Amount:** ${txn.amount} ${txn.currency}
+            - **Type:** ${txn.transactionType}
+            - **Bank:** $bank
+            - **Sender:** $sender
+            
+            ### Original SMS
+            ```
+            $smsBody
+            ```
+            
+            ### Expected Behavior
+            _Describe what was wrong (e.g., wrong category, wrong date, etc.)_
+        """.trimIndent()
+
+        val encodedTitle = URLEncoder.encode(issueTitle, "UTF-8")
+        val encodedBody = URLEncoder.encode(issueBody, "UTF-8")
+
+        return "${Constants.Links.NEW_ISSUE_URL}?title=$encodedTitle&body=$encodedBody"
+    }
+
+    fun showDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = true) }
+    }
+
+    fun hideDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = false) }
+    }
+
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            _uiState.value.transaction?.let { txn ->
+                _uiState.update { it.copy(isDeleting = true, showDeleteDialog = false) }
+
+                try {
+                    transactionRepository.deleteTransaction(txn)
+                    _uiState.update { it.copy(deleteSuccess = true) }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(errorMessage = "Failed to delete transaction") }
+                } finally {
+                    _uiState.update { it.copy(isDeleting = false) }
+                }
+            }
+        }
+    }
+
+    fun duplicateTransaction() {
+        viewModelScope.launch {
+            _uiState.value.transaction?.let { txn ->
+                try {
+                    val duplicate = txn.copy(
+                        id = 0,
+                        transactionHash = UUID.randomUUID().toString(),
+                        createdAt = LocalDateTime.now(),
+                        updatedAt = LocalDateTime.now()
+                    )
+                    transactionRepository.insertTransaction(duplicate)
+                    _uiState.update { it.copy(duplicateSuccess = true) }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(errorMessage = "Failed to duplicate transaction") }
+                }
+            }
+        }
+    }
+
+    fun clearDuplicateSuccess() {
+        _uiState.update { it.copy(duplicateSuccess = false) }
+    }
+
+    private suspend fun syncSubscriptionForTransaction(transaction: TransactionEntity) {
+        if (transaction.isRecurring) {
+            val existing = subscriptionRepository.matchTransactionToSubscription(
+                transaction.merchantName,
+                transaction.amount
+            )
+
+            val nextPaymentDate = SubscriptionUtils.calculateNextPaymentDate(
+                (transaction.dateTime ?: LocalDateTime.now()).toLocalDate(),
+                transaction.billingCycle
+            )
+
+            val subscription = existing?.copy(
+                amount = transaction.amount,
+                nextPaymentDate = nextPaymentDate,
+                category = transaction.category,
+                subcategory = transaction.subcategory,
+                bankName = transaction.bankName,
+                currency = transaction.currency,
+                billingCycle = transaction.billingCycle,
+                state = SubscriptionState.ACTIVE,
+                updatedAt = LocalDateTime.now()
+            )
+                ?: SubscriptionEntity(
+                    merchantName = transaction.merchantName,
+                    amount = transaction.amount,
+                    nextPaymentDate = nextPaymentDate,
+                    state = SubscriptionState.ACTIVE,
+                    bankName = transaction.bankName,
+                    category = transaction.category,
+                    subcategory = transaction.subcategory,
+                    currency = transaction.currency,
+                    billingCycle = transaction.billingCycle,
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                )
+            subscriptionRepository.insertSubscription(subscription)
+        } else {
+            // Find existing matching subscription and hide it
+            val existing = subscriptionRepository.matchTransactionToSubscription(
+                transaction.merchantName,
+                transaction.amount
+            )
+            if (existing != null) {
+                subscriptionRepository.hideSubscription(existing.id)
+            }
+        }
+    }
+
+
+    private suspend fun updateAccountBalances(
+        oldTransaction: TransactionEntity,
+        newTransaction: TransactionEntity
+    ) {
+        if (oldTransaction.transactionType == TransactionType.TRANSFER) {
+            handleTransferBalanceEdit(oldTransaction, newTransaction)
+            return
+        }
+        if (oldTransaction.bankName != null && oldTransaction.accountNumber != null) {
+            updateNonTransferBalance(oldTransaction, newTransaction)
+        }
+    }
+
+    private suspend fun updateNonTransferBalance(
+        oldTransaction: TransactionEntity,
+        newTransaction: TransactionEntity
+    ) {
+        val bankName = oldTransaction.bankName!!
+        val accountLast4 = oldTransaction.accountNumber!!
+        val timestamp = oldTransaction.dateTime ?: LocalDateTime.now()
+
+        val oldEffect = balanceEffect(oldTransaction.amount, oldTransaction.transactionType)
+        val newEffect = balanceEffect(newTransaction.amount, newTransaction.transactionType)
+
+        // Fix the historical balance entry at the transaction's timestamp, then
+        // recalculate forward — this cascades the change to all subsequent entries
+        // including the latest balance. No additional delta application needed.
+        val linkedEntry = accountBalanceRepository.getBalanceByTransactionId(oldTransaction.id)
+        if (linkedEntry != null) {
+            val newBalance = (linkedEntry.balance - oldEffect + newEffect).max(BigDecimal.ZERO)
+            accountBalanceRepository.updateBalance(linkedEntry.copy(balance = newBalance))
+            accountBalanceRepository.recalculateBalancesAfter(bankName, accountLast4, timestamp, newBalance)
+        }
+    }
+
+    private suspend fun handleTransferBalanceEdit(
+        oldTransaction: TransactionEntity,
+        newTransaction: TransactionEntity
+    ) {
+        val oldAmount = oldTransaction.amount
+        val newAmount = newTransaction.amount
+
+        // source account: -amount effect
+        val sourceDelta = -(newAmount - oldAmount)
+        if (sourceDelta != BigDecimal.ZERO && oldTransaction.bankName != null && oldTransaction.accountNumber != null) {
+            applyBalanceWithDelta(oldTransaction.bankName, oldTransaction.accountNumber, sourceDelta, newTransaction.currency)
+        }
+
+        // target account: +amount effect
+        val oldTarget = oldTransaction.toAccount
+        val newTarget = newTransaction.toAccount
+        if (oldTarget != null) {
+            findAccountByLast4(oldTarget)?.let { target ->
+                val targetDelta = newAmount - oldAmount
+                if (targetDelta != BigDecimal.ZERO) {
+                    applyBalanceWithDelta(target.bankName, target.accountLast4, targetDelta, newTransaction.currency)
+                }
+            }
+        }
+        if (newTarget != null && newTarget != oldTarget) {
+            findAccountByLast4(newTarget)?.let { target ->
+                applyBalanceWithDelta(target.bankName, target.accountLast4, newAmount, newTransaction.currency)
+            }
+        }
+    }
+
+    private fun balanceEffect(amount: BigDecimal, type: TransactionType): BigDecimal {
+        return when (type) {
+            TransactionType.INCOME, TransactionType.CREDIT -> amount
+            TransactionType.EXPENSE, TransactionType.INVESTMENT -> amount.negate()
+            else -> BigDecimal.ZERO
+        }
+    }
+
+    private suspend fun applyBalanceWithDelta(
+        bankName: String,
+        accountLast4: String,
+        delta: BigDecimal,
+        currency: String
+    ) {
+        val currentBalance = accountBalanceRepository.getLatestBalance(bankName, accountLast4)
+        val newBalance = (currentBalance?.balance ?: BigDecimal.ZERO) + delta
+        accountBalanceRepository.insertBalance(
+            AccountBalanceEntity(
+                bankName = bankName,
+                accountLast4 = accountLast4,
+                balance = newBalance,
+                timestamp = LocalDateTime.now(),
+                transactionId = null,
+                sourceType = "MANUAL_EDIT",
+                iconResId = currentBalance?.iconResId ?: 0,
+                isCreditCard = currentBalance?.isCreditCard ?: false,
+                isWallet = currentBalance?.isWallet ?: false,
+                creditLimit = currentBalance?.creditLimit,
+                currency = currency
+            )
+        )
+    }
+
+    private suspend fun findAccountByLast4(last4: String): AccountBalanceEntity? {
+        return accountBalanceRepository.getAllLatestBalances().first()
+            .find { it.accountLast4 == last4 }
+    }
+}
