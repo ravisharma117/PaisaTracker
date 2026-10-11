@@ -358,6 +358,15 @@ fun SharedTransitionScope.TransactionItem(
                             needsSeparator = true
                         }
 
+                        // Not income Tag
+                        if (transaction?.transactionType == TransactionType.INCOME && transaction.excludeFromIncome) {
+                            TagSeparator()
+                            SubtitleTag(
+                                text = stringResource(R.string.entry_counting_not_income),
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            needsSeparator = true
+                        }
 
                         // Balance Tag
                         balanceAfter?.let { balance ->

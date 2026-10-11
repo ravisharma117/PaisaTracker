@@ -39,7 +39,8 @@ constructor(
             targetAccountLast4: String? = null,
             billingCycle: String? = null,
             createSubscription: Boolean = true,
-            attachments: String = ""
+            attachments: String = "",
+            excludeFromIncome: Boolean = false
     ): Long {
         // Generate a unique hash for manual transactions
         val transactionHash =
@@ -68,7 +69,8 @@ constructor(
                         updatedAt = LocalDateTime.now(),
                         currency = currency,
                         billingCycle = billingCycle,
-                        attachments = attachments
+                        attachments = attachments,
+                        excludeFromIncome = excludeFromIncome && type == TransactionType.INCOME
                 )
 
         // Insert the transaction

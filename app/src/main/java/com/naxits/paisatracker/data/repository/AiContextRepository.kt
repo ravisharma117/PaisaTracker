@@ -4,6 +4,7 @@ import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.dao.SubscriptionDao
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.SubscriptionState
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.data.model.*
@@ -81,7 +82,7 @@ class AiContextRepository @Inject constructor(
         // Process in a single pass
         transactions.forEach { transaction ->
             when (transaction.transactionType) {
-                TransactionType.INCOME -> totalIncome = totalIncome.add(transaction.amount)
+                TransactionType.INCOME -> if (transaction.countsAsIncome) totalIncome = totalIncome.add(transaction.amount)
                 TransactionType.EXPENSE -> totalExpense = totalExpense.add(transaction.amount)
                 TransactionType.CREDIT -> totalExpense = totalExpense.add(transaction.amount) // Credit counts as expense
                 TransactionType.TRANSFER -> {} // Transfers don't affect income/expense totals

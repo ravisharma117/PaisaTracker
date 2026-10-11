@@ -1,5 +1,7 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.R
+import com.naxits.paisatracker.domain.service.TransferConversion
 import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
 import com.naxits.paisatracker.domain.model.CashAccount
 import com.naxits.paisatracker.utils.SubscriptionUtils
@@ -502,7 +504,9 @@ class TransactionDetailViewModel @Inject constructor(
     }
 
     fun updateTransactionType(type: TransactionType) {
-        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(transactionType = type)) }
+        _uiState.update {
+            it.copy(editableTransaction = it.editableTransaction?.copy(transactionType = type, excludeFromIncome = false))
+        }
 
         // Auto-select category based on type
         val newCategory = when (type) {
@@ -521,6 +525,35 @@ class TransactionDetailViewModel @Inject constructor(
         }
 
         updateCategory(newCategory)
+    }
+
+    /** Marks an income entry as "Not income": it keeps its balance effect but leaves the income totals. */
+    fun updateExcludeFromIncome(exclude: Boolean) {
+        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(excludeFromIncome = exclude)) }
+    }
+
+    /**
+     * Turns the income or expense entry being edited into a transfer between two of the user's
+     * accounts. An expense keeps its account as the source; an income keeps its account as the
+     * destination, and the user then picks the other side.
+     */
+    fun markAccountToAccount() {
+        val current = _uiState.value.editableTransaction ?: return
+        val converted = when (current.transactionType) {
+            TransactionType.INCOME -> current.copy(
+                transactionType = TransactionType.TRANSFER,
+                toAccount = current.accountNumber,
+                bankName = null,
+                accountNumber = null,
+                excludeFromIncome = false
+            )
+            TransactionType.EXPENSE -> current.copy(transactionType = TransactionType.TRANSFER)
+            else -> return
+        }
+        _uiState.update { it.copy(editableTransaction = converted, accountIconName = null) }
+        updateCategory(
+            if (converted.toAccount == CashAccount.WALLET_LAST4) "Cash Withdrawal" else "Self Transfer"
+        )
     }
 
     fun addAttachment(path: String) {
@@ -647,6 +680,20 @@ class TransactionDetailViewModel @Inject constructor(
             return
         }
 
+        // An entry being turned into a transfer needs both of its accounts
+        val becomesTransfer = toSave.transactionType == TransactionType.TRANSFER &&
+            state.transaction?.transactionType != TransactionType.TRANSFER
+        if (becomesTransfer) {
+            if (toSave.accountNumber == null || toSave.toAccount == null) {
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.err_source_target_required)) }
+                return
+            }
+            if (toSave.accountNumber == toSave.toAccount) {
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.err_accounts_different)) }
+                return
+            }
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             try {
@@ -661,7 +708,8 @@ class TransactionDetailViewModel @Inject constructor(
                     merchantName = normalizeMerchantName(toSave.merchantName),
                     billingCycle = finalBillingCycle,
                     updatedAt = LocalDateTime.now(),
-                    attachments = attachmentService.joinAttachments(_editableAttachments.value)
+                    attachments = attachmentService.joinAttachments(_editableAttachments.value),
+                    fromAccount = if (toSave.transactionType == TransactionType.TRANSFER) toSave.accountNumber else toSave.fromAccount
                 )
 
                 transactionRepository.updateTransaction(normalizedTransaction)
@@ -883,6 +931,10 @@ class TransactionDetailViewModel @Inject constructor(
             handleTransferBalanceEdit(oldTransaction, newTransaction)
             return
         }
+        if (newTransaction.transactionType == TransactionType.TRANSFER) {
+            convertToTransferBalances(oldTransaction, newTransaction)
+            return
+        }
         if (oldTransaction.bankName != null && oldTransaction.accountNumber != null) {
             updateNonTransferBalance(oldTransaction, newTransaction)
         }
@@ -907,6 +959,31 @@ class TransactionDetailViewModel @Inject constructor(
             val newBalance = (linkedEntry.balance - oldEffect + newEffect).max(BigDecimal.ZERO)
             accountBalanceRepository.updateBalance(linkedEntry.copy(balance = newBalance))
             accountBalanceRepository.recalculateBalancesAfter(bankName, accountLast4, timestamp, newBalance)
+        }
+    }
+
+    /**
+     * An income or expense entry became a transfer: undo what it did to its own account, then
+     * debit the source and credit the destination. An account that nets out is left untouched.
+     */
+    private suspend fun convertToTransferBalances(
+        oldTransaction: TransactionEntity,
+        newTransaction: TransactionEntity
+    ) {
+        val changes = TransferConversion.netChanges(
+            oldAccount = oldTransaction.accountNumber.takeIf { oldTransaction.bankName != null },
+            oldEffect = balanceEffect(oldTransaction.amount, oldTransaction.transactionType),
+            source = newTransaction.accountNumber,
+            target = newTransaction.toAccount,
+            amount = newTransaction.amount
+        )
+        changes.forEach { (last4, delta) ->
+            val bankName = when (last4) {
+                newTransaction.accountNumber -> newTransaction.bankName
+                oldTransaction.accountNumber -> oldTransaction.bankName
+                else -> null
+            } ?: findAccountByLast4(last4)?.bankName ?: return@forEach
+            applyBalanceWithDelta(bankName, last4, delta, newTransaction.currency)
         }
     }
 

@@ -116,6 +116,53 @@ class AddTransactionUseCaseTest {
     }
 
     @Test
+    fun `INCOME marked as not income still adds to balance and keeps the mark`() = runTest {
+        val balanceDao = FakeAccountBalanceDao()
+        val useCase = createUseCase(balanceDao)
+
+        balanceDao.seedBalance(
+            AccountBalanceEntity(
+                bankName = testBank,
+                accountLast4 = testLast4,
+                balance = BigDecimal("10000"),
+                timestamp = baseTime.minusDays(1)
+            )
+        )
+
+        useCase.execute(
+            amount = BigDecimal("5000"),
+            merchant = "Refund",
+            category = "Income",
+            type = TransactionType.INCOME,
+            date = baseTime,
+            bankName = testBank,
+            accountLast4 = testLast4,
+            currency = testCurrency,
+            excludeFromIncome = true
+        )
+
+        assertEquals(BigDecimal("15000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertTrue(transactionDao!!.insertedTransactions.last().excludeFromIncome)
+    }
+
+    @Test
+    fun `not income mark is ignored for an expense`() = runTest {
+        val useCase = createUseCase(FakeAccountBalanceDao())
+
+        useCase.execute(
+            amount = BigDecimal("500"),
+            merchant = "Shop",
+            category = "Food",
+            type = TransactionType.EXPENSE,
+            date = baseTime,
+            currency = testCurrency,
+            excludeFromIncome = true
+        )
+
+        assertTrue(!transactionDao!!.insertedTransactions.last().excludeFromIncome)
+    }
+
+    @Test
     fun `EXPENSE transaction subtracts from balance`() = runTest {
         val balanceDao = FakeAccountBalanceDao()
         val useCase = createUseCase(balanceDao)

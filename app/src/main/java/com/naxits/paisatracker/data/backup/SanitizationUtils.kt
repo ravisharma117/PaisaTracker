@@ -75,7 +75,8 @@ fun TransactionEntity.sanitize(): TransactionEntity {
         toAccount = toAccount,
         billingCycle = billingCycle,
         attachments = attachments ?: "",
-        isSample = isSample
+        isSample = isSample,
+        excludeFromIncome = excludeFromIncome
     )
 }
 

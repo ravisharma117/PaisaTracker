@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naxits.paisatracker.data.database.entity.CategoryEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.SubcategoryEntity
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
@@ -172,7 +173,7 @@ class TransactionsViewModel @Inject constructor(
         state.transactions.forEach { tx ->
             val valAmount = state.convertedAmounts[tx.id] ?: tx.amount
             when (tx.transactionType) {
-                TransactionType.INCOME -> income += valAmount
+                TransactionType.INCOME -> if (tx.countsAsIncome) income += valAmount
                 TransactionType.EXPENSE -> expenses += valAmount
                 TransactionType.CREDIT -> credit += valAmount
                 TransactionType.TRANSFER -> transfer += valAmount
@@ -973,7 +974,7 @@ class TransactionsViewModel @Inject constructor(
 
         val totalsByCurrency = transactionsByCurrency.mapValues { (currency, currencyTransactions) ->
             val income = currencyTransactions
-                .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                .filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                 .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
 
             val expenses = currencyTransactions

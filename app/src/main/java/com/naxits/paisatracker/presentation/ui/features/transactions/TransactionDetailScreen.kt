@@ -88,6 +88,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import com.naxits.paisatracker.presentation.ui.components.EntryCountingSelector
 import com.naxits.paisatracker.presentation.ui.components.CashiroCheckbox
 import com.naxits.paisatracker.presentation.ui.components.TransactionItem
 import com.naxits.paisatracker.presentation.ui.components.ListItem
@@ -1393,6 +1394,13 @@ private fun EditableTransactionHeader(
                     }
                 }
             }
+
+            EntryCountingSelector(
+                transactionType = transaction.transactionType,
+                excludeFromIncome = transaction.excludeFromIncome,
+                onExcludeFromIncomeChange = { viewModel.updateExcludeFromIncome(it) },
+                onAccountToAccount = { viewModel.markAccountToAccount() }
+            )
 
             // Date and Time
             DateTimeField(
@@ -2926,6 +2934,14 @@ private fun TransactionReceipt(
                     fontWeight = FontWeight.Bold,
                     color = amountColor
                 )
+
+                if (transaction.transactionType == TransactionType.INCOME && transaction.excludeFromIncome) {
+                    Text(
+                        text = stringResource(R.string.entry_counting_not_income),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
                     Spacer(modifier = Modifier.height(Spacing.xs))

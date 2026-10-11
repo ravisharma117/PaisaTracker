@@ -35,8 +35,14 @@ data class TransactionEntity(
         @ColumnInfo(name = "reference") val reference: String? = null,
         @ColumnInfo(name = "billing_cycle") val billingCycle: String? = null,
         @ColumnInfo(name = "attachments", defaultValue = "") val attachments: String = "",
-        @ColumnInfo(name = "is_sample", defaultValue = "0") val isSample: Boolean = false
+        @ColumnInfo(name = "is_sample", defaultValue = "0") val isSample: Boolean = false,
+        // Stored inverted so a backup written before this column existed reads back as counted
+        @ColumnInfo(name = "exclude_from_income", defaultValue = "0") val excludeFromIncome: Boolean = false
 )
+
+/** True for an income entry the user has not marked as "Not income". */
+val TransactionEntity.countsAsIncome: Boolean
+    get() = transactionType == TransactionType.INCOME && !excludeFromIncome
 
 enum class TransactionType(@StringRes val labelRes: Int) {
     INCOME(R.string.type_income),

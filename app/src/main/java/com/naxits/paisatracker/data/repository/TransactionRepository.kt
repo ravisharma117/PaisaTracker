@@ -2,6 +2,7 @@ package com.naxits.paisatracker.data.repository
 
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
 import java.math.BigDecimal
@@ -279,7 +280,7 @@ class TransactionRepository @Inject constructor(
 
         return transactionDao.getTransactionsBetweenDates(startDate, endDate).map { transactions ->
             val income =
-                    transactions.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }.fold(
+                    transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }.fold(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             val expenses =
@@ -306,7 +307,7 @@ class TransactionRepository @Inject constructor(
 
         return transactionDao.getTransactionsBetweenDates(startDate, endDate).map { transactions ->
             val income =
-                    transactions.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }.fold(
+                    transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }.fold(
                                     BigDecimal.ZERO
                             ) { acc, transaction -> acc + transaction.amount }
             val expenses =
@@ -331,7 +332,7 @@ class TransactionRepository @Inject constructor(
             transactions.groupBy { it.currency }.mapValues { (_, currencyTransactions) ->
                 val income =
                         currencyTransactions
-                                .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                                .filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                                 .fold(BigDecimal.ZERO) { acc, transaction ->
                                     acc + transaction.amount
                                 }
@@ -360,7 +361,7 @@ class TransactionRepository @Inject constructor(
             transactions.groupBy { it.currency }.mapValues { (_, currencyTransactions) ->
                 val income =
                         currencyTransactions
-                                .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                                .filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                                 .fold(BigDecimal.ZERO) { acc, transaction ->
                                     acc + transaction.amount
                                 }
@@ -384,7 +385,7 @@ class TransactionRepository @Inject constructor(
             transactions.groupBy { it.currency }.mapValues { (_, currencyTransactions) ->
                 val income =
                     currencyTransactions
-                        .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                        .filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                         .fold(BigDecimal.ZERO) { acc, transaction ->
                             acc + transaction.amount
                         }

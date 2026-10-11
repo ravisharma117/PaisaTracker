@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.data.repository.AccountBalanceRepository
 import com.naxits.paisatracker.data.repository.CategoryRepository
@@ -166,10 +167,12 @@ class AnalyticsViewModel @Inject constructor(
                     endDate = dateRange.second
                 ).map { list ->
                     // Apply transaction type filter
+                    // Income the user marked as "Not income" stays out of the analysis
+                    val counted = list.filter { it.transactionType != TransactionType.INCOME || it.countsAsIncome }
                     val typeFiltered = if (filterState.typeFilter.contains(TransactionTypeFilter.ALL)) {
-                        list
+                        counted
                     } else {
-                        list.filter { it.transactionType in dbTransactionTypes }
+                        counted.filter { it.transactionType in dbTransactionTypes }
                     }
 
                     val targetCurrency = filterState.currency ?: baseCurrency

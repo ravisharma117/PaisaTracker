@@ -2,6 +2,7 @@ package com.naxits.paisatracker.data.webhook
 
 import com.naxits.paisatracker.BuildConfig
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.BudgetEntity
 import com.naxits.paisatracker.data.database.entity.SubscriptionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
@@ -138,7 +139,7 @@ class WebhookPayloadBuilder @Inject constructor(
             currency = currency,
             transactionType = null
         ).first().filterNot { it.isSample }
-        val income = transactions.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }.sumAmounts()
+        val income = transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }.sumAmounts()
         val expense = transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }.sumAmounts()
         val categories = transactions
             .groupBy { it.category to it.subcategory }
