@@ -92,7 +92,7 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.NetWorthItemValueEntity::class,
             com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class
         ],
-        version = 66,
+        version = 68,
     exportSchema = true,
     autoMigrations =
         [
@@ -678,6 +678,22 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_67_68 =
+            object : Migration(67, 68) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Income and expense entries the user marked as "Cash" (copied from the exported schema 68)
+                    db.execSQL("ALTER TABLE `transactions` ADD COLUMN `counted_as_cash` INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+
+        val MIGRATION_66_67 =
+            object : Migration(66, 67) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Income entries the user marked as "Not income" (copied from the exported schema 67)
+                    db.execSQL("ALTER TABLE `transactions` ADD COLUMN `exclude_from_income` INTEGER NOT NULL DEFAULT 0")
                 }
             }
 

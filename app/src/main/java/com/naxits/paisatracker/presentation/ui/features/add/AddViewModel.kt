@@ -210,12 +210,18 @@ constructor(
                 transactionType = type,
                 category = newCategory,
                 subcategory = null,
-                categoryError = validateCategory(newCategory)
+                categoryError = validateCategory(newCategory),
+                excludeFromIncome = false,
+                isCashEntry = false
             )
         }
 
         // Update subcategories for the new default category
         updateTransactionSubcategories(newCategory)
+    }
+
+    fun updateEntryCounting(excludeFromIncome: Boolean, isCashEntry: Boolean) {
+        _transactionUiState.update { it.copy(excludeFromIncome = excludeFromIncome, isCashEntry = isCashEntry) }
     }
 
     fun updateTransactionMerchant(merchant: String) {
@@ -339,7 +345,9 @@ constructor(
                     sourceAccountId = state.selectedAccount?.id,
                     targetAccountBankName = state.targetAccount?.bankName,
                     targetAccountLast4 = state.targetAccount?.accountLast4,
-                    attachments = attachmentService.joinAttachments(_transactionAttachments.value)
+                    attachments = attachmentService.joinAttachments(_transactionAttachments.value),
+                    excludeFromIncome = state.excludeFromIncome,
+                    isCashEntry = state.isCashEntry
                 )
 
                 // A transaction the user did not tag as a loan may still be a repayment
@@ -823,7 +831,9 @@ data class TransactionUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val selectedPersonId: Long? = null,
-    val dueDate: LocalDateTime? = null
+    val dueDate: LocalDateTime? = null,
+    val excludeFromIncome: Boolean = false,
+    val isCashEntry: Boolean = false
 ) {
     private val isLoanType: Boolean
         get() = transactionType == TransactionType.LENT ||

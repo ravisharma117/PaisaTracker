@@ -95,6 +95,7 @@ import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.presentation.effects.BlurredAnimatedVisibility
 import com.naxits.paisatracker.presentation.effects.overScrollVertical
 import com.naxits.paisatracker.presentation.effects.rememberOverscrollFlingBehavior
+import com.naxits.paisatracker.presentation.ui.components.EntryCountingSelector
 import com.naxits.paisatracker.presentation.ui.components.AccountSelectionSheet
 import com.naxits.paisatracker.presentation.ui.components.AttachmentSection
 import com.naxits.paisatracker.presentation.ui.components.BrandIcon
@@ -232,6 +233,14 @@ fun TransactionTabContent(
                     }
                 }
             }
+
+            EntryCountingSelector(
+                transactionType = uiState.transactionType,
+                excludeFromIncome = uiState.excludeFromIncome,
+                isCashEntry = uiState.isCashEntry,
+                onCountingChange = { exclude, cash -> viewModel.updateEntryCounting(exclude, cash) },
+                onAccountToAccount = { viewModel.updateTransactionType(TransactionType.TRANSFER) }
+            )
             // Date and Time Selection
             Row(
                 modifier = Modifier.fillMaxWidth(),

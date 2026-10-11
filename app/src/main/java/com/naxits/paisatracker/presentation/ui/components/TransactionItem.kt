@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.components
 
+import com.naxits.paisatracker.data.database.entity.isLeftOutOfReports
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -358,6 +359,18 @@ fun SharedTransitionScope.TransactionItem(
                             needsSeparator = true
                         }
 
+                        // Not income / Cash Tag
+                        if (transaction?.isLeftOutOfReports == true) {
+                            TagSeparator()
+                            SubtitleTag(
+                                text = stringResource(
+                                    if (transaction.isCashEntry) R.string.entry_counting_cash
+                                    else R.string.entry_counting_not_income
+                                ),
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            needsSeparator = true
+                        }
 
                         // Balance Tag
                         balanceAfter?.let { balance ->

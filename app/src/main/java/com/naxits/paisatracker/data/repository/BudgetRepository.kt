@@ -1,8 +1,10 @@
 package com.naxits.paisatracker.data.repository
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.database.dao.BudgetDao
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.BudgetCategoryLimitEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.BudgetEntity
 import com.naxits.paisatracker.data.database.entity.BudgetTrackType
 import com.naxits.paisatracker.data.database.entity.BudgetType
@@ -184,9 +186,9 @@ class BudgetRepository @Inject constructor(
             
         // Filter by budget type
         transactions = if (budget.budgetType == BudgetType.EXPENSE) {
-            transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+            transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
         } else {
-            transactions.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+            transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
         }
         
         // Filter by tracking type
@@ -299,9 +301,9 @@ class BudgetRepository @Inject constructor(
 
         // Filter by budget type
         transactions = if (budget.budgetType == BudgetType.EXPENSE) {
-            transactions.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+            transactions.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
         } else {
-            transactions.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+            transactions.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
         }
         
         // Filter by tracking type
@@ -388,9 +390,9 @@ class BudgetRepository @Inject constructor(
                 
                 // Filter by budget type
                 filtered = if (budget.budgetType == BudgetType.EXPENSE) {
-                    filtered.filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
+                    filtered.filter { it.countsAsExpense || it.transactionType == TransactionType.CREDIT || it.transactionType == TransactionType.LENT }
                 } else {
-                    filtered.filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                    filtered.filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                 }
                 
                 // Filter by tracking type

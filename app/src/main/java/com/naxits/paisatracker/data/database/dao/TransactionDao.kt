@@ -20,6 +20,8 @@ interface TransactionDao {
         FROM transactions
         WHERE is_deleted = 0
         AND transaction_type IN ('INCOME', 'EXPENSE', 'CREDIT')
+        AND NOT (transaction_type = 'INCOME' AND exclude_from_income = 1)
+        AND NOT (transaction_type IN ('INCOME', 'EXPENSE') AND counted_as_cash = 1)
         AND date_time BETWEEN :startDate AND :endDate
     """
     )

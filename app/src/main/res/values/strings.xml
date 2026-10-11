@@ -816,6 +816,12 @@
     <string name="type_transfer">Transfer</string>
     <string name="type_investment">Investment</string>
     <string name="type_income">Income</string>
+    <string name="entry_counting_label">Count this entry as</string>
+    <string name="entry_counting_not_income">Not income</string>
+    <string name="entry_counting_cash">Cash</string>
+    <string name="entry_counting_account_to_account">Account to account</string>
+    <string name="entry_counting_hint_income">Not income still adds to the account balance but stays out of income totals. Cash also adds the amount to your Cash balance and stays out of the reports. Account to account moves the money between two of your accounts and stays out of the reports.</string>
+    <string name="entry_counting_hint_expense">Cash also takes the amount from your Cash balance and stays out of the reports. Account to account moves the money between two of your accounts and stays out of the reports.</string>
     <string name="type_expense">Expense</string>
     <!-- Estimated amounts -->
     <string name="estimated_amount_format">est. %1$s</string>
@@ -1152,6 +1158,7 @@
 <string name="notification_access_desc">Enable to detect bank transactions from push notifications</string>
 <string name="notification_access_required">Notification Access Required</string>
 <string name="notification_access_required_desc">To automatically detect bank transactions in real-time, Paisa IQ requires notification access. This is a system-level permission.</string>
+<string name="open_app_info">Open App info</string>
 <string name="open_settings">Open Settings</string>
 <string name="options_desc">Options</string>
 <string name="overdue_count_format">%1$d Overdue</string>
@@ -1191,6 +1198,8 @@
 <string name="restore_passphrase_desc">This backup is encrypted. Enter the passphrase used when creating the backup:</string>
 <string name="restore_snapshot">Restore Snapshot</string>
 <string name="restoring_data_format">Restoring data... %1$d%%</string>
+<string name="restricted_settings_desc">Android blocks this permission for apps installed outside an app store. Open App info, tap ⋮ in the top-right, choose \'Allow restricted settings\', then come back and try again.</string>
+<string name="restricted_settings_title">Seeing \'Restricted settings\'?</string>
 <string name="resync_all">Resync All</string>
 <string name="retention_limit">Retention Limit</string>
 <string name="review">Review</string>
@@ -1431,8 +1440,8 @@
     <string name="recurring_notif_reminder_text">%1$s on %2$s</string>
     <string name="recurring_action_add">Add now</string>
     <string name="recurring_action_skip">Skip</string>
-    <string name="recurring_title">Recurring transactions</string>
-    <string name="recurring_explainer">Recurring transactions are added to your transactions for you on the dates you set. Subscriptions (on the Home screen) only track a charge and its next date, and add nothing by themselves.</string>
+    <string name="recurring_title">Recurring transactions</string>
+    <string name="recurring_explainer">Recurring transactions are added to your transactions for you on the dates you set. Subscriptions (on the Home screen) only track a charge and its next date, and add nothing by themselves.</string>
     <string name="subscriptions_explainer">Bills and subscriptions track a charge and its next due date. They do not add transactions by themselves, unless you switch on Add the transaction for me on a bill. You can also use Recurring transactions in Settings.</string>
     <string name="recurring_subtitle">Adds the transaction for you on the dates you set</string>
     <string name="recurring_add">Add recurring</string>

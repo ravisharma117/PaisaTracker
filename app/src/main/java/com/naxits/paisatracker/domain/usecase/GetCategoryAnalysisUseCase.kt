@@ -1,7 +1,9 @@
 package com.naxits.paisatracker.domain.usecase
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.data.repository.CurrencyRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
@@ -47,7 +49,7 @@ class GetCategoryAnalysisUseCase @Inject constructor(
                         SpendWindow(
                             currency = base,
                             entries = list
-                                .filter { it.transactionType == kind.type }
+                                .filter { it.isOf(kind) }
                                 .map { it.toEntry(base) }
                         )
                     }
@@ -59,9 +61,13 @@ class GetCategoryAnalysisUseCase @Inject constructor(
             .getTransactionsBetweenDates(month.atDay(1), month.atEndOfMonth())
             .map { list ->
                 list.filter {
-                    it.transactionType == kind.type && (it.category ?: UNCATEGORISED) == category
+                    it.isOf(kind) && (it.category ?: UNCATEGORISED) == category
                 }
             }
+
+    /** Entries the user kept out of the reports are not analysed. */
+    private fun TransactionEntity.isOf(kind: CategoryKind): Boolean =
+        if (kind == CategoryKind.INCOME) countsAsIncome else countsAsExpense
 
     private suspend fun TransactionEntity.toEntry(base: String): SpendEntry = SpendEntry(
         category = category ?: UNCATEGORISED,

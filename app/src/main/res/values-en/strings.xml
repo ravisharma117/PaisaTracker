@@ -807,6 +807,12 @@
     <string name="type_transfer">Transfer</string>
     <string name="type_investment">Investment</string>
     <string name="type_income">Income</string>
+    <string name="entry_counting_label">Count this entry as</string>
+    <string name="entry_counting_not_income">Not income</string>
+    <string name="entry_counting_cash">Cash</string>
+    <string name="entry_counting_account_to_account">Account to account</string>
+    <string name="entry_counting_hint_income">Not income still adds to the account balance but stays out of income totals. Cash also adds the amount to your Cash balance and stays out of the reports. Account to account moves the money between two of your accounts and stays out of the reports.</string>
+    <string name="entry_counting_hint_expense">Cash also takes the amount from your Cash balance and stays out of the reports. Account to account moves the money between two of your accounts and stays out of the reports.</string>
     <string name="type_expense">Expense</string>
     <!-- Estimated amounts -->
     <string name="estimated_amount_format">est. %1$s</string>
@@ -972,6 +978,9 @@
     <string name="step_2">Find \'Paisa IQ\' in the list of applications.</string>
     <string name="step_3">Toggle \'Allow notification access\' to enabled.</string>
     <string name="open_settings">Open Settings</string>
+    <string name="restricted_settings_title">Seeing \'Restricted settings\'?</string>
+    <string name="restricted_settings_desc">Android blocks this permission for apps installed outside an app store. Open App info, tap ⋮ in the top-right, choose \'Allow restricted settings\', then come back and try again.</string>
+    <string name="open_app_info">Open App info</string>
     <string name="scan_settings">Scan Settings</string>
     <string name="remind_transactions">Remind Transactions</string>
     <string name="remind_transactions_desc">Get reminders to scan new messages</string>

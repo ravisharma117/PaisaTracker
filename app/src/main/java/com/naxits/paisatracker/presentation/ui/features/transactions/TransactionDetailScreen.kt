@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.data.database.entity.isLeftOutOfReports
 import com.naxits.paisatracker.domain.model.CashAccount
 import android.content.Intent
 import android.graphics.Bitmap
@@ -88,6 +89,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import com.naxits.paisatracker.presentation.ui.components.EntryCountingSelector
 import com.naxits.paisatracker.presentation.ui.components.CashiroCheckbox
 import com.naxits.paisatracker.presentation.ui.components.TransactionItem
 import com.naxits.paisatracker.presentation.ui.components.ListItem
@@ -1393,6 +1395,14 @@ private fun EditableTransactionHeader(
                     }
                 }
             }
+
+            EntryCountingSelector(
+                transactionType = transaction.transactionType,
+                excludeFromIncome = transaction.excludeFromIncome,
+                isCashEntry = transaction.isCashEntry,
+                onCountingChange = { exclude, cash -> viewModel.updateEntryCounting(exclude, cash) },
+                onAccountToAccount = { viewModel.markAccountToAccount() }
+            )
 
             // Date and Time
             DateTimeField(
@@ -2926,6 +2936,17 @@ private fun TransactionReceipt(
                     fontWeight = FontWeight.Bold,
                     color = amountColor
                 )
+
+                if (transaction.isLeftOutOfReports) {
+                    Text(
+                        text = stringResource(
+                            if (transaction.isCashEntry) R.string.entry_counting_cash
+                            else R.string.entry_counting_not_income
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 if (transaction.currency.isNotEmpty() && !transaction.currency.equals(primaryCurrency, ignoreCase = true) && convertedAmount != null) {
                     Spacer(modifier = Modifier.height(Spacing.xs))

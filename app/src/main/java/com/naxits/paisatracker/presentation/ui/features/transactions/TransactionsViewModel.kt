@@ -1,11 +1,13 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naxits.paisatracker.data.database.entity.CategoryEntity
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.database.entity.SubcategoryEntity
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
@@ -172,8 +174,8 @@ class TransactionsViewModel @Inject constructor(
         state.transactions.forEach { tx ->
             val valAmount = state.convertedAmounts[tx.id] ?: tx.amount
             when (tx.transactionType) {
-                TransactionType.INCOME -> income += valAmount
-                TransactionType.EXPENSE -> expenses += valAmount
+                TransactionType.INCOME -> if (tx.countsAsIncome) income += valAmount
+                TransactionType.EXPENSE -> if (tx.countsAsExpense) expenses += valAmount
                 TransactionType.CREDIT -> credit += valAmount
                 TransactionType.TRANSFER -> transfer += valAmount
                 TransactionType.INVESTMENT -> investment += valAmount
@@ -973,11 +975,11 @@ class TransactionsViewModel @Inject constructor(
 
         val totalsByCurrency = transactionsByCurrency.mapValues { (currency, currencyTransactions) ->
             val income = currencyTransactions
-                .filter { it.transactionType == TransactionType.INCOME || it.transactionType == TransactionType.BORROWED }
+                .filter { it.countsAsIncome || it.transactionType == TransactionType.BORROWED }
                 .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
 
             val expenses = currencyTransactions
-                .filter { it.transactionType == TransactionType.EXPENSE || it.transactionType == TransactionType.LENT }
+                .filter { it.countsAsExpense || it.transactionType == TransactionType.LENT }
                 .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
 
             val credit = currencyTransactions

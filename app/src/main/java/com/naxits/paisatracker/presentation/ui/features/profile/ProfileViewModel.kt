@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.presentation.ui.features.profile
 
+import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import android.content.Context
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
@@ -8,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.entity.TransactionType
+import com.naxits.paisatracker.data.database.entity.countsAsIncome
 import com.naxits.paisatracker.data.preferences.UserPreferencesRepository
 import com.naxits.paisatracker.data.repository.AccountBalanceRepository
 import com.naxits.paisatracker.data.repository.CurrencyRepository
@@ -136,9 +138,9 @@ constructor(
                         toCurrency = baseCurrency
                     )
                 }
-                if (txn.transactionType == TransactionType.INCOME || txn.transactionType == TransactionType.BORROWED) {
+                if (txn.countsAsIncome || txn.transactionType == TransactionType.BORROWED) {
                     income = income.add(amt)
-                } else if (txn.transactionType == TransactionType.EXPENSE || txn.transactionType == TransactionType.LENT) {
+                } else if (txn.countsAsExpense || txn.transactionType == TransactionType.LENT) {
                     expense = expense.add(amt)
                 }
             }

@@ -35,8 +35,25 @@ data class TransactionEntity(
         @ColumnInfo(name = "reference") val reference: String? = null,
         @ColumnInfo(name = "billing_cycle") val billingCycle: String? = null,
         @ColumnInfo(name = "attachments", defaultValue = "") val attachments: String = "",
-        @ColumnInfo(name = "is_sample", defaultValue = "0") val isSample: Boolean = false
+        @ColumnInfo(name = "is_sample", defaultValue = "0") val isSample: Boolean = false,
+        // Stored inverted so a backup written before this column existed reads back as counted
+        @ColumnInfo(name = "exclude_from_income", defaultValue = "0") val excludeFromIncome: Boolean = false,
+        // Marked "Cash": moves the Cash balance as well and stays out of income and expense reports
+        @ColumnInfo(name = "counted_as_cash", defaultValue = "0") val isCashEntry: Boolean = false
 )
+
+/** True for an income entry the user has not marked as "Not income" or "Cash". */
+val TransactionEntity.countsAsIncome: Boolean
+    get() = transactionType == TransactionType.INCOME && !excludeFromIncome && !isCashEntry
+
+/** True for an expense entry the user has not marked as "Cash". */
+val TransactionEntity.countsAsExpense: Boolean
+    get() = transactionType == TransactionType.EXPENSE && !isCashEntry
+
+/** An income or expense entry the user chose to keep out of the reports. */
+val TransactionEntity.isLeftOutOfReports: Boolean
+    get() = (transactionType == TransactionType.INCOME && !countsAsIncome) ||
+        (transactionType == TransactionType.EXPENSE && !countsAsExpense)
 
 enum class TransactionType(@StringRes val labelRes: Int) {
     INCOME(R.string.type_income),
