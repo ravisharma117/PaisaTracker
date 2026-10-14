@@ -35,12 +35,12 @@ Please reference these documents when working on this project:
 - Always test on both light and dark themes
 
 ## Current Phase
-Working through the 20-step plan in `/plan/README.md` (one `plan.md` per `plan N` folder). Check the status table there before starting work.
+The first 20-step plan is finished and its `/plan` folder was removed (it remains in git history). No plan is active; a new one will be added when the next phase starts.
 
 ## Branch Workflow
 - `main`: release branch
 - `develop`: integration branch; feature branches are created from it and merged back after their plan's verification passes
-- `feature/<name>`: one branch per plan, named in `/plan/README.md`
+- `feature/<name>`: one branch per feature or plan
 - `upstream` remote: the original Cashiro repository (`ritesh-kanwar/Cashiro`), fetched for upstream changes
 
 ## Commands to Run
