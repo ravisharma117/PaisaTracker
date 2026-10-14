@@ -129,8 +129,6 @@ import com.naxits.paisatracker.presentation.ui.components.TiledScrollingIconBack
 import com.naxits.paisatracker.presentation.ui.features.profile.EditProfileState
 import com.naxits.paisatracker.presentation.ui.features.profile.PresetAvatarSelection
 import com.naxits.paisatracker.presentation.ui.features.profile.ProfileCardPreview
-import com.naxits.paisatracker.presentation.ui.icons.Cashiro
-import com.naxits.paisatracker.presentation.ui.icons.CashiroOutline
 import com.naxits.paisatracker.presentation.ui.icons.Edit2
 import com.naxits.paisatracker.presentation.ui.icons.HierarchySquare3
 import com.naxits.paisatracker.presentation.ui.icons.Iconax
@@ -451,10 +449,10 @@ fun WelcomeStep() {
                 ) {
                     val primary = MaterialTheme.colorScheme.primary
                     val tertiary = MaterialTheme.colorScheme.tertiary
-                    val alternatingIcons = remember {
+                    val alternatingIcons = remember(primary, tertiary) {
                         listOf(
-                            IconResource.VectorIcon(Iconax.Cashiro, primary),
-                            IconResource.VectorIcon(Iconax.CashiroOutline, tertiary)
+                            IconResource.TintedResIcon(R.drawable.ic_paisa_iq_mark, primary),
+                            IconResource.TintedResIcon(R.drawable.ic_paisa_iq_mark, tertiary)
                         )
                     }
 
@@ -472,22 +470,15 @@ fun WelcomeStep() {
                         .graphicsLayer { alpha = rippleAlpha }
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), CircleShape)
                 )
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.ic_logo_original_fg),
+                    contentDescription = stringResource(R.string.app_logo),
                     modifier = Modifier
                         .size(130.dp)
                         .scale(scale)
-                        .background(Color(0xFF1f1f1f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.cashiro),
-                        contentDescription = stringResource(R.string.app_logo),
-                        modifier = Modifier
-                            .size(90.dp)
-                            .scale(scale),
-                        contentScale = ContentScale.Fit
-                    )
-                }
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
             }
         }
 
@@ -512,6 +503,15 @@ fun WelcomeStep() {
                     text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            BlurredAnimatedVisibility(visible = true) {
+                Text(
+                    text = stringResource(R.string.app_tagline),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -1436,7 +1436,7 @@ fun MessageBubble(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.cashiro),
+                    painter = painterResource(id = R.drawable.ic_paisa_iq_mark),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,

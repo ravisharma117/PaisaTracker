@@ -1142,7 +1142,7 @@ fun SettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.cashiro),
+                                painter = painterResource(id = R.drawable.ic_paisa_iq_mark),
                                 contentDescription = stringResource(R.string.cashiro_logo_cd),
                                 colorFilter = ColorFilter.tint(orange_dark),
                                 modifier = Modifier.size(24.dp)

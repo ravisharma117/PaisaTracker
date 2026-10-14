@@ -18,16 +18,4 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_original_fg</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/logo_original_bg</item>
     </style>
-
-    <style name="Theme.Cashiro.SplashScreen.Anarchy" parent="Theme.Cashiro.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_anarchy_fg</item>
-    </style>
-
-    <style name="Theme.Cashiro.SplashScreen.Zenith" parent="Theme.Cashiro.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_zenith_fg</item>
-    </style>
-
-    <style name="Theme.Cashiro.SplashScreen.Comic" parent="Theme.Cashiro.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_comic_fg</item>
-    </style>
 </resources>

@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Usa uno sfondo nero puro per un contrasto più profondo</string>
     <string name="blur_effects">Effetti Blur</string>
     <string name="blur_effects_desc">Abilita effetti blur glassmorphism nei componenti dell\'interfaccia</string>
-    <string name="logo_original">Originale</string>
-    <string name="logo_anarchy">Anarchia</string>
-    <string name="logo_comic">Fumetto</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monocromo</string>
     <string name="navigation_style">Navigazione</string>
     <string name="nav_floating">Galleggiante</string>
     <string name="nav_floating_sub">Moderno &amp; Elegante</string>

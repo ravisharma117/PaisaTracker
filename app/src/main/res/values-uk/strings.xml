@@ -307,7 +307,7 @@
     <string name="press_back_again_to_close">Натисніть ще раз, щоб закрити додаток</string>
     <string name="transaction_deleted">Транзакцію видалено</string>
     <string name="undo">Скасувати</string>
-    <string name="cashiro_title">Касіро</string>
+    <string name="cashiro_title">Paisa IQ</string>
     <string name="profile">Анкета</string>
     <string name="banner">Стяг</string>
     <string name="recent">Недавні</string>
@@ -479,7 +479,7 @@
     <string name="no_transactions_for_format">Немає транзакцій для %1$s</string>
     <string name="sync_sms_to_see_transactions">Синхронізуйте ваші SMS, щоб бачити операції</string>
     <string name="about">Про програму</string>
-    <string name="cashiro_logo_cd">Логотип Касіро</string>
+    <string name="cashiro_logo_cd">Логотип Paisa IQ</string>
     <string name="version_format">Версія %1$s, db-v%2$d</string>
     <string name="developed_by">Розроблено Ritesh</string>
     <string name="lead_developer_cd">провідний розробник</string>
@@ -490,7 +490,7 @@
     <string name="faq">ЧАП</string>
     <string name="faq_desc">Часті запитання</string>
     <string name="guides">Посібники</string>
-    <string name="guides_desc">Як користуватися Касіро</string>
+    <string name="guides_desc">Як користуватися Paisa IQ</string>
     <string name="report_bug">Повідомити про помилку</string>
     <string name="report_bug_desc">Допоможіть нам покращити Paisa IQ</string>
     <string name="privacy_policy">Політика конфіденційності</string>
@@ -546,7 +546,7 @@
     <string name="one_month">1 місяць</string>
     <string name="two_years">2 роки</string>
     <string name="unrecognized_messages_title">Нерозпізнані повідомлення</string>
-    <string name="unrecognized_bank_messages_desc">Ці повідомлення потенційних банків не можна автоматично аналізувати. Допоможіть покращити Кашіро, повідомивши про них, щоб ми могли додати підтримку для більшої кількості банків.</string>
+    <string name="unrecognized_bank_messages_desc">Ці повідомлення потенційних банків не можна автоматично аналізувати. Допоможіть покращити Paisa IQ, повідомивши про них, щоб ми могли додати підтримку для більшої кількості банків.</string>
     <string name="show_reported">Показати скаргу</string>
     <string name="count_new_format">%1$d новий</string>
     <string name="count_reported_format">Звіт про %1$d</string>
@@ -589,7 +589,7 @@
     <string name="delete_webhook_confirm_desc">Цей профіль, заплановані синхронізації та всі журнали доставки будуть видалені. Цю дію неможливо скасувати.</string>
     <string name="byoapi_sync_title">Синхронізація фінансів BYOAPI</string>
     <string name="byoapi_sync_desc">Надсилайте вибрані фінансові дані до власної кінцевої точки. Будь-яка HTTP 2xx відповідь розглядається як успішна доставка.</string>
-    <string name="byoapi_sync_warning">Це надішле ваші фінансові дані до URL-адреси, яку ви налаштували. Каширо не може перевірити безпеку кінцевої точки.</string>
+    <string name="byoapi_sync_warning">Це надішле ваші фінансові дані до URL-адреси, яку ви налаштували. Paisa IQ не може перевірити безпеку кінцевої точки.</string>
     <string name="sync_now">Синхронізувати зараз</string>
     <string name="sync_now_desc">Тримати доставку для всіх активованих профілів</string>
     <string name="sync_schedule_title">Розклад синхронізації</string>
@@ -826,11 +826,6 @@
     <string name="amoled_black_desc">Використовуйте чисто чорний фон для глибшого контрасту</string>
     <string name="blur_effects">Ефекти розмиття</string>
     <string name="blur_effects_desc">Увімкніть ефекти розмиття гласморфізму в компонентах інтерфейсу</string>
-    <string name="logo_original">Оригінал</string>
-    <string name="logo_anarchy">Анархія</string>
-    <string name="logo_comic">Комік</string>
-    <string name="logo_zenith">Зені́т</string>
-    <string name="logo_monochrome">Монохром</string>
     <string name="navigation_style">Навігація</string>
     <string name="nav_floating">Плаваюча</string>
     <string name="nav_floating_sub">Сучасний та стильний</string>

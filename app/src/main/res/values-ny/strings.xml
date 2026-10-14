@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Gwiritsani ntchito maziko akuda kuti musinthe mozama</string>
     <string name="blur_effects">Blur Effects</string>
     <string name="blur_effects_desc">Yambitsani kusokoneza kwa glassmorphism mu zigawo za UI</string>
-    <string name="logo_original">Choyambirira</string>
-    <string name="logo_anarchy">Chisokonezo</string>
-    <string name="logo_comic">Zoseketsa</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monochrome</string>
     <string name="navigation_style">Navigation</string>
     <string name="nav_floating">Zoyandama</string>
     <string name="nav_floating_sub">Zamakono &amp; Zowoneka bwino</string>

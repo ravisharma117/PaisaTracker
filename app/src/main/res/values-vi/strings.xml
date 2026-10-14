@@ -827,11 +827,6 @@ Xanh (+) = Tiết kiệm | Đỏ (-) = Chi tiêu vượt mức</string>
     <string name="amoled_black_desc">Sử dụng nền đen thuần để tăng độ tương phản</string>
     <string name="blur_effects">Hiệu Ứng Mờ</string>
     <string name="blur_effects_desc">Bật hiệu ứng mờ glassmorphism trong các thành phần giao diện</string>
-    <string name="logo_original">Gốc</string>
-    <string name="logo_anarchy">Vô Chính Phủ</string>
-    <string name="logo_comic">Truyện Tranh</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Đơn Sắc</string>
     <string name="navigation_style">Điều Hướng</string>
     <string name="nav_floating">Nổi</string>
     <string name="nav_floating_sub">Hiện Đại &amp; Mượt Mà</string>

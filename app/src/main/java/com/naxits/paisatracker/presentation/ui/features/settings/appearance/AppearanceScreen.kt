@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,16 +57,12 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.naxits.paisatracker.R
 import com.naxits.paisatracker.data.preferences.AccentColor
-import com.naxits.paisatracker.data.preferences.AppIcon
 import com.naxits.paisatracker.data.preferences.AppFont
 import com.naxits.paisatracker.data.preferences.NavigationBarStyle
 import com.naxits.paisatracker.data.preferences.ThemeStyle
-import com.naxits.paisatracker.utils.IconSwitchingUtils
 import com.naxits.paisatracker.presentation.effects.BlurredAnimatedVisibility
 import com.naxits.paisatracker.presentation.effects.overScrollVertical
 import com.naxits.paisatracker.presentation.ui.components.CustomTitleTopAppBar
@@ -452,87 +447,6 @@ fun AppearanceScreen(
                             )
                         }
                     }
-                }
-
-                // App Logo Section
-                SectionHeader(
-                    title = "App Logo",
-                    modifier = Modifier.padding(start = Spacing.xl, top = Spacing.md)
-                )
-
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                ) {
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_original),
-                            icon = AppIcon.ORIGINAL,
-                            backgroundColor = colorResource(R.color.logo_original_bg),
-                            drawableResId = R.drawable.ic_logo_original_fg,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ORIGINAL,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ORIGINAL)
-                                themeViewModel.updateAppIcon(AppIcon.ORIGINAL)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_anarchy),
-                            icon = AppIcon.ANARCHY,
-                            backgroundColor = Color(0xFFF5EEE5),
-                            drawableResId = R.drawable.cashiro_anarchy,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ANARCHY,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ANARCHY)
-                                themeViewModel.updateAppIcon(AppIcon.ANARCHY)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_comic),
-                            icon = AppIcon.COMIC,
-                            backgroundColor = Color.Transparent,
-                            drawableResId = R.drawable.cashiro_comic,
-                            backgroundDrawableResId = R.drawable.ic_logo_comic_bg,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.COMIC,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.COMIC)
-                                themeViewModel.updateAppIcon(AppIcon.COMIC)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_zenith),
-                            icon = AppIcon.ZENITH,
-                            backgroundColor = Color(0xFFE6E6E6),
-                            drawableResId = R.drawable.cashiro_zenith,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.ZENITH,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.ZENITH)
-                                themeViewModel.updateAppIcon(AppIcon.ZENITH)
-                            }
-                        )
-                    }
-                    item {
-                        AppLogoOption(
-                            name = stringResource(R.string.logo_monochrome),
-                            icon = AppIcon.MONOCHROME,
-                            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                            drawableResId = R.drawable.cashiro_monochrome,
-                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            isSelected = themeUiState.currentAppIcon == AppIcon.MONOCHROME,
-                            onClick = {
-                                IconSwitchingUtils.switchAppIcon(context, AppIcon.MONOCHROME)
-                                themeViewModel.updateAppIcon(AppIcon.MONOCHROME)
-                            }
-                        )
-                    }
-
                 }
 
                 // Navigation Style Section
@@ -1015,83 +929,6 @@ fun ColorSchemeBox(
                     accent,
                     RoundedCornerShape(Spacing.xs)
                 )
-            )
-        }
-    }
-}
-
-@Composable
-fun AppLogoOption(
-    name: String,
-    icon: AppIcon,
-    backgroundColor: Color,
-    drawableResId: Int,
-    isSelected: Boolean,
-    iconTint: Color? = null,
-    backgroundDrawableResId: Int? = null,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(vertical = Spacing.sm)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(Dimensions.Radius.lg)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (backgroundDrawableResId != null) {
-                Image(
-                    painter = painterResource(id = backgroundDrawableResId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                )
-            }
-            
-            Image(
-                painter = painterResource(id = drawableResId),
-                contentDescription = null,
-                modifier = Modifier.size(84.dp),
-                colorFilter = iconTint?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) }
-            )
-            
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .border(
-                            width = 3.dp,
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(Dimensions.Radius.lg)
-                        )
-                )
-            }
-        }
-        
-        Surface(
-            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-            shape = CircleShape
-        ) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = 4.dp)
             )
         }
     }

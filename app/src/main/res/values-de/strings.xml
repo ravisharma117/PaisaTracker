@@ -306,7 +306,7 @@
     <string name="press_back_again_to_close">Erneut zurückdrücken, um die App zu schließen</string>
     <string name="transaction_deleted">Transaktion gelöscht</string>
     <string name="undo">Rückgängig</string>
-    <string name="cashiro_title">Barrio</string>
+    <string name="cashiro_title">Paisa IQ</string>
     <string name="profile">Profil</string>
     <string name="banner">Banner</string>
     <string name="recent">Neueste</string>
@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Verwende reinen schwarzen Hintergrund für höheren Kontrast</string>
     <string name="blur_effects">Unschärfeeffekte</string>
     <string name="blur_effects_desc">Glasmorphismus-Unschärfeeffekte in UI-Komponenten aktivieren</string>
-    <string name="logo_original">Original</string>
-    <string name="logo_anarchy">Anarchie</string>
-    <string name="logo_comic">Comic</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monochrom</string>
     <string name="navigation_style">Navigation</string>
     <string name="nav_floating">Schwebend</string>
     <string name="nav_floating_sub">Modern &amp; Elegant</string>

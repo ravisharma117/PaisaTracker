@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Użyj czarnego tła dla głębszego kontrastu</string>
     <string name="blur_effects">Efekty rozmycia</string>
     <string name="blur_effects_desc">Włącz efekty rozmycia glassmorphism w komponentach interfejsu</string>
-    <string name="logo_original">Oryginał</string>
-    <string name="logo_anarchy">Anarchia</string>
-    <string name="logo_comic">Komiks</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monochrom</string>
     <string name="navigation_style">Nawigacja</string>
     <string name="nav_floating">Pływająca</string>
     <string name="nav_floating_sub">Nowoczesna i elegancka</string>

@@ -827,11 +827,6 @@
     <string name="amoled_black_desc">使用纯黑背景以获得更深的对比度</string>
     <string name="blur_effects">模糊效果</string>
     <string name="blur_effects_desc">在 UI 组件中启用玻璃态模糊效果</string>
-    <string name="logo_original">原始</string>
-    <string name="logo_anarchy">无政府主义</string>
-    <string name="logo_comic">漫画</string>
-    <string name="logo_zenith">顶点</string>
-    <string name="logo_monochrome">单色</string>
     <string name="navigation_style">导航</string>
     <string name="nav_floating">悬浮</string>
     <string name="nav_floating_sub">现代 &amp; 时尚</string>

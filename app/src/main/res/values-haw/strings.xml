@@ -477,7 +477,7 @@
     <string name="no_transactions_for_format">ʻAʻohe hana no %1$s</string>
     <string name="sync_sms_to_see_transactions">Hoʻopili i kāu SMS e ʻike i nā hana</string>
     <string name="about">E pili ana</string>
-    <string name="cashiro_logo_cd">Kāleka Kāleka</string>
+    <string name="cashiro_logo_cd">Paisa IQ</string>
     <string name="version_format">Manaʻo %1$s, db-v%2$d</string>
     <string name="developed_by">Hoʻomohala ʻia e Ritesh</string>
     <string name="lead_developer_cd">alakaʻi hoʻomohala</string>
@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">E hoʻohana i ke kāʻei ʻeleʻele maʻemaʻe no ka ʻokoʻa hohonu</string>
     <string name="blur_effects">Nā hopena pōkā</string>
     <string name="blur_effects_desc">E ʻae i nā hopena blur glassmorphism i nā ʻāpana UI</string>
-    <string name="logo_original">Kumu</string>
-    <string name="logo_anarchy">Anarchy</string>
-    <string name="logo_comic">Komeka</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monochrome</string>
     <string name="navigation_style">Hoʻokele</string>
     <string name="nav_floating">E lana ana</string>
     <string name="nav_floating_sub">ʻAno a me ka nani</string>

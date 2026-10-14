@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Folosește fundal negru pur pentru un contrast mai profund</string>
     <string name="blur_effects">Efecte de Estompare</string>
     <string name="blur_effects_desc">Activează efecte de sticlă (glassmorphism) în componentele UI</string>
-    <string name="logo_original">Original</string>
-    <string name="logo_anarchy">Anarhie</string>
-    <string name="logo_comic">Comica</string>
-    <string name="logo_zenith">Zenit</string>
-    <string name="logo_monochrome">Monocrom</string>
     <string name="navigation_style">Navigare</string>
     <string name="nav_floating">Plutitor</string>
     <string name="nav_floating_sub">Modern și Elegant</string>

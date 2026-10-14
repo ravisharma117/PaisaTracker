@@ -73,6 +73,8 @@ class CashiroApplication : Application(), Configuration.Provider {
 
         // Install crash handler first — must be before any other initialization
         com.naxits.paisatracker.utils.CrashHandler.install(this)
+        // Backstop for PackageReplacedReceiver: any process start (SMS, workers) restores the launcher entry
+        com.naxits.paisatracker.utils.IconSwitchingUtils.restoreDefaultLauncherIcon(this)
         registerActivityLifecycleCallbacks(AppLockLifecycleObserver())
         applicationScope.launch {
             try {

@@ -100,10 +100,10 @@ fun AboutScreen(
             ) {
                 val primary = MaterialTheme.colorScheme.primary
                 val tertiary = MaterialTheme.colorScheme.tertiary
-                val alternatingIcons = remember {
+                val alternatingIcons = remember(primary, tertiary) {
                     listOf(
-                        IconResource.VectorIcon(Iconax.Cashiro, primary),
-                        IconResource.VectorIcon(Iconax.CashiroOutline, tertiary)
+                        IconResource.TintedResIcon(R.drawable.ic_paisa_iq_mark, primary),
+                        IconResource.TintedResIcon(R.drawable.ic_paisa_iq_mark, tertiary)
                     )
                 }
 
@@ -150,7 +150,7 @@ fun AboutScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.cashiro),
+                            painter = painterResource(id = R.drawable.ic_paisa_iq_mark),
                             contentDescription = stringResource(R.string.cashiro_logo_cd),
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
                             modifier = Modifier.size(64.dp)
@@ -164,6 +164,12 @@ fun AboutScreen(
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = stringResource(R.string.app_tagline),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Text(

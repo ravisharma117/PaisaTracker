@@ -306,7 +306,7 @@
     <string name="press_back_again_to_close">Pressione o botão \"voltar\" novamente para fechar o aplicativo</string>
     <string name="transaction_deleted">Transação excluída</string>
     <string name="undo">Desfazer</string>
-    <string name="cashiro_title">Dinheiro</string>
+    <string name="cashiro_title">Paisa IQ</string>
     <string name="profile">Perfil</string>
     <string name="banner">Estandarte</string>
     <string name="recent">Recente</string>
@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Use fundo preto puro para contraste mais profundo</string>
     <string name="blur_effects">Efeitos de Desfoque</string>
     <string name="blur_effects_desc">Ativar efeitos de vidro borrado nos componentes da interface</string>
-    <string name="logo_original">Original</string>
-    <string name="logo_anarchy">Anarquia</string>
-    <string name="logo_comic">Quadrinho</string>
-    <string name="logo_zenith">Zênite</string>
-    <string name="logo_monochrome">Monocromático</string>
     <string name="navigation_style">Navegação</string>
     <string name="nav_floating">Flutuante</string>
     <string name="nav_floating_sub">Moderno e Elegante</string>

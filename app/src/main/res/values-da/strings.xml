@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Brug rent sort baggrund for dybere kontrast</string>
     <string name="blur_effects">Slør-effekter</string>
     <string name="blur_effects_desc">Aktivér glassmorphism-slør-effekter i UI-komponenter</string>
-    <string name="logo_original">Original</string>
-    <string name="logo_anarchy">Anarki</string>
-    <string name="logo_comic">Tegneserie</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monokrom</string>
     <string name="navigation_style">Navigation</string>
     <string name="nav_floating">Flydende</string>
     <string name="nav_floating_sub">Moderne &amp; elegant</string>

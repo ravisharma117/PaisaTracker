@@ -824,11 +824,6 @@
     <string name="amoled_black_desc">Použijte čistě černé pozadí pro hlubší kontrast</string>
     <string name="blur_effects">Efekty rozostření</string>
     <string name="blur_effects_desc">Povolte efekty skleněného rozostření v UI prvcích</string>
-    <string name="logo_original">Originál</string>
-    <string name="logo_anarchy">Anarchie</string>
-    <string name="logo_comic">Komiks</string>
-    <string name="logo_zenith">Zenit</string>
-    <string name="logo_monochrome">Monochrom</string>
     <string name="navigation_style">Navigace</string>
     <string name="nav_floating">Plovoucí</string>
     <string name="nav_floating_sub">Moderní a elegantní</string>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Paisa IQ</string>
+    <string name="app_tagline" translatable="false">Intelligent Wallet</string>
     <!-- App shortcuts -->
     <string name="add_transaction">Add Transaction</string>
     <string name="add_subscription">Add Subscription</string>
@@ -1125,11 +1126,6 @@
 <string name="lend_borrow_you_get">You\'ll get</string>
 <string name="lend_borrow_you_owe">You owe</string>
 <string name="loan_total_title">Total</string>
-<string name="logo_anarchy">Anarchy</string>
-<string name="logo_comic">Comic</string>
-<string name="logo_monochrome">Monochrome</string>
-<string name="logo_original">Original</string>
-<string name="logo_zenith">Zenith</string>
 <string name="manage_transaction">Manage Transaction</string>
 <string name="manual_actions">Manual Actions</string>
 <string name="mark_as">Mark as</string>

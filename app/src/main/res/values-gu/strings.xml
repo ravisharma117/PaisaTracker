@@ -274,7 +274,7 @@
     <string name="chart_type_heatmap">હીટમૅપ</string>
     <string name="chart_format">%1$s ચાર્ટ</string>
     <string name="toggle_view">દૃશ્યટૉગલ કરો</string>
-    <string name="cashiro_ai">કેશિરો એઆઈ</string>
+    <string name="cashiro_ai">Paisa IQ એઆઈ</string>
     <string name="more_options">વધારાના વિકલ્પો</string>
     <string name="clear_chat">ચેટ સાફ કરો</string>
     <string name="qwen_model_required">Qwen મોડલ જરૂરી</string>
@@ -343,7 +343,7 @@
     <string name="stay_updated">આરોગ્ય અપડેટ રહો</string>
     <string name="automatic_tracking">સ્વચાલિત ટ્રૅકિંગ</string>
     <string name="allow_notifications_desc">બિલ રિમીન્ડર અને દૈનિક સારાંશ મેળવવા માટે સૂચનાઓને મંજૂરી આપો.</string>
-    <string name="automatic_tracking_desc">કેશિરો તમારા લેનેદેણ એસએમએસને સ્વચાલિત રીતે સ્કેન કરી તમારા ખાતાઓને અપડેટ કરે છે.</string>
+    <string name="automatic_tracking_desc">Paisa IQ તમારા લેનેદેણ એસએમએસને સ્વચાલિત રીતે સ્કેન કરી તમારા ખાતાઓને અપડેટ કરે છે.</string>
     <string name="skip_for_now">હમણાં માટે છોડો</string>
     <string name="verify_accounts">ખાતાઓ ચકાસો</string>
     <string name="scanning_messages">સંદેશો સ્કેન થઈ રહ્યા છે</string>
@@ -413,7 +413,7 @@
     <string name="share">શેર કરો</string>
     <string name="retry">ફરિકવાર પ્રયાસ કરો</string>
     <string name="share_csv">CSV શેર કરો</string>
-    <string name="csv_export_subject">કેશીરો ટ્રાન્ઝેક્શન્સ નિકાસ</string>
+    <string name="csv_export_subject">Paisa IQ ટ્રાન્ઝેક્શન્સ નિકાસ</string>
     <string name="edit_transaction">ટ્રાન્ઝેક્શન સંપાદિત કરો</string>
     <string name="transaction_details">ટ્રાન્ઝેક્શન વિગતો</string>
     <string name="report_issue">સમસીયા રિપોર્ટ કરો</string>
@@ -588,7 +588,7 @@
     <string name="delete_webhook_confirm_desc">આ રૂપરેખા, તેના સુનિશ્ચિત સુમેળ અને બધા ડિલિવરી લોગ દૂર કરવામાં આવશે. આને પૂર્વવત્ કરી શકાતું નથી.</string>
     <string name="byoapi_sync_title">BYOAPI ફાઇનાન્સ સિંક</string>
     <string name="byoapi_sync_desc">પસંદ કરેલ ફાઇનાન્સ ડેટાને તમારા પોતાના અંતિમ બિંદુ પર મોકલો. કોઈપણ એચટીટીપી ૨xx પ્રતિસાદને સફળ ડિલિવરી તરીકે ગણવામાં આવે છે.</string>
-    <string name="byoapi_sync_warning">આ તમારા નાણાકીય ડેટાને તમે રૂપરેખાંકિત કરો છો તે URL પર મોકલશે. કેશિરો તે અંતિમ બિંદુની સુરક્ષાની ચકાસણી કરી શકતો નથી.</string>
+    <string name="byoapi_sync_warning">આ તમારા નાણાકીય ડેટાને તમે રૂપરેખાંકિત કરો છો તે URL પર મોકલશે. Paisa IQ તે અંતિમ બિંદુની સુરક્ષાની ચકાસણી કરી શકતો નથી.</string>
     <string name="sync_now">હવે સુમેળ કરો</string>
     <string name="sync_now_desc">બધી સક્રિય થયેલ રૂપરેખાઓ માટે વિતરણ ટ્રિગર કરો</string>
     <string name="sync_schedule_title">સમયપત્રકને સુમેળ કરો</string>
@@ -825,11 +825,6 @@
     <string name="amoled_black_desc">ઘેરContrasted માટે શુદ્ધ કાળો પૃષ્ઠભૂમિ વાપરો</string>
     <string name="blur_effects">ધુમંધાર અસર</string>
     <string name="blur_effects_desc">UI ઘટકોમાં ગ્લાસમૉર્ફિઝમ ધુમંધાર અસર સક્રિય કરો</string>
-    <string name="logo_original">મૂળ</string>
-    <string name="logo_anarchy">અનાર્કી</string>
-    <string name="logo_comic">कॉમિક</string>
-    <string name="logo_zenith">ઝેનિથ</string>
-    <string name="logo_monochrome">મોનોક્રોમ</string>
     <string name="navigation_style">નૅવિગેશન</string>
     <string name="nav_floating">ફ્લોટિંગ</string>
     <string name="nav_floating_sub">આધુનિક અને ચપળ</string>
@@ -883,7 +878,7 @@
     <string name="notification_access_active">સૂચના ઍક્સેસ સક્રિય છે</string>
     <string name="notification_access_desc">પુરુષોત્તમ સૂચનાઓમાંથી બેંકના લેનદેનનું નિરીક્ષણ કરવા માટે સક્રિય કરો</string>
     <string name="notification_access_required">સૂચના ઍક્સેસ જરૂરી</string>
-    <string name="notification_access_required_desc">રિયલ-ટાઈમમાં બેંક લેનદેનને આપમેળે શોધવા માટે, કેશિરોને સૂચના ઍક્સેસની જરૂર છે. આ સિસ્ટમ-સ્તરના પરવાનગીઓ છે.</string>
+    <string name="notification_access_required_desc">રિયલ-ટાઈમમાં બેંક લેનદેનને આપમેળે શોધવા માટે, Paisa IQ-ને સૂચના ઍક્સેસની જરૂર છે. આ સિસ્ટમ-સ્તરના પરવાનગીઓ છે.</string>
     <string name="how_to_enable">સક્રિય કરવા માટે:</string>
     <string name="step_1">નીચે \'Open Settings\' બટન પર ટૅપ કરો.</string>
     <string name="step_2">એપ્લિકેશન્સની યાદીમાં \'Paisa IQ\' શોધો.</string>

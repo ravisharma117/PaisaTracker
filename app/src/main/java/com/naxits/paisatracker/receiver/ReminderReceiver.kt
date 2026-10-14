@@ -83,7 +83,7 @@ class ReminderReceiver : BroadcastReceiver() {
         )
 
         val notification = NotificationCompat.Builder(context, SmsBroadcastReceiver.CHANNEL_ID)
-            .setSmallIcon(R.drawable.cashiro)
+            .setSmallIcon(R.drawable.ic_paisa_iq_mark)
             .setContentTitle("Daily Transaction Update")
             .setContentText("Don't forget to check your latest transactions and upcoming payments!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

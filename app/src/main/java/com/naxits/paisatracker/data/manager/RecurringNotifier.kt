@@ -190,7 +190,7 @@ class RecurringNotifier @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.cashiro)
+            .setSmallIcon(R.drawable.ic_paisa_iq_mark)
             .setContentTitle(title)
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

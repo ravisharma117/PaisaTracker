@@ -212,7 +212,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
 
                 // Build notification with category quick actions
                 val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.cashiro)
+                    .setSmallIcon(R.drawable.ic_paisa_iq_mark)
                     .setContentTitle(title)
                     .setContentText(content)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)

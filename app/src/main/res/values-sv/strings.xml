@@ -827,11 +827,6 @@ Grön (+) = Sparande | Röd (-) = Överspending</string>
     <string name="amoled_black_desc">Använd en helt svart bakgrund för djupare kontrast</string>
     <string name="blur_effects">Suddiga effekter</string>
     <string name="blur_effects_desc">Aktivera glasmorfism-oskärpa i UI-komponenter</string>
-    <string name="logo_original">Original</string>
-    <string name="logo_anarchy">Anarki</string>
-    <string name="logo_comic">Serietidning</string>
-    <string name="logo_zenith">Zenith</string>
-    <string name="logo_monochrome">Monokromt</string>
     <string name="navigation_style">Navigering</string>
     <string name="nav_floating">Flytande</string>
     <string name="nav_floating_sub">Modern &amp; Sleek</string>

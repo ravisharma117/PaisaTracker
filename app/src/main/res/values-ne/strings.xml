@@ -276,7 +276,7 @@
     <string name="chart_type_heatmap">तातो नक्सा</string>
     <string name="chart_format">%1$s चार्ट</string>
     <string name="toggle_view">दृश्य परिवर्तन गर्नुहोस्</string>
-    <string name="cashiro_ai">कासिरो एआई</string>
+    <string name="cashiro_ai">Paisa IQ एआई</string>
     <string name="more_options">थप विकल्पहरू</string>
     <string name="clear_chat">च्याट खाली गर्नुहोस्</string>
     <string name="qwen_model_required">Qwen मोडेल आवश्यक</string>
@@ -345,7 +345,7 @@
     <string name="stay_updated">अपडेट रहनुहोस्</string>
     <string name="automatic_tracking">स्वचालित ट्र्याकिङ</string>
     <string name="allow_notifications_desc">बिल सम्झाउने र दैनिक सारांश प्राप्त गर्न सूचना अनुमति दिनुहोस्।</string>
-    <string name="automatic_tracking_desc">क्यासिरोले तपाईंको लेनदेन SMS स्वचालित रूपमा स्क्यान गर्न सक्छ ताकि तपाईंको खाता अद्यावधिक रहोस्।</string>
+    <string name="automatic_tracking_desc">Paisa IQ-ले तपाईंको लेनदेन SMS स्वचालित रूपमा स्क्यान गर्न सक्छ ताकि तपाईंको खाता अद्यावधिक रहोस्।</string>
     <string name="skip_for_now">अहिले छोड्नुहोस्</string>
     <string name="verify_accounts">खाताहरू प्रमाणित गर्नुहोस्</string>
     <string name="scanning_messages">सन्देशहरू स्क्यान गर्दै</string>
@@ -415,7 +415,7 @@
     <string name="share">सेयर गर्नुहोस्</string>
     <string name="retry">पुन: प्रयास गर्नुहोस्</string>
     <string name="share_csv">CSV सेयर गर्नुहोस्</string>
-    <string name="csv_export_subject">क्याशिरो लेनदेन निर्यात</string>
+    <string name="csv_export_subject">Paisa IQ लेनदेन निर्यात</string>
     <string name="edit_transaction">लेनदेन सम्पादन गर्नुहोस्</string>
     <string name="transaction_details">लेनदेन विवरण</string>
     <string name="report_issue">समस्या रिपोर्ट गर्नुहोस्</string>
@@ -827,11 +827,6 @@
     <string name="amoled_black_desc">गहिरो विरोधाभासको लागि पूर्ण कालो पृष्ठभूमि प्रयोग गर्नुहोस्</string>
     <string name="blur_effects">ब्लर प्रभावहरू</string>
     <string name="blur_effects_desc">UI कम्पोनेन्टहरूमा ग्लासमॉर्फिज्म ब्लर प्रभाव सक्षम गर्नुहोस्</string>
-    <string name="logo_original">अभिलेख</string>
-    <string name="logo_anarchy">अराजकता</string>
-    <string name="logo_comic">क्यामिक</string>
-    <string name="logo_zenith">श्रेष्ठता</string>
-    <string name="logo_monochrome">एकरूप</string>
     <string name="navigation_style">नेभिगेसन</string>
     <string name="nav_floating">तैरिरहेको</string>
     <string name="nav_floating_sub">आधुनिक र चिकनी</string>
@@ -885,7 +880,7 @@
     <string name="notification_access_active">सूचना पहुँच सक्रिय छ</string>
     <string name="notification_access_desc">पुश सूचनाबाट बैंक लेनदेन पत्ता लगाउन सक्षम बनाउन सक्षम गर्नुहोस्</string>
     <string name="notification_access_required">सूचना पहुँच आवश्यक</string>
-    <string name="notification_access_required_desc">बैंक लेनदेनलाई वास्तविक समयमा स्वचालित रूपमा पत्ता लगाउन, क्यासिरोलाई नोटिफिकेशन पहुँच आवश्यक छ। यो प्रणाली-स्तरको अनुमति हो।</string>
+    <string name="notification_access_required_desc">बैंक लेनदेनलाई वास्तविक समयमा स्वचालित रूपमा पत्ता लगाउन, Paisa IQ-लाई नोटिफिकेशन पहुँच आवश्यक छ। यो प्रणाली-स्तरको अनुमति हो।</string>
     <string name="how_to_enable">सक्षम गर्ने तरिका:</string>
     <string name="step_1">तलको \'सेटिङ्स खोल्नुहोस्\' बटनमा ट्याप गर्नुहोस्।</string>
     <string name="step_2">एप्लिकेसनहरूको सूचीमा \'Paisa IQ\' फेला पार्नुहोस्।</string>
@@ -914,7 +909,7 @@
     <string name="this_month_lbl">यो महिना</string>
     <string name="this_year_lbl">यो वर्ष</string>
     <string name="percent_this_month_format">%1$s%2$s%% यो महिनामा</string>
-    <string name="app_locked_title">क्यासिरो लक गरिएको छ</string>
+    <string name="app_locked_title">Paisa IQ लक गरिएको छ</string>
     <string name="authenticate_desc">तपाईंको खर्च डेटा पहुँच गर्न प्रमाणित गर्नुहोस्</string>
     <string name="unlock">अनलक गर्नुहोस्</string>
     <string name="biometric_unavailable_title">बायोमेट्रिक प्रमाणीकरण उपलब्ध छैन</string>

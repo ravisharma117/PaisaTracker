@@ -982,7 +982,7 @@ fun TypingIndicator(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.cashiro),
+                painter = painterResource(id = R.drawable.ic_paisa_iq_mark),
                 contentDescription = null,
                 modifier = Modifier
                     .size(24.dp)

@@ -413,7 +413,7 @@
     <string name="share">共有</string>
     <string name="retry">再試行する</string>
     <string name="share_csv">CSVを共有</string>
-    <string name="csv_export_subject">キャッシュロートランザクションのエクスポート</string>
+    <string name="csv_export_subject">Paisa IQ トランザクションのエクスポート</string>
     <string name="edit_transaction">取引を編集</string>
     <string name="transaction_details">トランザクションの詳細</string>
     <string name="report_issue">問題を報告</string>
@@ -545,7 +545,7 @@
     <string name="one_month">1 ヶ月</string>
     <string name="two_years">2年</string>
     <string name="unrecognized_messages_title">認識できないメッセージ</string>
-    <string name="unrecognized_bank_messages_desc">潜在的な銀行からのこれらのメッセージは自動的に解析できませんでした。より多くの銀行へのサポートを追加できるように、報告することでキャッシュロの改善に貢献してください。</string>
+    <string name="unrecognized_bank_messages_desc">潜在的な銀行からのこれらのメッセージは自動的に解析できませんでした。より多くの銀行へのサポートを追加できるように、報告することでPaisa IQの改善に貢献してください。</string>
     <string name="show_reported">報告を表示</string>
     <string name="count_new_format">%1$d 件の新着</string>
     <string name="count_reported_format">%1$d が報告されました</string>
@@ -825,11 +825,6 @@
     <string name="amoled_black_desc">より深いコントラストのために純粋な黒背景を使用</string>
     <string name="blur_effects">ぼかし効果</string>
     <string name="blur_effects_desc">UIコンポーネントでガラスモーフィズムのぼかし効果を有効化</string>
-    <string name="logo_original">オリジナル</string>
-    <string name="logo_anarchy">アナーキー</string>
-    <string name="logo_comic">コミック</string>
-    <string name="logo_zenith">ゼニス</string>
-    <string name="logo_monochrome">モノクローム</string>
     <string name="navigation_style">ナビゲーション</string>
     <string name="nav_floating">フローティング</string>
     <string name="nav_floating_sub">モダン＆スリーク</string>
