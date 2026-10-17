@@ -1701,4 +1701,12 @@
     <string name="tracker_chart_lending">Money lent by month</string>
     <string name="tracker_chart_borrowing">Money borrowed by month</string>
     <string name="tracker_chart_net_worth">Net worth at month end</string>
+    <string name="account_tags_label">Tags</string>
+    <string name="account_tag_add_hint">Add a tag</string>
+    <string name="account_tag_add">Add tag</string>
+    <string name="account_description_label">Description</string>
+    <string name="account_description_hint">What is this account used for?</string>
+    <string name="account_use_bank_logo">Use bank logo</string>
+    <string name="move_account_up">Move %1$s up</string>
+    <string name="move_account_down">Move %1$s down</string>
 </resources>

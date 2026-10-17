@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,7 +17,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.naxits.paisatracker.presentation.common.icons.LocalAccountMeta
 import com.naxits.paisatracker.presentation.navigation.AppLock
+import com.naxits.paisatracker.presentation.ui.features.accounts.AccountMetaViewModel
 import com.naxits.paisatracker.presentation.navigation.Home
 import com.naxits.paisatracker.presentation.navigation.CashiroNavHost
 import com.naxits.paisatracker.presentation.navigation.OnBoarding
@@ -31,6 +34,7 @@ import com.naxits.paisatracker.presentation.ui.features.settings.appearance.Them
 fun CashiroApp(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     appLockViewModel: AppLockViewModel = hiltViewModel(),
+    accountMetaViewModel: AccountMetaViewModel = hiltViewModel(),
     editTransactionId: Long? = null,
     onEditComplete: () -> Unit = {},
     addTransactionTab: Int? = null,
@@ -39,6 +43,7 @@ fun CashiroApp(
 ) {
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     val appLockUiState by appLockViewModel.uiState.collectAsStateWithLifecycle()
+    val accountMeta by accountMetaViewModel.meta.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val darkTheme = themeUiState.isDarkTheme ?: isSystemInDarkTheme()
@@ -109,10 +114,12 @@ fun CashiroApp(
         appFont = themeUiState.appFont,
         blurEffects = themeUiState.blurEffects
     ) {
-        CashiroNavHost(
-            navController = navController,
-            startDestination = startDestination,
-            onEditComplete = onEditComplete
-        )
+        CompositionLocalProvider(LocalAccountMeta provides accountMeta) {
+            CashiroNavHost(
+                navController = navController,
+                startDestination = startDestination,
+                onEditComplete = onEditComplete
+            )
+        }
     }
 }

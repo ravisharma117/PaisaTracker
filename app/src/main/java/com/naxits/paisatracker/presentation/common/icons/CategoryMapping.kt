@@ -1131,9 +1131,20 @@ object CategoryMapping {
  */
 object IconProvider {
 
+    /** The drawable behind a stored icon name: full-colour for brand logos, untinted otherwise. */
+    private fun accountIconResource(context: Context?, iconName: String): IconResource? {
+        val resId = IconResolutionUtils.nameToResId(context, iconName)
+        if (resId == 0) return null
+        return if (iconName.startsWith("ic_brand") || iconName.startsWith("ic_launcher") || iconName.startsWith("merchant_")) {
+            IconResource.DrawableResource(resId)
+        } else {
+            IconResource.TintedResIcon(resId = resId, tint = Color.Unspecified)
+        }
+    }
+
     /**
      * Get icon with full fallback chain for transactions
-     * Priority: Brand Icon > Subcategory Icon > Category Icon > CategoryMapping > Miscellaneous
+     * Priority: account icon override > Brand Icon > Subcategory Icon > Category Icon > CategoryMapping > Miscellaneous
      */
     fun getIconForTransaction(
         context: Context? = null,
@@ -1143,8 +1154,14 @@ object IconProvider {
         category: String? = null,
         subcategory: String? = null,
         accountIconResId: Int = 0,
-        accountIconName: String? = null
+        accountIconName: String? = null,
+        accountIconOverride: String? = null
     ): IconResource {
+        // An icon the user picked for the account beats everything, including the logo found from the bank name
+        accountIconOverride?.takeIf { it.isNotBlank() }?.let { name ->
+            accountIconResource(context, name)?.let { return it }
+        }
+
         // brand icon first
         BrandIcons.getIconResource(merchantName)?.let { iconRes ->
             return IconResource.DrawableResource(iconRes)
@@ -1215,17 +1232,7 @@ object IconProvider {
 
         // account icon - Fallback
         if (!accountIconName.isNullOrEmpty()) {
-            val resId = IconResolutionUtils.nameToResId(context, accountIconName)
-            if (resId != 0) {
-                return if (accountIconName.startsWith("ic_brand") || accountIconName.startsWith("ic_launcher") || accountIconName.startsWith("merchant_")) {
-                    IconResource.DrawableResource(resId)
-                } else {
-                    IconResource.TintedResIcon(
-                        resId = resId,
-                        tint = Color.Unspecified
-                    )
-                }
-            }
+            accountIconResource(context, accountIconName)?.let { return it }
         }
         if (accountIconResId != 0) {
             val safeResId = IconResolutionUtils.getSafeResId(context ?: return@getIconForTransaction IconResource.TintedResIcon(

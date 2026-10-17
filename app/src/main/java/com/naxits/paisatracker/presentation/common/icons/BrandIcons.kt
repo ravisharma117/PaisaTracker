@@ -211,6 +211,7 @@ object BrandIcons {
         "kotak bank" to R.drawable.ic_brand_kotak_mahindra_bank,
         "nsdl payments bank" to R.drawable.ic_brand_nsdl_payments_bank,
         "onecard" to R.drawable.ic_brand_onecard,
+        "himachal pradesh state cooperative bank" to R.drawable.ic_brand_himachal_state_coop_bank,
         "punjab & sind bank" to R.drawable.ic_brand_punjab_sind_bank,
         "punjab and sind bank" to R.drawable.ic_brand_punjab_sind_bank,
         "uco bank" to R.drawable.ic_brand_uco_bank,

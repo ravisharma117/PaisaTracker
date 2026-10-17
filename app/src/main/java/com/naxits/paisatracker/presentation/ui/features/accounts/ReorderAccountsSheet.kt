@@ -12,9 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -114,12 +117,19 @@ fun ReorderAccountsSheet(
                                 .shadow(elevation.value)
                                 .background(MaterialTheme.colorScheme.surface)
                         ) {
+                            val position = arranged.indexOf(account)
                             ReorderAccountRow(
                                 account = account,
                                 isHidden = key in hiddenKeys,
                                 dragModifier = Modifier.draggableHandle(
                                     onDragStopped = { onOrderChanged(arranged) }
-                                )
+                                ),
+                                canMoveUp = position > 0,
+                                canMoveDown = position in 0 until arranged.lastIndex,
+                                onMove = { delta ->
+                                    arranged = AccountOrdering.move(arranged, position, delta)
+                                    onOrderChanged(arranged)
+                                }
                             )
                         }
                     }
@@ -133,7 +143,10 @@ fun ReorderAccountsSheet(
 private fun ReorderAccountRow(
     account: AccountBalanceEntity,
     isHidden: Boolean,
-    dragModifier: Modifier
+    dragModifier: Modifier,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMove: (delta: Int) -> Unit
 ) {
     val detail = when (account.kind) {
         AccountKind.CASH -> stringResource(R.string.type_wallet)
@@ -173,6 +186,18 @@ private fun ReorderAccountRow(
                 text = stringResource(R.string.account_hidden_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = { onMove(-1) }, enabled = canMoveUp) {
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowUp,
+                contentDescription = stringResource(R.string.move_account_up, account.bankName)
+            )
+        }
+        IconButton(onClick = { onMove(1) }, enabled = canMoveDown) {
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = stringResource(R.string.move_account_down, account.bankName)
             )
         }
     }

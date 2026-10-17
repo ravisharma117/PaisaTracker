@@ -230,6 +230,7 @@ fun SharedTransitionScope.AccountCarouselCard(
             ) {
                 BrandIcon(
                     merchantName = bankName,
+                    accountLast4 = accountLast4,
                     size = 48.dp,
                     showBackground = true,
                     accountIconResId = iconResId,

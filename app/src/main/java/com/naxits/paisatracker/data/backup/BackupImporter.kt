@@ -178,6 +178,7 @@ class BackupImporter @Inject constructor(
                 database.categoryDao().deleteAllCategories()
                 database.cardDao().deleteAllCards()
                 database.accountBalanceDao().deleteAllBalances()
+                database.accountMetaDao().deleteAll()
                 database.subscriptionDao().deleteAllSubscriptions()
                 database.merchantMappingDao().deleteAllMappings()
                 database.unrecognizedSmsDao().deleteAll()
@@ -271,6 +272,9 @@ class BackupImporter @Inject constructor(
                 backup.database.lendBorrowTransactions.forEach { tx ->
                     database.lendBorrowDao().insertTransaction(tx)
                 }
+
+                // Accounts are keyed by bank name and last 4 digits, which the backup keeps as saved
+                database.accountMetaDao().upsertAll(backup.database.accountMeta.orEmpty())
 
                 // Holdings and loans keep their ids, so their value history lines up as saved
                 database.netWorthDao().let { dao ->
@@ -426,6 +430,7 @@ class BackupImporter @Inject constructor(
                 // Import other entities with duplicate checking
                 importCardsWithMerge(backup.database.cards)
                 importAccountBalancesWithMerge(backup.database.accountBalances)
+                importAccountMetaWithMerge(backup.database.accountMeta.orEmpty())
                 importSubscriptionsWithMerge(backup.database.subscriptions)
                 importMerchantMappingsWithMerge(backup.database.merchantMappings)
                 importBudgetsWithMerge(backup.database.budgets, backup.database.budgetCategoryLimits)
@@ -574,6 +579,7 @@ class BackupImporter @Inject constructor(
                 }
                 if (filter.includeAccountBalances) {
                     importAccountBalancesWithMerge(backup.database.accountBalances)
+                    importAccountMetaWithMerge(backup.database.accountMeta.orEmpty())
                 }
                 if (filter.includeSubscriptions) {
                     importSubscriptionsWithMerge(backup.database.subscriptions)
@@ -634,6 +640,15 @@ class BackupImporter @Inject constructor(
         }
     }
     
+    /** Keeps the notes already on this device; adds the ones for accounts that have none yet. */
+    private suspend fun importAccountMetaWithMerge(metas: List<AccountMetaEntity>) {
+        metas.forEach { meta ->
+            if (database.accountMetaDao().get(meta.bankName, meta.accountLast4) == null) {
+                database.accountMetaDao().upsert(meta)
+            }
+        }
+    }
+
     /**
      * Import subscriptions with duplicate checking
      */

@@ -32,6 +32,13 @@ object AccountOrdering {
     fun orderOf(accounts: List<AccountBalanceEntity>): List<String> =
         accounts.map { keyOf(it) }.distinct()
 
+    /** [list] with the item at [index] moved by [delta] places. Unchanged when that would leave the list. */
+    fun <T> move(list: List<T>, index: Int, delta: Int): List<T> {
+        val target = index + delta
+        if (index !in list.indices || target !in list.indices || delta == 0) return list
+        return list.toMutableList().also { it.add(target, it.removeAt(index)) }
+    }
+
     /** Replaces [oldKey] with [newKey], keeping its position. No change if [oldKey] is not listed. */
     fun rename(order: List<String>, oldKey: String, newKey: String): List<String> {
         if (oldKey == newKey || oldKey !in order) return order

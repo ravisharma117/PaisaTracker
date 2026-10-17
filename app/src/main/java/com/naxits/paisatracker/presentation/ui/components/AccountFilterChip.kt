@@ -65,6 +65,7 @@ fun AccountFilterChip(
             ) {
                 BrandIcon(
                     merchantName = account.bankName,
+                    accountLast4 = account.accountLast4,
                     size = 48.dp,
                     showBackground = true,
                     accountIconResId = account.iconResId,

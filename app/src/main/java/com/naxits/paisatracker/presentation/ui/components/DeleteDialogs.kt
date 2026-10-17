@@ -520,6 +520,7 @@ fun DeleteAccountDialog(
                     ) {
                         BrandIcon(
                             merchantName = bankName,
+                            accountLast4 = accountLast4,
                             accountIconResId = accountIcon,
                             accountColorHex = accountColor,
                             size = 40.dp

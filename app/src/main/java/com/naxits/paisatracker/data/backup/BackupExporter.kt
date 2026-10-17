@@ -157,6 +157,12 @@ class BackupExporter @Inject constructor(
         val categories = if (config.includeProfileData) database.categoryDao().getAllCategories().first() else emptyList()
         val cards = if (config.includeProfileData) database.cardDao().getAllCards().first() else emptyList()
         val accountBalances = if (config.includeTransactionalData) database.accountBalanceDao().getAllBalances().first() else emptyList()
+        // A description can hold personal detail, so only a full export keeps it
+        val accountMeta = if (config.includeTransactionalData) {
+            database.accountMetaDao().getAll().map { meta ->
+                if (config.privacy == ExportPrivacy.FULL) meta else meta.copy(description = "")
+            }
+        } else emptyList()
         val subscriptions = if (config.includeBudgets) database.subscriptionDao().getAllSubscriptions().first() else emptyList()
         val merchantMappings = if (config.includeProfileData) database.merchantMappingDao().getAllMappings().first() else emptyList()
         val unrecognizedSms = if (config.includeTransactionalData) database.unrecognizedSmsDao().getAllUnrecognizedSms().first() else emptyList()
@@ -274,6 +280,7 @@ class BackupExporter @Inject constructor(
                 categories = categories,
                 cards = cards,
                 accountBalances = accountBalances,
+                accountMeta = accountMeta,
                 subscriptions = subscriptions,
                 merchantMappings = merchantMappings,
                 unrecognizedSms = if (config.privacy == ExportPrivacy.FULL) unrecognizedSms else emptyList(),

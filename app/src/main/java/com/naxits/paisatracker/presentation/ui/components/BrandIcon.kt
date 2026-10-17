@@ -24,6 +24,7 @@ import com.naxits.paisatracker.data.database.entity.SubcategoryEntity
 import com.naxits.paisatracker.presentation.common.icons.CategoryMapping
 import com.naxits.paisatracker.presentation.common.icons.IconProvider
 import com.naxits.paisatracker.presentation.common.icons.IconResource
+import com.naxits.paisatracker.presentation.common.icons.accountIconOverrideFor
 
 /**
  * Displays a brand icon with intelligent fallback
@@ -41,10 +42,16 @@ fun BrandIcon(
     subcategory: String? = null,
     accountIconResId: Int = 0,
     accountIconName: String? = null,
-    accountColorHex: String? = null
+    accountColorHex: String? = null,
+    /** Last 4 digits when [merchantName] is an account's bank name, so the user's icon for it is used. */
+    accountLast4: String? = null,
+    /** Icon name that beats the logo found from the bank name; looked up from [accountLast4] when null. */
+    accountIconOverride: String? = null
 ) {
     val context = LocalContext.current
-    val iconResource = remember(merchantName, categoryEntity, subcategoryEntity, category, subcategory, accountIconResId, accountIconName) {
+    val overrideIcon = accountIconOverride
+        ?: accountLast4?.let { accountIconOverrideFor(merchantName, it) }
+    val iconResource = remember(merchantName, categoryEntity, subcategoryEntity, category, subcategory, accountIconResId, accountIconName, overrideIcon) {
         IconProvider.getIconForTransaction(
             context = context,
             merchantName = merchantName,
@@ -53,7 +60,8 @@ fun BrandIcon(
             category = category,
             subcategory = subcategory,
             accountIconResId = accountIconResId,
-            accountIconName = accountIconName
+            accountIconName = accountIconName,
+            accountIconOverride = overrideIcon
         )
     }
     val brandColor = remember(merchantName, categoryEntity, subcategoryEntity, category, subcategory, accountColorHex) {

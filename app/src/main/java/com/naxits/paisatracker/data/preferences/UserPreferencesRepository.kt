@@ -101,6 +101,8 @@ constructor(@ApplicationContext private val context: Context) {
         val IS_SAMPLE_DATA_SEEDED = booleanPreferencesKey("is_sample_data_seeded")
         // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
+        // Set once accounts the SMS parser labelled with the wrong bank have been renamed
+        val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_done")
         val APP_ICON = stringPreferencesKey("app_icon")
         val WEBHOOK_SYNC_MODE = stringPreferencesKey("webhook_sync_mode")
         val WEBHOOK_INTERVAL_HOURS = intPreferencesKey("webhook_interval_hours")
@@ -946,6 +948,17 @@ constructor(@ApplicationContext private val context: Context) {
     suspend fun markAtmTransferBackfillDone() {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] = true
+        }
+    }
+
+    suspend fun isBankRelabelBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.BANK_RELABEL_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markBankRelabelBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.BANK_RELABEL_BACKFILL_DONE] = true
         }
     }
 

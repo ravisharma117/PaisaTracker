@@ -169,7 +169,11 @@ data class DatabaseSnapshot(
     val netWorthItemValues: List<com.naxits.paisatracker.data.database.entity.NetWorthItemValueEntity> = emptyList(),
 
     @SerializedName("net_worth_snapshots")
-    val netWorthSnapshots: List<com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity> = emptyList()
+    val netWorthSnapshots: List<com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity> = emptyList(),
+
+    // Absent in backups made before accounts could carry an icon, tags and a description
+    @SerializedName("account_meta")
+    val accountMeta: List<com.naxits.paisatracker.data.database.entity.AccountMetaEntity> = emptyList()
 )
 
 data class WebhookProfileBackup(

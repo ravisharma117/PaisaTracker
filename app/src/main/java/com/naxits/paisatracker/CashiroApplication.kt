@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.naxits.paisatracker.data.manager.AtmWithdrawalBackfill
+import com.naxits.paisatracker.data.manager.BankRelabelBackfill
 import com.naxits.paisatracker.data.repository.AppLockRepository
 import com.naxits.paisatracker.data.webhook.WebhookSyncScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -32,6 +33,9 @@ class CashiroApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var atmWithdrawalBackfill: AtmWithdrawalBackfill
+
+    @Inject
+    lateinit var bankRelabelBackfill: BankRelabelBackfill
 
     // Route any unhandled coroutine exception to the CrashHandler so the crash screen
     // appears even when the crash originates inside a coroutine (which normally bypasses
@@ -92,6 +96,13 @@ class CashiroApplication : Application(), Configuration.Provider {
                 atmWithdrawalBackfill.runOnce()
             } catch (e: Exception) {
                 Log.e("CashiroApplication", "Error converting recent ATM withdrawals", e)
+            }
+        }
+        applicationScope.launch {
+            try {
+                bankRelabelBackfill.runOnce()
+            } catch (e: Exception) {
+                Log.e("CashiroApplication", "Error renaming accounts saved under the wrong bank", e)
             }
         }
     }

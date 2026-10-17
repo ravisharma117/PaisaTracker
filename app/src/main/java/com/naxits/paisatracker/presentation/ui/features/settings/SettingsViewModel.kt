@@ -79,6 +79,7 @@ class SettingsViewModel @Inject constructor(
     private val unrecognizedSmsRepository: UnrecognizedSmsRepository,
     private val transactionRepository: TransactionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
+    private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
     private val cardRepository: CardRepository,
     private val budgetRepository: BudgetRepository,
     private val subscriptionRepository: SubscriptionRepository,
@@ -1091,6 +1092,7 @@ class SettingsViewModel @Inject constructor(
             try {
                 transactionRepository.deleteAllTransactions()
                 accountBalanceRepository.deleteAllBalances()
+                accountMetaRepository.deleteAll()
                 budgetRepository.deleteAllBudgets()
                 subscriptionRepository.deleteAllSubscriptions()
                 cardRepository.deleteAllCards()

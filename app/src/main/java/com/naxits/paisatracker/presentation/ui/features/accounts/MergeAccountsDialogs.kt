@@ -163,6 +163,7 @@ fun AccountSelectionItem(account: AccountBalanceEntity, isSelected: Boolean, onC
             // Icon
             BrandIcon(
                 merchantName = account.bankName,
+                accountLast4 = account.accountLast4,
                 size = 32.dp,
                 accountIconResId = account.iconResId,
                 accountColorHex = account.color,
