@@ -102,7 +102,8 @@ constructor(@ApplicationContext private val context: Context) {
         // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
         // Set once accounts the SMS parser labelled with the wrong bank have been renamed
-        val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_done")
+        // (v2: also covers transactions that have no account row of their own)
+        val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_v2_done")
         val APP_ICON = stringPreferencesKey("app_icon")
         val WEBHOOK_SYNC_MODE = stringPreferencesKey("webhook_sync_mode")
         val WEBHOOK_INTERVAL_HOURS = intPreferencesKey("webhook_interval_hours")

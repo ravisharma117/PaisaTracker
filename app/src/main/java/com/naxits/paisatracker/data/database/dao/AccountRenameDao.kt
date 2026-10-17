@@ -13,8 +13,18 @@ import androidx.room.Transaction
 @Dao
 abstract class AccountRenameDao {
 
-    /** Last 4 digits of every account that currently carries [bankName]. */
-    @Query("SELECT DISTINCT account_last4 FROM account_balances WHERE bank_name = :bankName")
+    /**
+     * Last 4 digits of every account that currently carries [bankName], including ones that only
+     * have transactions: a message can be saved before its account gets a balance row.
+     */
+    @Query(
+        """
+        SELECT account_last4 FROM account_balances WHERE bank_name = :bankName
+        UNION
+        SELECT account_number FROM transactions
+        WHERE bank_name = :bankName AND account_number IS NOT NULL AND account_number != ''
+        """
+    )
     abstract suspend fun accountsOf(bankName: String): List<String>
 
     /** Sender of every SMS-sourced transaction on the account. Manual entries have none. */

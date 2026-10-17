@@ -29,7 +29,8 @@ class BankRelabelerTest {
         val meta = mutableListOf<Meta>()
 
         override suspend fun accountsOf(bankName: String) =
-            balances.filter { it.bank == bankName }.map { it.last4 }.distinct()
+            (balances.filter { it.bank == bankName }.map { it.last4 } +
+                txs.filter { it.bank == bankName }.map { it.last4 }).distinct()
 
         override suspend fun smsSendersOf(bankName: String, accountLast4: String) =
             txs.filter { it.bank == bankName && it.last4 == accountLast4 && !it.sender.isNullOrEmpty() }
@@ -186,6 +187,21 @@ class BankRelabelerTest {
         assertEquals(listOf(1, 2), dao.balances.map { it.timestamp }.sorted())
         assertTrue(dao.balances.all { it.bank == newBank })
         assertEquals(1, dao.meta.size, "notes already on the new name are kept")
+    }
+
+    @Test
+    fun transactionsWithoutAnAccountRowAreRelabelledToo() = runTest {
+        dao.balances += Balance(oldBank, "1234", 1)
+        dao.txs += Tx(oldBank, "1234", "BI-HPSBNK-S")
+        // A message saved before its account ever got a balance row
+        dao.txs += Tx(oldBank, "5678", "JK-HPSBNK-S")
+        // Another account with no balance row that really is with the old bank
+        dao.txs += Tx(oldBank, "9999", "AD-PSBANK-S")
+
+        assertEquals(2, relabeler.relabel())
+
+        assertEquals(newBank, dao.txs[1].bank)
+        assertEquals(oldBank, dao.txs[2].bank)
     }
 
     @Test

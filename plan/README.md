@@ -99,14 +99,20 @@ Design is in the data model table above. Summary:
 4. **Auto-confirm (item 9).** Pure `ReviewAutoConfirmer.run(now)`: PENDING reviews created at or before `now - 3 months` become `AUTO_CONFIRMED` (`resolved_by = AUTO_3M`, `resolved_value` = suggested value); the transaction's category is not changed. `TransactionReviewDao.getPendingCreatedOnOrBefore` already exists. A daily `@HiltWorker` plus a scheduler copied from `WebhookSyncScheduler` (unique periodic work, `ExistingPeriodicWorkPolicy.UPDATE`), started from `CashiroApplication.onCreate`. Review history UI shows manual and automatic resolutions.
 5. Tests: monthly salary, vendor in another category, amounts inside and outside tolerance, irregular interval, single earlier match (no suggestion), auto-confirm just under and just over 3 months, category unchanged, both resolution types kept.
 
-## On-device checks (not done yet; phone was offline when Phase A finished)
+## On-device checks
 
-Wireless debugging from earlier dropped. Reconnect with USB (`adb tcpip 5555`, then `adb connect <phone-ip>:5555`) or ask Ravi to re-enable it. `adb` is at `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (not on PATH in PowerShell). Phone model `21091116I`.
+Installed on Ravi's phone (model `21091116I`) over USB on 2026-10-17 from `feature/parties-review`. `adb` is at `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (not on PATH in PowerShell). The arm64 build is `app/build/outputs/apk/standard/debug/app-standard-arm64-v8a-debug.apk`. The database can be copied with `adb exec-out run-as com.naxits.paisatracker cat databases/pennywise_database` (plus the `-wal` and `-shm` files) into the scratchpad for read-only checks; the real data must stay local.
 
-- **Himachal relabel:** snapshot the app database first, install, open the app, snapshot again. Only the one mis-detected account should change (bank name, logo, its transactions, order position). Other accounts unchanged. `scratchpad/inspect_db.py`-style read-only queries work on a copy; the real data must stay local.
+**Verified by comparing the database before and after the update:**
+- Migrations 68 to 69 to 70 ran; `account_meta`, `parties`, `transaction_reviews` exist.
+- The one-time Himachal relabel renamed the misdetected account (6 balance rows, same balances) and all 8 transactions from the Himachal sender, including 2 that had no account row (this is why the relabel also walks transactions, and why its flag is `bank_relabel_backfill_v2_done`). Every other account and transaction is identical to before. No crashes in the log.
+
+**Still to check by hand (nothing automated can see the screens):**
 - **Reorder:** move accounts with the arrows, restart the app, check the order persists and the first account stays first.
-- **Tags, description, icon:** set on an account, check card, detail page and that a custom icon beats the bank-name logo; "Use bank logo" resets it.
-- **Business flow:** tag an account Business, add a transaction with a new and an existing customer, replay a test SMS to see Unknown or a suggested match with its reason and red badge, correct and confirm.
+- **Tags, description, icon:** set them on an account; check the card and the detail page, that a custom icon beats the bank-name logo, and that "Use bank logo" resets it.
+- **Himachal logo:** the account card shows the "HP / COOP BANK" monogram.
+- **Business flow:** tag an account Business, add a transaction with a new and an existing customer (autocomplete), and look at the detail screen and the Parties screen under Settings.
+- **Review flow:** replay a test SMS on the Business account to see Unknown or a suggested match with its reason and the red badge, then confirm, change and dismiss; try the "Needs review" filter.
 - **Recurring (after Phase C):** replay three monthly test SMS and check the suggestion and badge; run the worker with a backdated review.
 
 ## Things noticed along the way (not part of this plan)
