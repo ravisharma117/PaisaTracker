@@ -39,7 +39,9 @@ data class TransactionEntity(
         // Stored inverted so a backup written before this column existed reads back as counted
         @ColumnInfo(name = "exclude_from_income", defaultValue = "0") val excludeFromIncome: Boolean = false,
         // Marked "Cash": moves the Cash balance as well and stays out of income and expense reports
-        @ColumnInfo(name = "counted_as_cash", defaultValue = "0") val isCashEntry: Boolean = false
+        @ColumnInfo(name = "counted_as_cash", defaultValue = "0") val isCashEntry: Boolean = false,
+        // The customer or vendor this entry was with (see `parties`); null when not set or unknown
+        @ColumnInfo(name = "party_id") val partyId: Long? = null
 )
 
 /** True for an income entry the user has not marked as "Not income" or "Cash". */

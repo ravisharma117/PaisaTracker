@@ -35,7 +35,7 @@ Please reference these documents when working on this project:
 - Always test on both light and dark themes
 
 ## Current Phase
-The first 20-step plan is finished and its `/plan` folder was removed (it remains in git history). No plan is active; a new one will be added when the next phase starts.
+The first 20-step plan is finished (it remains in git history). **A new plan is active but paused**: account metadata, customers/vendors, recurring suggestions and review. It is written up in `plan/README.md` with its branches, what is done and what is left. When Ravi asks to resume it, read that file first and follow its "How to resume" section. The work lives on `feature/parties-review` (Phase A is on `feature/account-metadata`); neither is merged into `develop` yet.
 
 ## Branch Workflow
 - `main`: release branch

@@ -77,7 +77,8 @@ fun TransactionEntity.sanitize(): TransactionEntity {
         attachments = attachments ?: "",
         isSample = isSample,
         excludeFromIncome = excludeFromIncome,
-        isCashEntry = isCashEntry
+        isCashEntry = isCashEntry,
+        partyId = partyId
     )
 }
 

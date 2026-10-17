@@ -91,9 +91,11 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.NetWorthItemEntity::class,
             com.naxits.paisatracker.data.database.entity.NetWorthItemValueEntity::class,
             com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class,
-            com.naxits.paisatracker.data.database.entity.AccountMetaEntity::class
+            com.naxits.paisatracker.data.database.entity.AccountMetaEntity::class,
+            com.naxits.paisatracker.data.database.entity.PartyEntity::class,
+            com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class
         ],
-        version = 69,
+        version = 70,
     exportSchema = true,
     autoMigrations =
         [
@@ -147,6 +149,8 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun netWorthDao(): com.naxits.paisatracker.data.database.dao.NetWorthDao
     abstract fun accountMetaDao(): com.naxits.paisatracker.data.database.dao.AccountMetaDao
     abstract fun accountRenameDao(): com.naxits.paisatracker.data.database.dao.AccountRenameDao
+    abstract fun partyDao(): com.naxits.paisatracker.data.database.dao.PartyDao
+    abstract fun transactionReviewDao(): com.naxits.paisatracker.data.database.dao.TransactionReviewDao
 
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -681,6 +685,23 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_69_70 =
+            object : Migration(69, 70) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Customers and vendors, and the things the app wants the user to look at (copied from the exported schema 70)
+                    db.execSQL("ALTER TABLE `transactions` ADD COLUMN `party_id` INTEGER")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `parties` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL DEFAULT 'CUSTOMER', `phone` TEXT, `identifiers` TEXT NOT NULL DEFAULT '', `aliases` TEXT NOT NULL DEFAULT '', `notes` TEXT, `is_archived` INTEGER NOT NULL DEFAULT 0, `created_at` TEXT NOT NULL)"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_parties_name` ON `parties` (`name`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `transaction_reviews` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transaction_id` INTEGER NOT NULL, `kind` TEXT NOT NULL, `suggested_value` TEXT NOT NULL, `suggested_subcategory` TEXT, `suggested_party_id` INTEGER, `reason` TEXT NOT NULL, `confidence` INTEGER NOT NULL DEFAULT 0, `status` TEXT NOT NULL DEFAULT 'PENDING', `created_at` TEXT NOT NULL, `resolved_at` TEXT, `resolved_by` TEXT, `resolved_value` TEXT)"
+                    )
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_transaction_reviews_transaction_id_kind` ON `transaction_reviews` (`transaction_id`, `kind`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_transaction_reviews_status` ON `transaction_reviews` (`status`)")
                 }
             }
 

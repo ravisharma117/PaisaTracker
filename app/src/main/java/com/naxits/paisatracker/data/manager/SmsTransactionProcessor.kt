@@ -30,7 +30,8 @@ class SmsTransactionProcessor @Inject constructor(
     private val ruleRepository: RuleRepository,
     private val ruleEngine: RuleEngine,
     private val balanceUpdateProcessor: BalanceUpdateProcessor,
-    private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService
+    private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService
 ) {
     companion object {
         private const val TAG = "SmsTransactionProcessor"
@@ -205,6 +206,7 @@ class SmsTransactionProcessor @Inject constructor(
                     subscriptionRepository.linkPaymentTransaction(matchedSubscription.id, settledDueDate, rowId)
                 }
                 repaymentService.onTransactionSaved(rowId, finalEntityForInsert)
+                reviewService.onTransactionSaved(rowId, finalEntityForInsert)
                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntityForInsert.isRecurring) " (Recurring)" else ""}")
 
                 // Save rule applications if any rules were applied
