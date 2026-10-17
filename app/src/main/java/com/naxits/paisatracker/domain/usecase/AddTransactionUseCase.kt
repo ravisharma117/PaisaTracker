@@ -42,7 +42,8 @@ constructor(
             createSubscription: Boolean = true,
             attachments: String = "",
             excludeFromIncome: Boolean = false,
-            isCashEntry: Boolean = false
+            isCashEntry: Boolean = false,
+            partyId: Long? = null
     ): Long {
         // Generate a unique hash for manual transactions
         val transactionHash =
@@ -74,7 +75,8 @@ constructor(
                         attachments = attachments,
                         excludeFromIncome = excludeFromIncome && type == TransactionType.INCOME,
                         isCashEntry = isCashEntry &&
-                                (type == TransactionType.INCOME || type == TransactionType.EXPENSE)
+                                (type == TransactionType.INCOME || type == TransactionType.EXPENSE),
+                        partyId = partyId
                 )
 
         // Insert the transaction

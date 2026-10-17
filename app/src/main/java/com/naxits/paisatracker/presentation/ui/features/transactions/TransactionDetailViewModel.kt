@@ -583,6 +583,16 @@ class TransactionDetailViewModel @Inject constructor(
         _editableAttachments.update { it - path }
     }
 
+    /** The customer or vendor was changed in the party section, which has already saved it. */
+    fun onPartyChanged(partyId: Long?) {
+        _uiState.update {
+            it.copy(
+                transaction = it.transaction?.copy(partyId = partyId),
+                editableTransaction = it.editableTransaction?.copy(partyId = partyId)
+            )
+        }
+    }
+
     fun updateCategory(category: String) {
         _uiState.update { state ->
             val current = state.editableTransaction

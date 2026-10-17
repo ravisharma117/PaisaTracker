@@ -173,7 +173,15 @@ data class DatabaseSnapshot(
 
     // Absent in backups made before accounts could carry an icon, tags and a description
     @SerializedName("account_meta")
-    val accountMeta: List<com.naxits.paisatracker.data.database.entity.AccountMetaEntity> = emptyList()
+    val accountMeta: List<com.naxits.paisatracker.data.database.entity.AccountMetaEntity> = emptyList(),
+
+    // Absent in backups made before customers and vendors existed
+    @SerializedName("parties")
+    val parties: List<com.naxits.paisatracker.data.database.entity.PartyEntity> = emptyList(),
+
+    // The audit trail of suggestions and how each was settled
+    @SerializedName("transaction_reviews")
+    val transactionReviews: List<com.naxits.paisatracker.data.database.entity.TransactionReviewEntity> = emptyList()
 )
 
 data class WebhookProfileBackup(

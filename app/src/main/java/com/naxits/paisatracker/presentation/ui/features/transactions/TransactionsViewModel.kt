@@ -54,6 +54,7 @@ class TransactionsViewModel @Inject constructor(
     private val currencyRepository: CurrencyRepository,
     private val currencyConversionService: CurrencyConversionService,
     private val lendBorrowRepository: LendBorrowRepository,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -79,6 +80,10 @@ class TransactionsViewModel @Inject constructor(
     private val _currenciesFilter = MutableStateFlow<Set<String>>(emptySet())
     val currenciesFilter: StateFlow<Set<String>> = _currenciesFilter.asStateFlow()
     
+    /** Show only the entries that still have a suggestion waiting for the user. */
+    private val _needsReviewFilter = MutableStateFlow(false)
+    val needsReviewFilter: StateFlow<Boolean> = _needsReviewFilter.asStateFlow()
+
     private val _transactionTypeFilter = MutableStateFlow<Set<TransactionTypeFilter>>(emptySet())
     val transactionTypeFilter: StateFlow<Set<TransactionTypeFilter>> = _transactionTypeFilter.asStateFlow()
     
@@ -333,6 +338,7 @@ class TransactionsViewModel @Inject constructor(
                     accountsFilter.map { "accounts" },
                     currenciesFilter.map { "currencies" },
                     transactionTypeFilter.map { "typeFilter" },
+                    needsReviewFilter.map { "needsReview" },
                     selectedCurrency.map { "currency" },
                     sortOption.map { "sort" },
                     customDateRange.map { "customDate" },
@@ -351,6 +357,7 @@ class TransactionsViewModel @Inject constructor(
                 val accounts = accountsFilter.value
                 val filterCurrencies = currenciesFilter.value
                 val typeFilter = transactionTypeFilter.value
+                val needsReview = needsReviewFilter.value
                 val currency = selectedCurrency.value
                 val baseCurrencyCode = baseCurrency.value
                 val sort = sortOption.value
@@ -359,10 +366,12 @@ class TransactionsViewModel @Inject constructor(
                  combine(
                      getFilteredTransactions(query, period, category, subcategory, amountRange, accounts, filterCurrencies, typeFilter),
                      lendBorrowRepository.getAllTransactions(),
-                     lendBorrowRepository.getPersons()
-                 ) { transactions, lbTransactions, persons ->
+                     lendBorrowRepository.getPersons(),
+                     reviewService.observePendingTransactionIds()
+                 ) { transactions, lbTransactions, persons, pendingReviews ->
                      // No longer filtering by selectedCurrency. Show all unless explicitly filtered via filter sheet
-                     val currencyFilteredTransactions = transactions
+                     val currencyFilteredTransactions =
+                         if (needsReview) transactions.filter { it.id in pendingReviews } else transactions
                      
                      // Calculate converted amounts for shown transactions if transaction currency differs from base (main) currency
                      val converted = currencyFilteredTransactions.filter { !it.currency.equals(baseCurrencyCode, ignoreCase = true) }
@@ -471,7 +480,12 @@ class TransactionsViewModel @Inject constructor(
         _amountRangeFilter.value = Pair(min, max)
     }
 
+    fun toggleNeedsReviewFilter() {
+        _needsReviewFilter.value = !_needsReviewFilter.value
+    }
+
     fun clearExtendedFilters() {
+        _needsReviewFilter.value = false
         _subcategoryFilter.value = emptySet()
         _amountRangeFilter.value = null
         _accountsFilter.value = emptySet()

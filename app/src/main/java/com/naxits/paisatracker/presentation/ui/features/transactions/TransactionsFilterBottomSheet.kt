@@ -63,6 +63,7 @@ fun TransactionsFilterBottomSheet(
     val accountsFilter by viewModel.accountsFilter.collectAsState()
     val currenciesFilter by viewModel.currenciesFilter.collectAsState()
     val typeFilter by viewModel.transactionTypeFilter.collectAsState()
+    val needsReviewFilter by viewModel.needsReviewFilter.collectAsState()
     
     val categoriesMap by viewModel.categories.collectAsState()
     val subcategoriesMap by viewModel.subcategories.collectAsState()
@@ -409,6 +410,32 @@ fun TransactionsFilterBottomSheet(
                                 }
                             }
                         }
+                    }
+
+                    // Review
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Text(
+                        text = stringResource(R.string.filter_review_section),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = Dimensions.Padding.content,
+                            vertical = Spacing.sm
+                        )
+                    ) {
+                        FilterChip(
+                            selected = needsReviewFilter,
+                            onClick = viewModel::toggleNeedsReviewFilter,
+                            label = { Text(stringResource(R.string.filter_needs_review)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        )
                     }
 
                     // Currencies

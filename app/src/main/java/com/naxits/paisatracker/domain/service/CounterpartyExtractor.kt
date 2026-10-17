@@ -19,8 +19,10 @@ data class Counterparty(
  */
 object CounterpartyExtractor {
 
-    // someone@bank, but not an e-mail address (a dot and letters after the part behind the @)
-    private val UPI = Regex("""(?<![A-Za-z0-9._\-])([A-Za-z0-9._\-]{2,})@([A-Za-z][A-Za-z0-9]{1,})(?!\.[A-Za-z])""")
+    // someone@bank, but not an e-mail address: checked right after the @ so a shorter match cannot slip through
+    private val UPI = Regex(
+        """(?<![A-Za-z0-9._\-])([A-Za-z0-9._\-]{2,})@(?![A-Za-z0-9]*\.(?:com|in|org|net|co|edu|gov)(?![A-Za-z0-9]))([A-Za-z][A-Za-z0-9]{1,})"""
+    )
 
     // A mobile number standing on its own: not part of a longer number or an amount
     private val PHONE = Regex("""(?<![\d.,])[6-9]\d{9}(?!\d)""")

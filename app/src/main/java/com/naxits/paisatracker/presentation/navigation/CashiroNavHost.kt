@@ -94,6 +94,7 @@ import com.naxits.paisatracker.presentation.ui.features.lendborrow.LendBorrowScr
 import com.naxits.paisatracker.presentation.ui.features.lendborrow.PersonDetailScreen
 import com.naxits.paisatracker.presentation.ui.features.onboarding.OnBoardingScreen
 import com.naxits.paisatracker.presentation.ui.features.networth.NetWorthScreen
+import com.naxits.paisatracker.presentation.ui.features.parties.PartiesScreen
 import com.naxits.paisatracker.presentation.ui.features.profile.ProfileScreen
 import com.naxits.paisatracker.presentation.ui.features.recurring.RecurringTransactionsScreen
 import com.naxits.paisatracker.presentation.ui.features.settings.SettingsScreen
@@ -368,6 +369,7 @@ fun CashiroNavHost(
                         onNavigateToCategories = { navController.safeNavigate(Categories) },
                         onNavigateToManageAccounts = { navController.safeNavigate(ManageAccounts) },
                         onNavigateToRules = { navController.safeNavigate(Rules) },
+                        onNavigateToParties = { navController.safeNavigate(Parties) },
                         onNavigateToAppearance = { navController.safeNavigate(Appearance) },
                         onNavigateToProfile = { navController.safeNavigate(Profile) },
                         onNavigateToSms = { navController.safeNavigate(SmsSettings) },
@@ -571,6 +573,15 @@ fun CashiroNavHost(
                             navController.safeNavigate(CategoryDetail(name, month.year, month.monthValue))
                         }
                     )
+                }
+
+                composable<Parties>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) {
+                    PartiesScreen(onNavigateBack = { navController.safePopBackStack() })
                 }
 
                 composable<NetWorth>(

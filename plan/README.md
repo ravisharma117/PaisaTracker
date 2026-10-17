@@ -1,6 +1,6 @@
 # Active plan: account metadata, customers/vendors, recurring suggestions, review
 
-Status: **paused** after Phase A (done) and part of Phase B (data layer and core logic done, UI and backup left).
+Status: **paused** after Phases A and B (both built and unit tested; on-device checks pending). Phase C not started.
 Last updated: 2026-10-17.
 
 ## How to resume
@@ -8,9 +8,9 @@ Last updated: 2026-10-17.
 When Ravi says to resume this plan:
 
 1. Read this whole file.
-2. `git checkout feature/parties-review`. It holds Phase A plus the partial Phase B work (see "Branches").
+2. `git checkout feature/parties-review`. It holds Phases A and B (see "Branches"). Phase C starts from here on a new branch.
 3. `git status` and `git log --oneline -5` to confirm the state matches this file.
-4. Carry on from "Phase B: what is left", in the order listed.
+4. Carry on from "Phase C" (or the on-device checks, whichever Ravi asks for).
 5. Ask Ravi questions as clickable multiple-choice options, never as prose.
 
 Standing rules for this project (from `CLAUDE.md` and Ravi's instructions):
@@ -49,7 +49,7 @@ Standing rules for this project (from `CLAUDE.md` and Ravi's instructions):
 
 - `develop`: has the ATM-withdrawal feature merged (merge commit `b994f069`). Nothing from this plan is on `develop` yet.
 - `feature/account-metadata`: **Phase A**, one commit (`feat: account icon, tags and description, and the Himachal bank fix`), branched from `develop`.
-- `feature/parties-review`: **Phase B**, branched from Phase A (it needs the Business tag). Holds the work in progress described below.
+- `feature/parties-review`: **Phase B**, branched from Phase A (it needs the Business tag). Complete, committed, unit tested.
 - Phase C is not started. Branch it from Phase B when ready: `feature/recurring-suggestions`.
 - Merge order when all is verified: A, then B, then C, into `develop`. Nothing has been pushed.
 
@@ -76,30 +76,18 @@ Migration pattern: hand-written `MIGRATION_n_m` in `CashiroDatabase.kt`, SQL cop
 
 **Not yet done for Phase A:** on-device verification (see "On-device checks").
 
-## Phase B: partly done (branch `feature/parties-review`, uncommitted work saved in the WIP commit)
+## Phase B: DONE (branch `feature/parties-review`)
 
-Done and compiling, unit tests still green:
+- Data: `parties` and `transaction_reviews` tables, `transactions.party_id`, database 70 with `MIGRATION_69_70` (SQL checked against `70.json`). Entities `PartyEntity`, `TransactionReviewEntity`, DAOs `PartyDao`, `TransactionReviewDao`.
+- Logic (pure, tested): `CounterpartyExtractor`, `PartyMatcher`, `PartyLearning`, `PartyReviewDetector`, `ReviewActions` (`confirmParty`, `dismiss`), `ReviewService`, `PartyRepository`.
+- SMS saves call `reviewService.onTransactionSaved(...)` after the repayment hook; only Business-tagged accounts get a party review (Unknown is reviewed too).
+- Backups carry `parties` and `transaction_reviews` (replace, merge and selective paths; party and transaction ids remapped on merge; privacy levels strip names and notes). Delete-all-data clears them.
+- Add Transaction: `PartyAutocompleteField` (suggestions while typing, "Add new customer"), shown only for a Business account on income, expense or credit entries; `AddTransactionUseCase.execute(partyId = ...)`.
+- Review UI: red **Review** badge in `TransactionItem` (plain "Review" text in card style) fed by `LocalPendingReviews`; `TransactionPartySection` on the detail screen (both view and edit mode) with suggested value, reason, confidence, Confirm / Change / Dismiss and the audit lines; "Needs review" chip in the transactions filter sheet; Parties screen (add, edit, merge, archive) reachable from Settings.
+- Tests added: `CounterpartyExtractorTest`, `PartyMatcherTest`, `PartyLearningTest`, `PartyReviewDetectorTest`, `ReviewActionsTest`, `PartyRepositoryTest`, `BackupPartiesTest`, with `PartyFakes.kt`. A test caught and fixed an e-mail address being read as a UPI id.
+- At the end of Phase B: 544 app unit tests and the parser-core suite pass; `:app:assembleStandardDebug` builds.
 
-- Entities and DAOs: `PartyEntity`/`PartyDao`, `TransactionReviewEntity`/`TransactionReviewDao`, `TransactionEntity.partyId` (also added to `SanitizationUtils.sanitize()`).
-- DB version 70, `MIGRATION_69_70`, DAO accessors, Hilt providers.
-- `domain/model/Party.kt` (`Party`, `PartyIdentifier` upi/acct, `PartyText`), `CounterpartyExtractor`, `PartyMatcher`, `PartyLearning`, `PartyReviewDetector`, `ReviewActions` (`confirmParty`, `dismiss`), `ReviewService` (singleton wrapper), `PartyRepository` (search, findOrCreate, update, archive, merge).
-- `SmsTransactionProcessor` calls `reviewService.onTransactionSaved(...)` after `repaymentService.onTransactionSaved(...)`.
-
-### Phase B: what is left (in this order)
-
-1. **Backup wiring** (not applied yet). In `data/backup/`:
-   - `BackupModels.kt`: add to `DatabaseSnapshot`, with `emptyList()` defaults: `@SerializedName("parties") val parties: List<PartyEntity>` and `@SerializedName("transaction_reviews") val transactionReviews: List<TransactionReviewEntity>`.
-   - `BackupExporter.createBackup`: export `partyDao().getAll()` (privacy: MASKED drops notes and masks phone; ANONYMOUS renames to "Party <id>" and clears phone, identifiers, aliases, notes) and `transactionReviewDao().getAll()` (FULL only); pass both into `DatabaseSnapshot(...)`.
-   - `BackupImporter`: replace path deletes reviews then parties, upserts parties (ids kept) before transactions and reviews after. Merge and selective paths: new `importPartiesWithMerge` (match by name ignoring case, returns old-id to new-id map), remap `partyId` on inserted and updated transactions (`sanitizedTxn.copy(id = 0, partyId = ...)`, 2 places each in merge and selective), and new `importReviewsWithMerge` (remap transaction and party ids, insert ignoring duplicates). Use `.orEmpty()` on the new lists because Gson leaves absent lists null (the snapshot has required params, so no defaults are applied).
-   - Add `partyDao().deleteAll()` and `transactionReviewDao().deleteAll()` to `SettingsViewModel.deleteAllData` (via repositories).
-2. **Tests for the Phase B logic** (placeholder data only, injectable `now`): `CounterpartyExtractorTest` (UPI id, e-mail not mistaken for UPI, phone only when standalone and not a 12-digit reference, own account ignored), `PartyMatcherTest` (phone, UPI, account, history, name at 80+, ambiguous, archived ignored, Unknown), `PartyLearningTest`, `PartyReviewDetectorTest` (only Business-tagged accounts, only SMS, Unknown gets a review, party stored as suggestion, no duplicate review), `ReviewActionsTest` (confirm, correct to another party, dismiss, learning, audit fields set), `PartyRepositoryTest` (search, findOrCreate, merge). Fake the DAOs with in-memory classes (see `AccountMetaRepositoryTest` / `BankRelabelerTest` for the style).
-3. **Add Transaction customer field (item 6).** New reusable `PartyAutocompleteField` (no autocomplete component exists today; the merchant field in `TransactionTabContent.kt` is a plain `TextField`). Show it only when the selected account's `AccountMeta.isBusiness`. `AddViewModel` keeps typed name and chosen party, resolves with `PartyRepository.findOrCreate` on save, and `AddTransactionUseCase.execute` gets an optional `partyId` stored in `TransactionEntity.partyId`. Show "Add new customer 'X'" when nothing matches.
-4. **Review UI (item 7).**
-   - Red **Review** badge in `TransactionItem` (`SubtitleTag` in `TagComponents.kt` always uses `onSurfaceVariant`, so add a colour parameter; card style uses `ListItemCard` with a joined subtitle, handle that too). Feed it with a `LocalPendingReviews` composition local (a `Set<Long>` from `ReviewService.observePendingTransactionIds()`), provided at the root in `CashiroApp` next to `LocalAccountMeta`, so the six call sites need no change.
-   - Review section on `TransactionDetailScreen` (4000+ lines; add a separate composable): shows the suggested party or Unknown, the reason text, confidence, and Confirm / Change party / Dismiss. Changing party calls `ReviewService.confirmParty(reviewId, newPartyId)`. Also let the party be edited on a transaction that has no review.
-   - "Needs review" filter in `TransactionsFilterBottomSheet` / `TransactionsViewModel`.
-   - Parties screen (list, add, rename, archive, merge) reachable from Settings; needs a navigation route in `CashiroNavHost.kt`.
-5. Run `./gradlew :parser-core:test :app:testStandardDebugUnitTest`, build `:app:assembleStandardDebug`, commit Phase B.
+Still to check by hand for Phase B: the Add screen customer field, the badge, the detail section and the Parties screen on the phone (see "On-device checks").
 
 ## Phase C: not started (branch `feature/recurring-suggestions` from Phase B)
 
@@ -118,7 +106,7 @@ Wireless debugging from earlier dropped. Reconnect with USB (`adb tcpip 5555`, t
 - **Himachal relabel:** snapshot the app database first, install, open the app, snapshot again. Only the one mis-detected account should change (bank name, logo, its transactions, order position). Other accounts unchanged. `scratchpad/inspect_db.py`-style read-only queries work on a copy; the real data must stay local.
 - **Reorder:** move accounts with the arrows, restart the app, check the order persists and the first account stays first.
 - **Tags, description, icon:** set on an account, check card, detail page and that a custom icon beats the bank-name logo; "Use bank logo" resets it.
-- **Business flow (after Phase B UI):** tag an account Business, add a transaction with a new and an existing customer, replay a test SMS to see Unknown or a suggested match with its reason and red badge, correct and confirm.
+- **Business flow:** tag an account Business, add a transaction with a new and an existing customer, replay a test SMS to see Unknown or a suggested match with its reason and red badge, correct and confirm.
 - **Recurring (after Phase C):** replay three monthly test SMS and check the suggestion and badge; run the worker with a backdated review.
 
 ## Things noticed along the way (not part of this plan)

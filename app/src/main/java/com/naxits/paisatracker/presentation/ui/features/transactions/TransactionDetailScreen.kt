@@ -1101,6 +1101,12 @@ private fun TransactionDetailContent(
                     Spacer(modifier = Modifier.height(Spacing.md))
                 }
 
+                TransactionPartySection(
+                    transaction = transaction,
+                    onPartyChanged = viewModel::onPartyChanged,
+                    modifier = Modifier.padding(bottom = Spacing.md)
+                )
+
                 EditableExtractedInfoCard(
                     transaction = transaction,
                     applyToAllFromMerchant = applyToAllFromMerchant,
@@ -1257,6 +1263,12 @@ private fun TransactionDetailContent(
                         )
                     }
                 }
+
+                TransactionPartySection(
+                    transaction = transaction,
+                    onPartyChanged = viewModel::onPartyChanged,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
 
                 Spacer(modifier = Modifier.height(300.dp)) // for better scroll
             }

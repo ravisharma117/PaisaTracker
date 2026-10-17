@@ -55,4 +55,6 @@ class ReviewService @Inject constructor(
     suspend fun confirmParty(reviewId: Long, partyId: Long? = null): Boolean = actions.confirmParty(reviewId, partyId)
 
     suspend fun dismiss(reviewId: Long): Boolean = actions.dismiss(reviewId)
+
+    suspend fun deleteAll() = reviewDao.deleteAll()
 }

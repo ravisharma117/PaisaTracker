@@ -196,6 +196,8 @@ data class Transactions(
 
 @Serializable object NetWorth
 
+@Serializable object Parties
+
 @Serializable data class CategoryDetail(val categoryName: String, val year: Int, val month: Int)
 
 @Serializable object Analytics

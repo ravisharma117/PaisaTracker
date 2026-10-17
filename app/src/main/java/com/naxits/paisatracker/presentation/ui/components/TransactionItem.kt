@@ -58,6 +58,7 @@ import com.naxits.paisatracker.utils.formatAmount
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import androidx.core.graphics.toColorInt
+import com.naxits.paisatracker.presentation.common.LocalPendingReviews
 import com.naxits.paisatracker.presentation.ui.icons.Calendar
 import com.naxits.paisatracker.presentation.ui.icons.DocumentText2
 import com.naxits.paisatracker.presentation.ui.icons.Paperclip2
@@ -238,6 +239,10 @@ fun SharedTransitionScope.TransactionItem(
         }
     }
 
+    // Something the app worked out about this entry is waiting for the user
+    val needsReview = transaction != null && transaction.id in LocalPendingReviews.current
+    val reviewStr = stringResource(R.string.review_badge)
+
     // Build subtitle parts
     val recurringStr = stringResource(R.string.recurring)
     val balanceAfterStr = balanceAfter?.let { balance ->
@@ -248,9 +253,12 @@ fun SharedTransitionScope.TransactionItem(
         defaultSubtitle,
         isRecurring,
         recurringStr,
-        balanceAfterStr
+        balanceAfterStr,
+        needsReview,
+        reviewStr
     ) {
         val parts = buildList {
+            if (needsReview) add(reviewStr)
             if (subtitleOverride != null) {
                 add(subtitleOverride)
             } else {
@@ -320,6 +328,18 @@ fun SharedTransitionScope.TransactionItem(
                             },
                             text = defaultSubtitle,
                             color = dateTagColor,
+                        )
+                        needsSeparator = true
+                    }
+
+                    // Review Tag
+                    if (needsReview) {
+                        TagSeparator()
+                        SubtitleTag(
+                            text = reviewStr,
+                            color = MaterialTheme.colorScheme.error,
+                            alpha = 0.15f,
+                            textColor = MaterialTheme.colorScheme.error
                         )
                         needsSeparator = true
                     }

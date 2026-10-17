@@ -179,6 +179,8 @@ class BackupImporter @Inject constructor(
                 database.cardDao().deleteAllCards()
                 database.accountBalanceDao().deleteAllBalances()
                 database.accountMetaDao().deleteAll()
+                database.transactionReviewDao().deleteAll()
+                database.partyDao().deleteAll()
                 database.subscriptionDao().deleteAllSubscriptions()
                 database.merchantMappingDao().deleteAllMappings()
                 database.unrecognizedSmsDao().deleteAll()
@@ -205,10 +207,15 @@ class BackupImporter @Inject constructor(
                     importedCategories++
                 }
                 
+                // Parties keep their ids, so the transactions that point at them line up as saved
+                database.partyDao().upsertAll(backup.database.parties.orEmpty())
+
                 backup.database.transactions.forEach { transaction ->
                     database.transactionDao().insertTransaction(transaction.sanitize())
                     importedTransactions++
                 }
+
+                database.transactionReviewDao().upsertAll(backup.database.transactionReviews.orEmpty())
                 
                 backup.database.cards.forEach { card ->
                     database.cardDao().insertCard(card.sanitize())
@@ -368,6 +375,9 @@ class BackupImporter @Inject constructor(
                     }
                 }
                 
+                // Customers and vendors are matched by name; transactions are pointed at the local copy
+                val partyIdMap = importPartiesWithMerge(backup.database.parties.orEmpty())
+
                 // Mapping to track OldTransactionID -> NewTransactionID for rule applications
                 val transactionIdMap = mutableMapOf<Long, Long>()
 
@@ -377,7 +387,7 @@ class BackupImporter @Inject constructor(
                     val existingTxn = existingTransactionsMap[sanitizedTxn.transactionHash]
                     if (existingTxn == null) {
                         // New transaction, insert it
-                        val newTransaction = sanitizedTxn.copy(id = 0)
+                        val newTransaction = sanitizedTxn.copy(id = 0, partyId = sanitizedTxn.partyId?.let { partyIdMap[it] })
                         val newId = database.transactionDao().insertTransaction(newTransaction)
                         transactionIdMap[sanitizedTxn.id] = newId
                         importedTransactions++
@@ -404,7 +414,7 @@ class BackupImporter @Inject constructor(
                         }
  
                         if (shouldUpdate) {
-                            val updatedTxn = sanitizedTxn.copy(id = existingTxn.id)
+                            val updatedTxn = sanitizedTxn.copy(id = existingTxn.id, partyId = sanitizedTxn.partyId?.let { partyIdMap[it] })
                             database.transactionDao().updateTransaction(updatedTxn)
                             importedTransactions++
                         } else {
@@ -413,6 +423,8 @@ class BackupImporter @Inject constructor(
                     }
                 }
                 
+                importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
+
                 // Import rules (merge by name/ID)
                 backup.database.rules.forEach { rule ->
                     database.ruleDao().insertRule(rule)
@@ -528,6 +540,9 @@ class BackupImporter @Inject constructor(
                     }
                 }
 
+                val partyIdMap = if (filter.includeTransactions) {
+                    importPartiesWithMerge(backup.database.parties.orEmpty())
+                } else emptyMap()
                 val transactionIdMap = mutableMapOf<Long, Long>()
 
                 if (filter.includeTransactions) {
@@ -535,7 +550,7 @@ class BackupImporter @Inject constructor(
                         val sanitizedTxn = backupTxn.sanitize()
                         val existingTxn = existingTransactionsMap[sanitizedTxn.transactionHash]
                         if (existingTxn == null) {
-                            val newTransaction = sanitizedTxn.copy(id = 0)
+                            val newTransaction = sanitizedTxn.copy(id = 0, partyId = sanitizedTxn.partyId?.let { partyIdMap[it] })
                             val newId = database.transactionDao().insertTransaction(newTransaction)
                             transactionIdMap[sanitizedTxn.id] = newId
                             importedTransactions++
@@ -548,7 +563,7 @@ class BackupImporter @Inject constructor(
                                 else -> false
                             }
                             if (shouldUpdate) {
-                                val updatedTxn = sanitizedTxn.copy(id = existingTxn.id)
+                                val updatedTxn = sanitizedTxn.copy(id = existingTxn.id, partyId = sanitizedTxn.partyId?.let { partyIdMap[it] })
                                 database.transactionDao().updateTransaction(updatedTxn)
                                 importedTransactions++
                             } else {
@@ -556,6 +571,10 @@ class BackupImporter @Inject constructor(
                             }
                         }
                     }
+                }
+
+                if (filter.includeTransactions) {
+                    importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
                 }
 
                 if (filter.includeRules) {
@@ -640,6 +659,38 @@ class BackupImporter @Inject constructor(
         }
     }
     
+    /**
+     * Customers and vendors already on this device (same name, ignoring case) are reused; the
+     * rest are added. Returns the backup's party ids mapped to the ids they have here.
+     */
+    private suspend fun importPartiesWithMerge(parties: List<PartyEntity>): Map<Long, Long> {
+        val existing = database.partyDao().getAll()
+        val idMap = mutableMapOf<Long, Long>()
+        parties.forEach { party ->
+            val local = existing.firstOrNull { it.name.equals(party.name, ignoreCase = true) }
+            idMap[party.id] = local?.id ?: database.partyDao().insert(party.copy(id = 0))
+        }
+        return idMap
+    }
+
+    /** Adds reviews for transactions that were imported, keeping any review already on this device. */
+    private suspend fun importReviewsWithMerge(
+        reviews: List<TransactionReviewEntity>,
+        transactionIdMap: Map<Long, Long>,
+        partyIdMap: Map<Long, Long>
+    ) {
+        reviews.forEach { review ->
+            val newTransactionId = transactionIdMap[review.transactionId] ?: return@forEach
+            database.transactionReviewDao().insert(
+                review.copy(
+                    id = 0,
+                    transactionId = newTransactionId,
+                    suggestedPartyId = review.suggestedPartyId?.let { partyIdMap[it] }
+                )
+            )
+        }
+    }
+
     /** Keeps the notes already on this device; adds the ones for accounts that have none yet. */
     private suspend fun importAccountMetaWithMerge(metas: List<AccountMetaEntity>) {
         metas.forEach { meta ->

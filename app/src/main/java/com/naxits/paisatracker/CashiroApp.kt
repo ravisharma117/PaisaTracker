@@ -17,7 +17,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.naxits.paisatracker.presentation.common.LocalPendingReviews
 import com.naxits.paisatracker.presentation.common.icons.LocalAccountMeta
+import com.naxits.paisatracker.presentation.ui.features.transactions.ReviewsViewModel
 import com.naxits.paisatracker.presentation.navigation.AppLock
 import com.naxits.paisatracker.presentation.ui.features.accounts.AccountMetaViewModel
 import com.naxits.paisatracker.presentation.navigation.Home
@@ -35,6 +37,7 @@ fun CashiroApp(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     appLockViewModel: AppLockViewModel = hiltViewModel(),
     accountMetaViewModel: AccountMetaViewModel = hiltViewModel(),
+    reviewsViewModel: ReviewsViewModel = hiltViewModel(),
     editTransactionId: Long? = null,
     onEditComplete: () -> Unit = {},
     addTransactionTab: Int? = null,
@@ -44,6 +47,7 @@ fun CashiroApp(
     val themeUiState by themeViewModel.themeUiState.collectAsStateWithLifecycle()
     val appLockUiState by appLockViewModel.uiState.collectAsStateWithLifecycle()
     val accountMeta by accountMetaViewModel.meta.collectAsStateWithLifecycle()
+    val pendingReviews by reviewsViewModel.pendingTransactionIds.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val darkTheme = themeUiState.isDarkTheme ?: isSystemInDarkTheme()
@@ -114,7 +118,10 @@ fun CashiroApp(
         appFont = themeUiState.appFont,
         blurEffects = themeUiState.blurEffects
     ) {
-        CompositionLocalProvider(LocalAccountMeta provides accountMeta) {
+        CompositionLocalProvider(
+            LocalAccountMeta provides accountMeta,
+            LocalPendingReviews provides pendingReviews
+        ) {
             CashiroNavHost(
                 navController = navController,
                 startDestination = startDestination,

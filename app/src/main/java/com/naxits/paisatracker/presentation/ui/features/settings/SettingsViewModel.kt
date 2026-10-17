@@ -80,6 +80,8 @@ class SettingsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
     private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
+    private val partyRepository: com.naxits.paisatracker.data.repository.PartyRepository,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
     private val cardRepository: CardRepository,
     private val budgetRepository: BudgetRepository,
     private val subscriptionRepository: SubscriptionRepository,
@@ -1093,6 +1095,8 @@ class SettingsViewModel @Inject constructor(
                 transactionRepository.deleteAllTransactions()
                 accountBalanceRepository.deleteAllBalances()
                 accountMetaRepository.deleteAll()
+                reviewService.deleteAll()
+                partyRepository.deleteAll()
                 budgetRepository.deleteAllBudgets()
                 subscriptionRepository.deleteAllSubscriptions()
                 cardRepository.deleteAllCards()
