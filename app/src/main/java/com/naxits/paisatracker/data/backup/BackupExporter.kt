@@ -178,6 +178,10 @@ class BackupExporter @Inject constructor(
         val transactionReviews = if (config.includeTransactionalData && config.privacy == ExportPrivacy.FULL) {
             database.transactionReviewDao().getAll()
         } else emptyList()
+        // Pattern keys hold merchant names, UPI ids and account digits, so only a full export keeps them
+        val categoryPatterns = if (config.includeTransactionalData && config.privacy == ExportPrivacy.FULL) {
+            database.categoryPatternDao().getAll()
+        } else emptyList()
         val subscriptions = if (config.includeBudgets) database.subscriptionDao().getAllSubscriptions().first() else emptyList()
         val merchantMappings = if (config.includeProfileData) database.merchantMappingDao().getAllMappings().first() else emptyList()
         val unrecognizedSms = if (config.includeTransactionalData) database.unrecognizedSmsDao().getAllUnrecognizedSms().first() else emptyList()
@@ -298,6 +302,7 @@ class BackupExporter @Inject constructor(
                 accountMeta = accountMeta,
                 parties = parties,
                 transactionReviews = transactionReviews,
+                categoryPatterns = categoryPatterns,
                 subscriptions = subscriptions,
                 merchantMappings = merchantMappings,
                 unrecognizedSms = if (config.privacy == ExportPrivacy.FULL) unrecognizedSms else emptyList(),

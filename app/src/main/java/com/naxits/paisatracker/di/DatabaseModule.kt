@@ -90,7 +90,8 @@ object DatabaseModule {
                     CashiroDatabase.MIGRATION_66_67,
                     CashiroDatabase.MIGRATION_67_68,
                     CashiroDatabase.MIGRATION_68_69,
-                    CashiroDatabase.MIGRATION_69_70
+                    CashiroDatabase.MIGRATION_69_70,
+                    CashiroDatabase.MIGRATION_70_71
                 )
 
                 // Enable auto-migrations
@@ -314,6 +315,12 @@ object DatabaseModule {
     @Singleton
     fun provideTransactionReviewDao(database: CashiroDatabase): com.naxits.paisatracker.data.database.dao.TransactionReviewDao {
         return database.transactionReviewDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCategoryPatternDao(database: CashiroDatabase): com.naxits.paisatracker.data.database.dao.CategoryPatternDao {
+        return database.categoryPatternDao()
     }
 
     @Provides

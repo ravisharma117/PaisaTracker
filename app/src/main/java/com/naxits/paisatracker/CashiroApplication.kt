@@ -9,6 +9,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.naxits.paisatracker.data.manager.AtmWithdrawalBackfill
 import com.naxits.paisatracker.data.manager.BankRelabelBackfill
+import com.naxits.paisatracker.data.manager.ReviewAutoConfirmScheduler
 import com.naxits.paisatracker.data.repository.AppLockRepository
 import com.naxits.paisatracker.data.webhook.WebhookSyncScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -36,6 +37,9 @@ class CashiroApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var bankRelabelBackfill: BankRelabelBackfill
+
+    @Inject
+    lateinit var reviewAutoConfirmScheduler: ReviewAutoConfirmScheduler
 
     // Route any unhandled coroutine exception to the CrashHandler so the crash screen
     // appears even when the crash originates inside a coroutine (which normally bypasses
@@ -104,6 +108,11 @@ class CashiroApplication : Application(), Configuration.Provider {
             } catch (e: Exception) {
                 Log.e("CashiroApplication", "Error renaming accounts saved under the wrong bank", e)
             }
+        }
+        try {
+            reviewAutoConfirmScheduler.schedule()
+        } catch (e: Exception) {
+            Log.e("CashiroApplication", "Error scheduling the daily review check", e)
         }
     }
 

@@ -1106,6 +1106,11 @@ private fun TransactionDetailContent(
                     onPartyChanged = viewModel::onPartyChanged,
                     modifier = Modifier.padding(bottom = Spacing.md)
                 )
+                TransactionCategoryReviewSection(
+                    transaction = transaction,
+                    onChangeCategory = onCategoryClick,
+                    modifier = Modifier.padding(bottom = Spacing.md)
+                )
 
                 EditableExtractedInfoCard(
                     transaction = transaction,
@@ -1267,6 +1272,11 @@ private fun TransactionDetailContent(
                 TransactionPartySection(
                     transaction = transaction,
                     onPartyChanged = viewModel::onPartyChanged,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+                TransactionCategoryReviewSection(
+                    transaction = transaction,
+                    onChangeCategory = viewModel::enterEditMode,
                     modifier = Modifier.padding(top = Spacing.md)
                 )
 

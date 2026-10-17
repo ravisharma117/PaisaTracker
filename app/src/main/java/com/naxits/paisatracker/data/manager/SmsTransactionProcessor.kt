@@ -206,7 +206,11 @@ class SmsTransactionProcessor @Inject constructor(
                     subscriptionRepository.linkPaymentTransaction(matchedSubscription.id, settledDueDate, rowId)
                 }
                 repaymentService.onTransactionSaved(rowId, finalEntityForInsert)
-                reviewService.onTransactionSaved(rowId, finalEntityForInsert)
+                reviewService.onTransactionSaved(
+                    rowId,
+                    finalEntityForInsert,
+                    categoryChosenByUser = customCategory != null || ruleApplications.isNotEmpty()
+                )
                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntityForInsert.isRecurring) " (Recurring)" else ""}")
 
                 // Save rule applications if any rules were applied

@@ -181,7 +181,11 @@ data class DatabaseSnapshot(
 
     // The audit trail of suggestions and how each was settled
     @SerializedName("transaction_reviews")
-    val transactionReviews: List<com.naxits.paisatracker.data.database.entity.TransactionReviewEntity> = emptyList()
+    val transactionReviews: List<com.naxits.paisatracker.data.database.entity.TransactionReviewEntity> = emptyList(),
+
+    // What the user files each counterparty under; absent in backups made before suggestions existed
+    @SerializedName("category_patterns")
+    val categoryPatterns: List<com.naxits.paisatracker.data.database.entity.CategoryPatternEntity> = emptyList()
 )
 
 data class WebhookProfileBackup(

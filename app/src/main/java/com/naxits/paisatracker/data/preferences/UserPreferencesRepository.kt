@@ -101,6 +101,8 @@ constructor(@ApplicationContext private val context: Context) {
         val IS_SAMPLE_DATA_SEEDED = booleanPreferencesKey("is_sample_data_seeded")
         // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
+        // How far an amount may differ, in tenths of a percent, for entries to count as a series
+        val RECURRING_TOLERANCE_TENTHS = intPreferencesKey("recurring_tolerance_tenths")
         // Set once accounts the SMS parser labelled with the wrong bank have been renamed
         // (v2: also covers transactions that have no account row of their own)
         val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_v2_done")
@@ -651,6 +653,18 @@ constructor(@ApplicationContext private val context: Context) {
 
     suspend fun setLendRemindersEnabled(enabled: Boolean) {
         context.dataStore.edit { it[PreferencesKeys.LEND_REMINDERS_ENABLED] = enabled }
+    }
+
+    /** How far an amount may differ (in tenths of a percent, 100 is 10%) for entries to count as one series. */
+    val recurringToleranceTenths: Flow<Int> =
+            context.dataStore.data.map {
+                it[PreferencesKeys.RECURRING_TOLERANCE_TENTHS]
+                    ?.takeIf { value -> value in com.naxits.paisatracker.domain.service.RecurringPatternDetector.TOLERANCE_CHOICES_TENTHS }
+                    ?: com.naxits.paisatracker.domain.service.RecurringPatternDetector.DEFAULT_TOLERANCE_TENTHS
+            }
+
+    suspend fun setRecurringToleranceTenths(tenths: Int) {
+        context.dataStore.edit { it[PreferencesKeys.RECURRING_TOLERANCE_TENTHS] = tenths }
     }
 
     /** Notifications for strong possible-repayment matches. Off until the user turns them on. */

@@ -1744,4 +1744,10 @@
         <item quantity="one">%1$d transaction</item>
         <item quantity="other">%1$d transactions</item>
     </plurals>
+    <string name="category_review_title">Category</string>
+    <string name="recurring_suggestions_title">Recurring suggestions</string>
+    <string name="recurring_tolerance_subtitle">Amounts may differ by %1$s</string>
+    <string name="recurring_tolerance_explain">A new entry is suggested the category you used before when it matches an earlier series: same customer, account or payee, a regular rhythm such as monthly, and an amount within this range.</string>
+    <string name="recurring_tolerance_option">%1$s</string>
+    <string name="cancel_lbl">Cancel</string>
 </resources>

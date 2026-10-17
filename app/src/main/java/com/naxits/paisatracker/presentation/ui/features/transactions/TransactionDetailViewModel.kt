@@ -73,6 +73,7 @@ class TransactionDetailViewModel @Inject constructor(
     private val getLendBorrowEntryForTransactionUseCase: GetLendBorrowEntryForTransactionUseCase,
     private val markTransactionAsLoanUseCase: MarkTransactionAsLoanUseCase,
     private val unmarkTransactionAsLoanUseCase: UnmarkTransactionAsLoanUseCase,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
     val attachmentService: AttachmentService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -756,6 +757,14 @@ class TransactionDetailViewModel @Inject constructor(
 
                 // Sync with subscriptions if recurring
                 syncSubscriptionForTransaction(normalizedTransaction)
+
+                // A category the user chose is remembered for the next entry in the series, and
+                // settles a suggestion that was waiting for them
+                val categoryChanged = originalTransaction?.let {
+                    !it.category.equals(normalizedTransaction.category, ignoreCase = true) ||
+                        it.subcategory != normalizedTransaction.subcategory
+                } ?: false
+                if (categoryChanged) reviewService.userCategorised(normalizedTransaction)
 
                 // Save merchant mapping if checkbox is checked
                 if (state.applyToAllFromMerchant) {

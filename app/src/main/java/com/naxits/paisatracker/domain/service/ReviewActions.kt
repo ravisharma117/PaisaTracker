@@ -55,13 +55,19 @@ class ReviewActions(
     suspend fun dismiss(reviewId: Long): Boolean {
         val review = reviewDao.getById(reviewId) ?: return false
         if (!review.isPending) return false
-        val current = transactionById(review.transactionId)?.partyId?.let { partyDao.getById(it) }
+        val transaction = transactionById(review.transactionId)
+        // What the entry holds right now, which dismissing leaves as it is
+        val current = if (review.kind == ReviewKind.CATEGORY) {
+            transaction?.category
+        } else {
+            transaction?.partyId?.let { partyDao.getById(it) }?.name
+        }
         reviewDao.update(
             review.copy(
                 status = ReviewStatus.DISMISSED,
                 resolvedAt = now(),
                 resolvedBy = ReviewResolvedBy.MANUAL,
-                resolvedValue = current?.name ?: PartyReviewDetector.UNKNOWN
+                resolvedValue = current ?: PartyReviewDetector.UNKNOWN
             )
         )
         return true

@@ -92,4 +92,35 @@ class BackupPartiesTest {
         assertEquals("parties", key("parties"))
         assertEquals("transaction_reviews", key("transactionReviews"))
     }
+
+    @Test
+    fun learnedCategoriesSurviveAnExportAndImport() {
+        val patterns = listOf(
+            com.naxits.paisatracker.data.database.entity.CategoryPatternEntity(
+                patternKey = "party:3", type = "INCOME", category = "Salary", subcategory = "Monthly", count = 4,
+                lastAmount = BigDecimal("50000.00"), lastDate = LocalDateTime.of(2026, 3, 1, 9, 0),
+                updatedAt = LocalDateTime.of(2026, 3, 2, 10, 0)
+            )
+        )
+
+        val restored: List<com.naxits.paisatracker.data.database.entity.CategoryPatternEntity> =
+            gson.fromJson(
+                gson.toJson(patterns),
+                object : TypeToken<List<com.naxits.paisatracker.data.database.entity.CategoryPatternEntity>>() {}.type
+            )
+
+        assertEquals(patterns, restored)
+    }
+
+    @Test
+    fun aBackupMadeBeforeSuggestionsExistedImportsAsNoPatterns() {
+        val snapshot = gson.fromJson("{}", DatabaseSnapshot::class.java)
+
+        assertTrue(snapshot.categoryPatterns.orEmpty().isEmpty())
+        assertEquals(
+            "category_patterns",
+            DatabaseSnapshot::class.java.getDeclaredField("categoryPatterns")
+                .getAnnotation(SerializedName::class.java)?.value
+        )
+    }
 }

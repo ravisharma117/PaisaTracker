@@ -180,6 +180,7 @@ class BackupImporter @Inject constructor(
                 database.accountBalanceDao().deleteAllBalances()
                 database.accountMetaDao().deleteAll()
                 database.transactionReviewDao().deleteAll()
+                database.categoryPatternDao().deleteAll()
                 database.partyDao().deleteAll()
                 database.subscriptionDao().deleteAllSubscriptions()
                 database.merchantMappingDao().deleteAllMappings()
@@ -216,6 +217,7 @@ class BackupImporter @Inject constructor(
                 }
 
                 database.transactionReviewDao().upsertAll(backup.database.transactionReviews.orEmpty())
+                database.categoryPatternDao().upsertAll(backup.database.categoryPatterns.orEmpty())
                 
                 backup.database.cards.forEach { card ->
                     database.cardDao().insertCard(card.sanitize())
@@ -424,6 +426,7 @@ class BackupImporter @Inject constructor(
                 }
                 
                 importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
+                importPatternsWithMerge(backup.database.categoryPatterns.orEmpty(), partyIdMap)
 
                 // Import rules (merge by name/ID)
                 backup.database.rules.forEach { rule ->
@@ -575,6 +578,7 @@ class BackupImporter @Inject constructor(
 
                 if (filter.includeTransactions) {
                     importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
+                    importPatternsWithMerge(backup.database.categoryPatterns.orEmpty(), partyIdMap)
                 }
 
                 if (filter.includeRules) {
@@ -671,6 +675,25 @@ class BackupImporter @Inject constructor(
             idMap[party.id] = local?.id ?: database.partyDao().insert(party.copy(id = 0))
         }
         return idMap
+    }
+
+    /**
+     * Adds the learned categories this device does not have yet. A pattern about a customer is keyed
+     * by that customer's id, so the id is mapped to the one it has here (and dropped if unknown).
+     */
+    private suspend fun importPatternsWithMerge(patterns: List<CategoryPatternEntity>, partyIdMap: Map<Long, Long>) {
+        patterns.forEach { pattern ->
+            val key = if (pattern.patternKey.startsWith("party:")) {
+                val newId = pattern.patternKey.removePrefix("party:").toLongOrNull()?.let { partyIdMap[it] }
+                    ?: return@forEach
+                "party:$newId"
+            } else {
+                pattern.patternKey
+            }
+            if (database.categoryPatternDao().get(key, pattern.type) == null) {
+                database.categoryPatternDao().upsert(pattern.copy(patternKey = key))
+            }
+        }
     }
 
     /** Adds reviews for transactions that were imported, keeping any review already on this device. */

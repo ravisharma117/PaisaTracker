@@ -93,9 +93,10 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class,
             com.naxits.paisatracker.data.database.entity.AccountMetaEntity::class,
             com.naxits.paisatracker.data.database.entity.PartyEntity::class,
-            com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class
+            com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class,
+            com.naxits.paisatracker.data.database.entity.CategoryPatternEntity::class
         ],
-        version = 70,
+        version = 71,
     exportSchema = true,
     autoMigrations =
         [
@@ -151,6 +152,7 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun accountRenameDao(): com.naxits.paisatracker.data.database.dao.AccountRenameDao
     abstract fun partyDao(): com.naxits.paisatracker.data.database.dao.PartyDao
     abstract fun transactionReviewDao(): com.naxits.paisatracker.data.database.dao.TransactionReviewDao
+    abstract fun categoryPatternDao(): com.naxits.paisatracker.data.database.dao.CategoryPatternDao
 
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -684,6 +686,16 @@ MIGRATION_55_56,
                             datetime('now'), datetime('now')
                         )
                         """.trimIndent()
+                    )
+                }
+            }
+
+        val MIGRATION_70_71 =
+            object : Migration(70, 71) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // The category the user files each counterparty under, for suggesting it next time (copied from the exported schema 71)
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `category_patterns` (`pattern_key` TEXT NOT NULL, `type` TEXT NOT NULL, `category` TEXT NOT NULL, `subcategory` TEXT, `count` INTEGER NOT NULL DEFAULT 1, `last_amount` TEXT NOT NULL, `last_date` TEXT NOT NULL, `updated_at` TEXT NOT NULL, PRIMARY KEY(`pattern_key`, `type`))"
                     )
                 }
             }

@@ -140,6 +140,7 @@ fun SettingsScreen(
     val downloadState = uiState.downloadStatus
     val downloadProgress = uiState.downloadProgress
     val totalTransactionsCount by settingsViewModel.totalTransactions.collectAsStateWithLifecycle()
+    val recurringTolerance by settingsViewModel.recurringToleranceTenths.collectAsStateWithLifecycle()
     val googleDriveEmail by settingsViewModel.googleDriveEmail.collectAsStateWithLifecycle()
     val userPreferences by settingsViewModel.userPreferences.collectAsStateWithLifecycle(initialValue = null)
     val isWebhookModeEnabled = userPreferences?.isWebhookModeEnabled == true
@@ -830,6 +831,12 @@ fun SettingsScreen(
                         onClick = { onNavigateToParties() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
+                    )
+
+                    // Recurring suggestions
+                    RecurringToleranceRow(
+                        tenths = recurringTolerance,
+                        onSelect = settingsViewModel::setRecurringTolerance
                     )
 
                     // Data Privacy

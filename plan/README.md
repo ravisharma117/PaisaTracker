@@ -1,6 +1,6 @@
 # Active plan: account metadata, customers/vendors, recurring suggestions, review
 
-Status: **paused** after Phases A and B (both built and unit tested; on-device checks pending). Phase C not started.
+Status: **all three phases built and unit tested; waiting on Ravi's hand checks on the phone, then merge.**
 Last updated: 2026-10-17.
 
 ## How to resume
@@ -8,9 +8,9 @@ Last updated: 2026-10-17.
 When Ravi says to resume this plan:
 
 1. Read this whole file.
-2. `git checkout feature/parties-review`. It holds Phases A and B (see "Branches"). Phase C starts from here on a new branch.
+2. `git checkout feature/recurring-suggestions`. It holds all three phases (see "Branches").
 3. `git status` and `git log --oneline -5` to confirm the state matches this file.
-4. Carry on from "Phase C" (or the on-device checks, whichever Ravi asks for).
+4. Carry on from "On-device checks" and "Finish line"; fix whatever Ravi finds.
 5. Ask Ravi questions as clickable multiple-choice options, never as prose.
 
 Standing rules for this project (from `CLAUDE.md` and Ravi's instructions):
@@ -50,8 +50,8 @@ Standing rules for this project (from `CLAUDE.md` and Ravi's instructions):
 - `develop`: has the ATM-withdrawal feature merged (merge commit `b994f069`). Nothing from this plan is on `develop` yet.
 - `feature/account-metadata`: **Phase A**, one commit (`feat: account icon, tags and description, and the Himachal bank fix`), branched from `develop`.
 - `feature/parties-review`: **Phase B**, branched from Phase A (it needs the Business tag). Complete, committed, unit tested.
-- Phase C is not started. Branch it from Phase B when ready: `feature/recurring-suggestions`.
-- Merge order when all is verified: A, then B, then C, into `develop`. Nothing has been pushed.
+- `feature/recurring-suggestions`: **Phase C**, branched from Phase B. Complete, committed, unit tested.
+- Merge order when all is verified: A, then B, then C, into `develop` (each branch contains the one before, so merging C alone brings all three). Nothing has been pushed.
 
 ## Database versions
 
@@ -89,15 +89,18 @@ Migration pattern: hand-written `MIGRATION_n_m` in `CashiroDatabase.kt`, SQL cop
 
 Still to check by hand for Phase B: the Add screen customer field, the badge, the detail section and the Parties screen on the phone (see "On-device checks").
 
-## Phase C: not started (branch `feature/recurring-suggestions` from Phase B)
+## Phase C: DONE (branch `feature/recurring-suggestions`)
 
-Design is in the data model table above. Summary:
-
-1. **Learning.** When the user changes a category (`TransactionDetailViewModel.saveChanges`) or confirms a CATEGORY review, write a `category_patterns` row keyed by party, counterparty identifier or normalised merchant, plus transaction type.
-2. **`RecurringPatternDetector.suggest(new, patterns, history, now, tolerance)`**, pure. Combine: same party/identifier, description or reference similarity, recurring interval (weekly, monthly, quarterly, yearly with a few days of slack), amount within tolerance. Needs at least 2 earlier matches and a score above a threshold; otherwise suggest nothing and keep the parser category. Tolerance default 10%, setting 5 / 7.5 / 10% in `UserPreferencesRepository` and Settings.
-3. **Applying it.** In `SmsTransactionProcessor` after rules and merchant mappings (an explicit user mapping or rule always wins and needs no review): set the category and file a CATEGORY review (PENDING) with a plain-words reason such as "3 earlier monthly payments to this account, amounts within 8%, categorised Salary". The `transaction_reviews` table already has `suggested_subcategory` for this.
-4. **Auto-confirm (item 9).** Pure `ReviewAutoConfirmer.run(now)`: PENDING reviews created at or before `now - 3 months` become `AUTO_CONFIRMED` (`resolved_by = AUTO_3M`, `resolved_value` = suggested value); the transaction's category is not changed. `TransactionReviewDao.getPendingCreatedOnOrBefore` already exists. A daily `@HiltWorker` plus a scheduler copied from `WebhookSyncScheduler` (unique periodic work, `ExistingPeriodicWorkPolicy.UPDATE`), started from `CashiroApplication.onCreate`. Review history UI shows manual and automatic resolutions.
-5. Tests: monthly salary, vendor in another category, amounts inside and outside tolerance, irregular interval, single earlier match (no suggestion), auto-confirm just under and just over 3 months, category unchanged, both resolution types kept.
+- Data: `category_patterns` table (database 71, `MIGRATION_70_71`, SQL checked against `71.json`), `CategoryPatternEntity`, `CategoryPatternDao` (also holds the three history queries and `setCategory`, so no existing DAO fake changed).
+- Pure logic: `PatternKeys` (party, upi, acct, phone, merchant keys), `RecurringPatternDetector` (identity 40 or 25, amount up to 25, rhythm 15 plus 10 when steady, wording up to 10; needs 2 earlier entries, a regular period, at least one close amount, score 70+), `RecurrencePeriod` (weekly, fortnightly, monthly, quarterly, yearly with slack for moving pay days).
+- Services: `CategorySuggester` (applies the remembered category and files a CATEGORY review with a plain-words reason; skipped when a rule or saved merchant choice set the category, when the entry already has that category, or when unsure), `CategoryLearner` (learns on user categorisation or confirmation, settles a waiting suggestion), `ReviewAutoConfirmer` (pending reviews 3 months old become `AUTO_CONFIRMED` with `resolved_by = AUTO_3M`; the transaction is never touched), all wired through `ReviewService`.
+- Hooks: `SmsTransactionProcessor` passes `categoryChosenByUser`; `AddViewModel` and `TransactionDetailViewModel.saveChanges` call `reviewService.userCategorised(...)`.
+- Daily check: `ReviewAutoConfirmWorker` + `ReviewAutoConfirmScheduler` (unique periodic work, started in `CashiroApplication.onCreate`).
+- UI: `TransactionCategoryReviewSection` on the detail screen (suggestion, reason, confidence, Confirm / Change / Dismiss, history lines); Settings row "Recurring suggestions" (`RecurringToleranceRow`) to pick 5, 7.5 or 10% (default 10%).
+- Backups carry `category_patterns` (full export only; `party:<id>` keys are remapped on merge). Delete-all-data clears reviews and patterns.
+- Tests added: `RecurringPatternDetectorTest`, `CategorySuggesterTest`, `CategoryLearnerTest`, `ReviewAutoConfirmerTest`, `RecurringToleranceTest`, backup cases, a dismiss-category case, with `PatternFakes.kt`.
+- Also fixed a latent race found by the test run: delete and undo of a non-transfer entry both stamped their balance row with `now()`, so two in the same instant tied (and could be refused by the unique account and time index). They now stamp strictly after the latest row (`TransactionRepository.stampAfter`). `AddTransactionUseCaseTest` had been failing about half the runs; it passed 6 of 6 afterwards.
+- At the end of Phase C: 593 app unit tests and the parser-core suite pass.
 
 ## On-device checks
 
@@ -113,7 +116,8 @@ Installed on Ravi's phone (model `21091116I`) over USB on 2026-10-17 from `featu
 - **Himachal logo:** the account card shows the "HP / COOP BANK" monogram.
 - **Business flow:** tag an account Business, add a transaction with a new and an existing customer (autocomplete), and look at the detail screen and the Parties screen under Settings.
 - **Review flow:** replay a test SMS on the Business account to see Unknown or a suggested match with its reason and the red badge, then confirm, change and dismiss; try the "Needs review" filter.
-- **Recurring (after Phase C):** replay three monthly test SMS and check the suggestion and badge; run the worker with a backdated review.
+- **Recurring suggestions:** categorise a monthly entry yourself (for example salary) three times, then replay a fourth monthly test SMS with a similar amount: it should arrive in that category with a red Review badge and a reason; Confirm, Change and Dismiss should each settle it. Settings, Recurring suggestions should offer 5, 7.5 and 10%.
+- **Auto-confirm:** the daily worker only acts on reviews 3 months old; to see it work, back-date a review's `created_at` in a copy of the database or wait.
 
 ## Things noticed along the way (not part of this plan)
 
