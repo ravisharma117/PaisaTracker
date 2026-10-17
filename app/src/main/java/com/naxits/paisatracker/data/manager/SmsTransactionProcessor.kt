@@ -10,6 +10,7 @@ import com.naxits.paisatracker.data.repository.MerchantMappingRepository
 import com.naxits.paisatracker.data.repository.SubscriptionRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
 import com.naxits.paisatracker.domain.repository.RuleRepository
+import com.naxits.paisatracker.domain.service.AtmWithdrawal
 import com.naxits.paisatracker.domain.service.RuleEngine
 import com.naxits.paisatracker.data.manager.TransactionDeduplication
 import com.naxits.paisatracker.data.manager.DedupResult
@@ -96,8 +97,10 @@ class SmsTransactionProcessor @Inject constructor(
         smsBody: String
     ): ProcessingResult {
         return try {
-            // Convert to entity
-            val entity = parsedTransaction.toEntity()
+            // Convert to entity; an ATM withdrawal becomes a transfer from its account to Cash
+            val entity = parsedTransaction.toEntity().let {
+                if (parsedTransaction.isAtmWithdrawal) AtmWithdrawal.toCashTransfer(it) else it
+            }
 
             // Check if this transaction was previously deleted or is a duplicate
             val existingTransaction = transactionRepository.getTransactionByHash(entity.transactionHash)

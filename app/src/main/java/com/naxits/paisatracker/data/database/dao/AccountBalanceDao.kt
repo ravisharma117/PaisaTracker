@@ -55,9 +55,11 @@ abstract class AccountBalanceDao {
             ab.source_type AS sourceType,
             ab.is_credit_card AS isCreditCard,
             ab.transaction_id AS transactionId,
+            ab.account_last4 AS accountLast4,
             t.amount AS transactionAmount,
             t.transaction_type AS transactionType,
             t.balance_after AS transactionBalanceAfter,
+            t.to_account AS transactionToAccount,
             t.is_deleted AS isDeleted
         FROM account_balances ab
         LEFT JOIN transactions t ON t.id = ab.transaction_id
@@ -182,7 +184,7 @@ abstract class AccountBalanceDao {
             }
 
             // Bank-reported explicit balances (SMS) are authoritative anchors — stop here.
-            val isExplicitBalance = row.transactionBalanceAfter != null ||
+            val isExplicitBalance = (row.transactionBalanceAfter != null && !row.isTransferTarget) ||
                     sourceType == SOURCE_TRANSACTION_SMS_BALANCE ||
                     sourceType == SOURCE_SMS_BALANCE
 
@@ -204,7 +206,15 @@ abstract class AccountBalanceDao {
             }
 
             val amount = row.transactionAmount
+            // A transfer adds to the account it went to and takes from the one it came from
             val transactionType = row.transactionType?.let { runCatching { TransactionType.valueOf(it) }.getOrNull() }
+                ?.let { type ->
+                    when {
+                        type != TransactionType.TRANSFER -> type
+                        row.isTransferTarget -> TransactionType.INCOME
+                        else -> TransactionType.EXPENSE
+                    }
+                }
             val isDeleted = row.isDeleted == true
             
             val recalculated = if (amount != null && transactionType != null && !isDeleted) {
@@ -420,8 +430,15 @@ data class AccountBalanceTransactionInfo(
     val transactionAmount: BigDecimal?,
     val transactionType: String?,
     val transactionBalanceAfter: BigDecimal?,
-    val isDeleted: Boolean?
-)
+    val isDeleted: Boolean?,
+    val accountLast4: String? = null,
+    val transactionToAccount: String? = null
+) {
+    /** The receiving side of a transfer; its transaction's SMS balance belongs to the source account. */
+    val isTransferTarget: Boolean
+        get() = transactionType == TransactionType.TRANSFER.name &&
+            accountLast4 != null && transactionToAccount == accountLast4
+}
 
 private fun calculateTransactionBalance(
     currentBalance: BigDecimal,

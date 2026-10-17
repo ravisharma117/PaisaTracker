@@ -76,6 +76,7 @@ class SouthIndianBankParser : BankParser() {
             accountLast4 = accountLast4,
             balance = balance,
             smsBody = smsBody,
+            isAtmWithdrawal = transactionType == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody),
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName()

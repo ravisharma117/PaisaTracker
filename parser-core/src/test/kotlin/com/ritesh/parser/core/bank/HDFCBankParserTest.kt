@@ -3,12 +3,13 @@ package com.ritesh.parser.core.bank
 import com.ritesh.parser.core.test.ExpectedTransaction
 import com.ritesh.parser.core.test.ParserTestCase
 import com.ritesh.parser.core.test.ParserTestUtils
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.TestFactory
 import java.math.BigDecimal
 
 class HDFCBankParserTest {
-    @Test
-    fun `test HDFC Bank Parser comprehensive test suite`() {
+    @TestFactory
+    fun `test HDFC Bank Parser comprehensive test suite`(): List<DynamicTest> {
         val parser = HDFCBankParser()
 
         ParserTestUtils.printTestHeader(
@@ -39,6 +40,48 @@ T&C. Ignore if paid""",
                     type = com.ritesh.parser.core.TransactionType.EXPENSE,
                     accountLast4 = "1234",
                     reference = "123456789012"
+                )
+            ),
+            ParserTestCase(
+                name = "Debit card ATM withdrawal",
+                message = "Withdrawn Rs.5000 From HDFC Bank Card x1234 At TEST LOCATION On 2026-10-16:15:27:41 Bal Rs.12345.67 Not You? Call bank support/SMS BLOCK DC 1234",
+                sender = "AD-HDFCBK-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("5000"),
+                    currency = "INR",
+                    type = com.ritesh.parser.core.TransactionType.EXPENSE,
+                    merchant = "ATM Withdrawal at TEST LOCATION",
+                    accountLast4 = "1234",
+                    balance = BigDecimal("12345.67"),
+                    isFromCard = true,
+                    isAtmWithdrawal = true
+                )
+            ),
+            ParserTestCase(
+                name = "Debit card ATM withdrawal at a location containing O",
+                message = "Withdrawn Rs.2000 From HDFC Bank Card x1234 At OLD TOWN ROAD On 2026-10-16:09:05:00 Bal Rs.5000.00 Not You? Call bank support/SMS BLOCK DC 1234",
+                sender = "AD-HDFCBK-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("2000"),
+                    currency = "INR",
+                    type = com.ritesh.parser.core.TransactionType.EXPENSE,
+                    merchant = "ATM Withdrawal at OLD TOWN ROAD",
+                    accountLast4 = "1234",
+                    isAtmWithdrawal = true
+                )
+            ),
+            ParserTestCase(
+                name = "Debit card purchase is not an ATM withdrawal",
+                message = "Spent Rs.250 From HDFC Bank Card x1234 At SAMPLE STORE On 2026-10-16:10:00:00 Bal Rs.1000.00 Not You? Call bank support/SMS BLOCK DC 1234",
+                sender = "AD-HDFCBK-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("250"),
+                    currency = "INR",
+                    type = com.ritesh.parser.core.TransactionType.EXPENSE,
+                    merchant = "SAMPLE STORE",
+                    accountLast4 = "1234",
+                    isFromCard = true,
+                    isAtmWithdrawal = false
                 )
             ),
             ParserTestCase(
@@ -90,8 +133,6 @@ Contact bank support/SMS BLOCK UPI""",
             "" to false
         )
 
-        val result =
-            ParserTestUtils.runTestSuite(parser, testCases, handleCases, "HDFC Bank Parser Tests")
-
+        return ParserTestUtils.runTestSuite(parser, testCases, handleCases, "HDFC Bank Parser Tests")
     }
 }

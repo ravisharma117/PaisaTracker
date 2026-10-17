@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.naxits.paisatracker.data.manager.AtmWithdrawalBackfill
 import com.naxits.paisatracker.data.repository.AppLockRepository
 import com.naxits.paisatracker.data.webhook.WebhookSyncScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -28,6 +29,9 @@ class CashiroApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var webhookSyncScheduler: WebhookSyncScheduler
+
+    @Inject
+    lateinit var atmWithdrawalBackfill: AtmWithdrawalBackfill
 
     // Route any unhandled coroutine exception to the CrashHandler so the crash screen
     // appears even when the crash originates inside a coroutine (which normally bypasses
@@ -81,6 +85,13 @@ class CashiroApplication : Application(), Configuration.Provider {
                 webhookSyncScheduler.applyScheduling()
             } catch (e: Exception) {
                 Log.e("CashiroApplication", "Error scheduling webhooks", e)
+            }
+        }
+        applicationScope.launch {
+            try {
+                atmWithdrawalBackfill.runOnce()
+            } catch (e: Exception) {
+                Log.e("CashiroApplication", "Error converting recent ATM withdrawals", e)
             }
         }
     }

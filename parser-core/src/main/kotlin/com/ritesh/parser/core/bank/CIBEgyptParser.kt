@@ -47,6 +47,7 @@ class CIBEgyptParser : BankParser() {
             balance = extractBalance(smsBody),
             creditLimit = extractAvailableLimit(smsBody),
             smsBody = smsBody,
+            isAtmWithdrawal = type == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody),
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName(),

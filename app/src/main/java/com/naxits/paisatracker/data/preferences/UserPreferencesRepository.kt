@@ -99,6 +99,8 @@ constructor(@ApplicationContext private val context: Context) {
         val HIDE_PILL_INDICATOR = booleanPreferencesKey("hide_pill_indicator")
         val BLUR_EFFECTS = booleanPreferencesKey("blur_effects")
         val IS_SAMPLE_DATA_SEEDED = booleanPreferencesKey("is_sample_data_seeded")
+        // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
+        val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
         val APP_ICON = stringPreferencesKey("app_icon")
         val WEBHOOK_SYNC_MODE = stringPreferencesKey("webhook_sync_mode")
         val WEBHOOK_INTERVAL_HOURS = intPreferencesKey("webhook_interval_hours")
@@ -933,6 +935,17 @@ constructor(@ApplicationContext private val context: Context) {
     suspend fun setSampleDataSeeded(seeded: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_SAMPLE_DATA_SEEDED] = seeded
+        }
+    }
+
+    suspend fun isAtmTransferBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markAtmTransferBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] = true
         }
     }
 

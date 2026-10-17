@@ -84,6 +84,85 @@ class AccountBalanceRepositoryTest {
     }
 
     @Test
+    fun recalculationCarriesThroughTheCashSideOfATransferDespiteTheSourceSmsBalance() = runTest {
+        val transactionTime = LocalDateTime.of(2026, 10, 16, 12, 0)
+        val cash = CashAccount.BANK_NAME
+        val wallet = CashAccount.WALLET_LAST4
+        val opening = balance(
+            id = 1,
+            bankName = cash,
+            accountLast4 = wallet,
+            balance = BigDecimal("5000.00"),
+            timestamp = transactionTime.minusHours(1)
+        )
+        val dao = FakeAccountBalanceDao(
+            latestBalances = mutableMapOf(accountKey(cash, wallet) to opening),
+            balanceAtOrBefore = opening,
+            balancesAfter = listOf(
+                // Cash side of an ATM withdrawal; the 12345.67 is the bank's balance from the SMS
+                AccountBalanceTransactionInfo(
+                    id = 2,
+                    balance = BigDecimal("10000.00"),
+                    sourceType = "TRANSACTION_CALCULATED",
+                    isCreditCard = false,
+                    transactionId = 22,
+                    transactionAmount = BigDecimal("5000.00"),
+                    transactionType = TransactionType.TRANSFER.name,
+                    transactionBalanceAfter = BigDecimal("12345.67"),
+                    isDeleted = false,
+                    accountLast4 = wallet,
+                    transactionToAccount = wallet
+                ),
+                AccountBalanceTransactionInfo(
+                    id = 3,
+                    balance = BigDecimal("9000.00"),
+                    sourceType = "TRANSACTION_CALCULATED",
+                    isCreditCard = false,
+                    transactionId = 33,
+                    transactionAmount = BigDecimal("1000.00"),
+                    transactionType = TransactionType.EXPENSE.name,
+                    transactionBalanceAfter = null,
+                    isDeleted = false,
+                    accountLast4 = wallet
+                )
+            )
+        )
+        listOf(2L to "10000.00", 3L to "9000.00").forEach { (id, amount) ->
+            dao.seedBalance(
+                AccountBalanceEntity(
+                    id = id,
+                    bankName = cash,
+                    accountLast4 = wallet,
+                    balance = BigDecimal(amount),
+                    timestamp = transactionTime.plusHours(id),
+                    sourceType = "TRANSACTION_CALCULATED",
+                    transactionId = id * 11
+                )
+            )
+        }
+        val repository = AccountBalanceRepository(dao, ContextWrapper(null))
+
+        // A cash expense entered afterwards but dated before the withdrawal
+        repository.insertTransactionBalance(
+            bankName = cash,
+            accountLast4 = wallet,
+            amount = BigDecimal("500.00"),
+            transactionType = TransactionType.EXPENSE,
+            explicitBalance = null,
+            timestamp = transactionTime,
+            transactionId = 44,
+            creditLimit = null,
+            isCreditCard = false,
+            smsSource = null,
+            currency = "INR"
+        )
+
+        assertEquals(BigDecimal("4500.00"), dao.insertedBalances.single().balance)
+        assertEquals(BigDecimal("9500.00"), dao.updatedBalances[2])
+        assertEquals(BigDecimal("8500.00"), dao.updatedBalances[3])
+    }
+
+    @Test
     fun insertTransactionBalanceDoesNotRecalculateAfterExplicitBalanceBoundary() = runTest {
         val transactionTime = LocalDateTime.of(2026, 5, 23, 20, 35)
         val dao = FakeAccountBalanceDao(

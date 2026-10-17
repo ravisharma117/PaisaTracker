@@ -30,6 +30,25 @@ class BalanceUpdateProcessor @Inject constructor(
         entity: TransactionEntity,
         rowId: Long
     ) {
+        updateSourceAccount(parsedTransaction, entity, rowId)
+
+        // An ATM withdrawal is a transfer: the cash lands in the Cash account
+        if (parsedTransaction.isAtmWithdrawal) {
+            accountBalanceRepository.creditCashForTransfer(
+                amount = parsedTransaction.amount,
+                timestamp = entity.dateTime,
+                transactionId = if (rowId != -1L) rowId else null,
+                currency = parsedTransaction.currency
+            )
+        }
+    }
+
+    /** Debits or credits the card or account the SMS is about, and records the card's balance. */
+    private suspend fun updateSourceAccount(
+        parsedTransaction: ParsedTransaction,
+        entity: TransactionEntity,
+        rowId: Long
+    ) {
         val parsedAccountLast4 = parsedTransaction.accountLast4?.takeIf { it.isNotBlank() }
         val resolvedAccountLast4 = entity.accountNumber?.takeIf { it.isNotBlank() }
         val fallbackAccountLast4 = parsedAccountLast4 ?: resolvedAccountLast4

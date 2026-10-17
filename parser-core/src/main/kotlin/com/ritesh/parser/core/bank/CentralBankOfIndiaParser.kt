@@ -42,6 +42,7 @@ class CentralBankOfIndiaParser : BankParser() {
             balance = extractBalance(smsBody),
             reference = extractReference(smsBody),
             smsBody = smsBody,
+            isAtmWithdrawal = transactionType == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody),
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName()

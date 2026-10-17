@@ -38,7 +38,28 @@ class HDFCBankParser : BankParser() {
         return CompiledPatterns.HDFC.DLT_PATTERNS.any { it.matches(upperSender) }
     }
 
+    override fun detectAtmWithdrawal(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        // "Withdrawn Rs.xxx From HDFC Bank Card xxxx At [LOCATION] On xxx" never says "ATM"
+        return super.detectAtmWithdrawal(message) ||
+            (lowerMessage.contains("withdrawn") && lowerMessage.contains("from hdfc bank card"))
+    }
+
     override fun extractMerchant(message: String, sender: String): String? {
+        // ATM withdrawals - "Withdrawn Rs.xxx From HDFC Bank Card xxxx At [LOCATION] On xxx".
+        // Checked before the card branch below, which would otherwise return the bare location.
+        if (message.contains("withdrawn", ignoreCase = true)) {
+            val atIndex = message.indexOf(" At ", ignoreCase = true)
+            val onIndex = message.indexOf(" On ", ignoreCase = true)
+            if (atIndex != -1 && onIndex > atIndex) {
+                val location = cleanMerchantName(message.substring(atIndex + 4, onIndex).trim().removePrefix("+").trim())
+                if (location.isNotEmpty()) {
+                    return "ATM Withdrawal at $location"
+                }
+            }
+            return "ATM Withdrawal"
+        }
+
         // Check for HDFC Bank Card debit transactions - "Spent Rs.xxx From HDFC Bank Card xxxx At [MERCHANT] On xxx"
         if (message.contains("From HDFC Bank Card", ignoreCase = true) &&
             message.contains(" At ", ignoreCase = true) &&
@@ -53,21 +74,6 @@ class HDFCBankParser : BankParser() {
                     return cleanMerchantName(merchant)
                 }
             }
-        }
-
-        // Check for ATM withdrawals - extract location
-        if (message.contains("withdrawn", ignoreCase = true)) {
-            // Pattern: "At +18 Random Location" or "At ATM Location On"
-            val atLocationPattern = Regex("""At\s+\+?([^O]+?)\s+On""", RegexOption.IGNORE_CASE)
-            atLocationPattern.find(message)?.let { match ->
-                val location = match.groupValues[1].trim()
-                return if (location.isNotEmpty()) {
-                    "ATM at ${cleanMerchantName(location)}"
-                } else {
-                    "ATM"
-                }
-            }
-            return "ATM" // Fallback if no location found
         }
 
         // Check for generic ATM mentions (without "withdrawn")
