@@ -1,5 +1,6 @@
 package com.naxits.paisatracker.data.repository
 
+import com.naxits.paisatracker.domain.model.CashAccount
 import com.naxits.paisatracker.domain.service.CashEntryRules
 import com.naxits.paisatracker.data.database.entity.countsAsExpense
 import com.naxits.paisatracker.data.database.dao.TransactionDao
@@ -19,7 +20,8 @@ import kotlinx.coroutines.flow.map
 @Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
-    private val accountBalanceRepository: AccountBalanceRepository
+    private val accountBalanceRepository: AccountBalanceRepository,
+    private val cardRepository: CardRepository
 ) {
     fun getAllTransactions(): Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
         .map { list -> list.filter { it.transactionType != TransactionType.BALANCE_UPDATE } }
@@ -35,6 +37,12 @@ class TransactionRepository @Inject constructor(
             currency: String
     ): List<TransactionEntity> =
             transactionDao.getTransactionsUpdatedBetween(updatedAfter, updatedBefore, currency)
+
+    suspend fun getTransactionsBetweenDatesList(
+            startDate: LocalDateTime,
+            endDate: LocalDateTime
+    ): List<TransactionEntity> =
+            transactionDao.getTransactionsBetweenDatesList(startDate, endDate)
 
     suspend fun getTransactionsBetweenDatesByCurrency(
             startDate: LocalDateTime,
@@ -186,6 +194,10 @@ class TransactionRepository @Inject constructor(
 
     private suspend fun reverseBalanceForDeletion(transaction: TransactionEntity) {
         accountBalanceRepository.adjustCashBalance(CashEntryRules.effect(transaction).negate(), transaction.currency)
+        if (transaction.transactionType == TransactionType.TRANSFER) {
+            moveTransferBalances(transaction, applying = false)
+            return
+        }
         val bankName = transaction.bankName ?: return
         val accountLast4 = transaction.accountNumber ?: return
         val latestBalance = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
@@ -217,6 +229,10 @@ class TransactionRepository @Inject constructor(
 
     private suspend fun applyBalanceForTransaction(transaction: TransactionEntity) {
         accountBalanceRepository.adjustCashBalance(CashEntryRules.effect(transaction), transaction.currency)
+        if (transaction.transactionType == TransactionType.TRANSFER) {
+            moveTransferBalances(transaction, applying = true)
+            return
+        }
         val bankName = transaction.bankName ?: return
         val accountLast4 = transaction.accountNumber ?: return
         val latestBalance = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
@@ -244,6 +260,57 @@ class TransactionRepository @Inject constructor(
             sourceType = "UNDO_REVERSAL"
         )
         accountBalanceRepository.insertBalance(balanceEntity)
+    }
+
+    /**
+     * Redoes ([applying]) or undoes a transfer: the source account gives the amount and the
+     * destination receives it. A card number resolves to the account the card is linked to.
+     */
+    private suspend fun moveTransferBalances(transaction: TransactionEntity, applying: Boolean) {
+        val received = if (applying) transaction.amount else transaction.amount.negate()
+        val sourceType = if (applying) "UNDO_REVERSAL" else "DELETE_REVERSAL"
+
+        val bankName = transaction.bankName
+        val sourceLast4 = transaction.accountNumber
+        if (bankName != null && sourceLast4 != null) {
+            val account = if (accountBalanceRepository.getLatestBalance(bankName, sourceLast4) != null) {
+                sourceLast4
+            } else {
+                cardRepository.getTargetAccount(sourceLast4, bankName)
+            }
+            shiftLatestBalance(bankName, account, received.negate(), transaction.currency, sourceType)
+        }
+
+        val target = transaction.toAccount ?: return
+        if (target == CashAccount.WALLET_LAST4) {
+            accountBalanceRepository.adjustCashBalance(received, transaction.currency)
+        } else {
+            accountBalanceRepository.getAccountByLast4(target)?.let {
+                shiftLatestBalance(it.bankName, it.accountLast4, received, transaction.currency, sourceType)
+            }
+        }
+    }
+
+    private suspend fun shiftLatestBalance(
+        bankName: String,
+        accountLast4: String,
+        delta: BigDecimal,
+        currency: String,
+        sourceType: String
+    ) {
+        val latest = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
+        // Stay strictly after the latest row so this one is read back as the latest
+        val now = LocalDateTime.now()
+        accountBalanceRepository.insertBalance(
+            latest.copy(
+                id = 0,
+                balance = latest.balance + delta,
+                timestamp = if (now.isAfter(latest.timestamp)) now else latest.timestamp.plusNanos(1_000_000),
+                transactionId = null,
+                currency = currency,
+                sourceType = sourceType
+            )
+        )
     }
 
     suspend fun updateCategoryForMerchant(merchantName: String, newCategory: String) {

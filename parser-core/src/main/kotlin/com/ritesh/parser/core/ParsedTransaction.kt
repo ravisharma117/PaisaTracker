@@ -19,7 +19,9 @@ data class ParsedTransaction(
     val isFromCard: Boolean = false,
     val currency: String = "INR",
     val fromAccount: String? = null,
-    val toAccount: String? = null
+    val toAccount: String? = null,
+    // Cash taken out at an ATM from a debit card or account; the app records it as a transfer to Cash
+    val isAtmWithdrawal: Boolean = false
 ) {
     fun generateTransactionId(): String {
         val normalizedAmount = amount.setScale(2, java.math.RoundingMode.HALF_UP)

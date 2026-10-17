@@ -95,6 +95,7 @@ class CharlesSchwabParser : BankParser() {
             balance = extractBalance(smsBody),
             creditLimit = availableLimit,  // TODO: This is actually available limit, will be fixed in SmsReaderWorker
             smsBody = smsBody,
+            isAtmWithdrawal = type == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody),
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName(),

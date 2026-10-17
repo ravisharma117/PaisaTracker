@@ -95,7 +95,8 @@ abstract class BankParser {
             timestamp = timestamp,
             bankName = getBankName(),
             isFromCard = detectIsCard(smsBody),
-            currency = getCurrency()
+            currency = getCurrency(),
+            isAtmWithdrawal = type == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody)
         )
     }
 
@@ -517,6 +518,17 @@ abstract class BankParser {
         }
 
         return false
+    }
+
+    /**
+     * Detects a cash withdrawal at an ATM. Only consulted for expenses, so credit-card
+     * cash advances are left alone. Banks with their own wording override this.
+     */
+    protected open fun detectAtmWithdrawal(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        if (lowerMessage.contains("cash withdrawal")) return true
+        return Regex("""\batm\b""").containsMatchIn(lowerMessage) &&
+            listOf("withdrawn", "withdrawal", "wdl").any { lowerMessage.contains(it) }
     }
 
     /**

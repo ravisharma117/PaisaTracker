@@ -3,16 +3,19 @@ package com.naxits.paisatracker.domain.usecase
 import android.content.ContextWrapper
 import com.naxits.paisatracker.data.database.dao.AccountBalanceDao
 import com.naxits.paisatracker.data.database.dao.AccountBalanceTransactionInfo
+import com.naxits.paisatracker.data.database.dao.CardDao
 import com.naxits.paisatracker.data.database.dao.SubscriptionDao
 import com.naxits.paisatracker.data.database.dao.TransactionDao
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
 import com.naxits.paisatracker.data.database.entity.TransactionEntity
 import com.naxits.paisatracker.data.database.entity.TransactionType
 import com.naxits.paisatracker.data.repository.AccountBalanceRepository
+import com.naxits.paisatracker.data.repository.CardRepository
 import com.naxits.paisatracker.data.repository.SubscriptionRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
 import com.naxits.paisatracker.domain.model.CashAccount
 import java.math.BigDecimal
+import java.lang.reflect.Proxy
 import java.math.RoundingMode
 import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
@@ -421,6 +424,54 @@ class AddTransactionUseCaseTest {
     }
 
     @Test
+    fun `deleting a transfer to Cash moves the money back and undo moves it again`() = runTest {
+        val balanceDao = FakeAccountBalanceDao()
+        val (useCase, transactionRepo) = createUseCaseWithRepo(balanceDao)
+
+        balanceDao.seedBalance(
+            AccountBalanceEntity(
+                bankName = testBank,
+                accountLast4 = testLast4,
+                balance = BigDecimal("25000"),
+                timestamp = baseTime.minusDays(1)
+            )
+        )
+
+        useCase.execute(
+            amount = BigDecimal("5000"),
+            merchant = "ATM Withdrawal",
+            category = "Cash Withdrawal",
+            type = TransactionType.TRANSFER,
+            date = baseTime,
+            bankName = testBank,
+            accountLast4 = testLast4,
+            currency = testCurrency,
+            targetAccountBankName = CashAccount.BANK_NAME,
+            targetAccountLast4 = CashAccount.WALLET_LAST4
+        )
+        assertEquals(BigDecimal("20000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertEquals(
+            BigDecimal("5000"),
+            balanceDao.getLatestBalance(CashAccount.BANK_NAME, CashAccount.WALLET_LAST4)!!.balance
+        )
+
+        val transfer = transactionDao!!.insertedTransactions.last()
+        transactionRepo.deleteTransaction(transfer)
+        assertEquals(BigDecimal("25000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertEquals(
+            BigDecimal("0"),
+            balanceDao.getLatestBalance(CashAccount.BANK_NAME, CashAccount.WALLET_LAST4)!!.balance
+        )
+
+        transactionRepo.undoDeleteTransaction(transfer)
+        assertEquals(BigDecimal("20000"), balanceDao.getLatestBalance(testBank, testLast4)!!.balance)
+        assertEquals(
+            BigDecimal("5000"),
+            balanceDao.getLatestBalance(CashAccount.BANK_NAME, CashAccount.WALLET_LAST4)!!.balance
+        )
+    }
+
+    @Test
     fun `undoing CREDIT delete re-applies the balance`() = runTest {
         val balanceDao = FakeAccountBalanceDao()
         val (useCase, transactionRepo) = createUseCaseWithRepo(balanceDao)
@@ -472,7 +523,7 @@ class AddTransactionUseCaseTest {
         val accountBalanceRepo = AccountBalanceRepository(balanceDao, context)
         val dao = FakeTransactionDao()
         transactionDao = dao
-        val transactionRepo = TransactionRepository(dao, accountBalanceRepo)
+        val transactionRepo = TransactionRepository(dao, accountBalanceRepo, CardRepository(noCardsDao()))
         val subscriptionDao = FakeSubscriptionDao()
         val subscriptionRepo = SubscriptionRepository(subscriptionDao, com.naxits.paisatracker.data.repository.FakeBillPaymentDao())
         return Pair(
@@ -480,6 +531,10 @@ class AddTransactionUseCaseTest {
             transactionRepo
         )
     }
+
+    /** A card store with no cards: every lookup answers null. */
+    private fun noCardsDao(): CardDao =
+        Proxy.newProxyInstance(CardDao::class.java.classLoader, arrayOf(CardDao::class.java)) { _, _, _ -> null } as CardDao
 
     private class FakeTransactionDao : TransactionDao {
         var insertedTransactions = mutableListOf<TransactionEntity>()

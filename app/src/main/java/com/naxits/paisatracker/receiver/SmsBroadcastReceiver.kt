@@ -120,12 +120,13 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                             // Fetch the saved transaction to get its category
                             val savedTransaction = repository.getTransactionById(result.transactionId)
 
+                            // Prefer what was saved: an ATM withdrawal is stored as a transfer to Cash
                             showTransactionNotification(
                                 context = context,
                                 transactionId = result.transactionId,
                                 amount = parsedTransaction.amount.toString(),
-                                merchant = parsedTransaction.merchant ?: "Unknown",
-                                type = parsedTransaction.type.name,
+                                merchant = savedTransaction?.merchantName ?: parsedTransaction.merchant ?: "Unknown",
+                                type = savedTransaction?.transactionType?.name ?: parsedTransaction.type.name,
                                 bankName = parsedTransaction.bankName ?: "Bank",
                                 category = savedTransaction?.category ?: "Miscellaneous",
                                 repository = repository

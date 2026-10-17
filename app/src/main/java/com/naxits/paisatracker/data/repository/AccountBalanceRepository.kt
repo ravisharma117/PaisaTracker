@@ -72,6 +72,32 @@ class AccountBalanceRepository @Inject constructor(
     }
 
     /**
+     * Credits Cash with money moved in by a transfer (an ATM withdrawal), dated at the transfer and
+     * linked to it, so balances after it are recalculated and a delete can reverse it.
+     */
+    suspend fun creditCashForTransfer(
+        amount: BigDecimal,
+        timestamp: LocalDateTime,
+        transactionId: Long?,
+        currency: String
+    ) {
+        ensureCashAccount(currency)
+        insertTransactionBalance(
+            bankName = CashAccount.BANK_NAME,
+            accountLast4 = CashAccount.WALLET_LAST4,
+            amount = amount,
+            transactionType = TransactionType.INCOME,
+            explicitBalance = null,
+            timestamp = timestamp,
+            transactionId = transactionId,
+            creditLimit = null,
+            isCreditCard = false,
+            smsSource = null,
+            currency = currency
+        )
+    }
+
+    /**
      * Keeps the Cash account in the given currency, creating the account if needed.
      */
     suspend fun syncCashCurrency(currency: String) {

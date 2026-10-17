@@ -57,6 +57,7 @@ class ICICIBankParser : BankParser() {
             balance = extractBalance(smsBody),
             creditLimit = availableLimit,
             smsBody = smsBody,
+            isAtmWithdrawal = type == TransactionType.EXPENSE && detectAtmWithdrawal(smsBody),
             sender = sender,
             timestamp = timestamp,
             bankName = getBankName(),

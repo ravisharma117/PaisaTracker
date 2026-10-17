@@ -24,7 +24,8 @@ data class ExpectedTransaction(
     val creditLimit: BigDecimal? = null,
     val isFromCard: Boolean? = null,
     val fromAccount: String? = null,
-    val toAccount: String? = null
+    val toAccount: String? = null,
+    val isAtmWithdrawal: Boolean? = null
 )
 
 data class ParserTestCase(
@@ -118,6 +119,7 @@ object ParserTestUtils {
         expected.isFromCard?.let { if (result.isFromCard != it) errors.add("isFromCard mismatch: expected $it, got ${result.isFromCard}") }
         expected.fromAccount?.let { if (result.fromAccount != it) errors.add("From account mismatch: expected $it, got ${result.fromAccount}") }
         expected.toAccount?.let { if (result.toAccount != it) errors.add("To account mismatch: expected $it, got ${result.toAccount}") }
+        expected.isAtmWithdrawal?.let { if (result.isAtmWithdrawal != it) errors.add("isAtmWithdrawal mismatch: expected $it, got ${result.isAtmWithdrawal}") }
 
         return errors
     }
@@ -167,6 +169,11 @@ object ParserTestUtils {
             {
                 expected.toAccount?.let {
                     assertEquals(it, parsed.toAccount, "To account mismatch")
+                }
+            },
+            {
+                expected.isAtmWithdrawal?.let {
+                    assertEquals(it, parsed.isAtmWithdrawal, "isAtmWithdrawal mismatch")
                 }
             }
         )
