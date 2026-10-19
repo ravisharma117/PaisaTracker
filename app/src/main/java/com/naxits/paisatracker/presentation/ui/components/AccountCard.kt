@@ -323,12 +323,15 @@ text = {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            // Takes the space the icon leaves, so a long bank name wraps instead of squeezing the icon
+                            Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
                                 Text(
                                     text = account.bankName,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = if (account.isWallet) "wallet"

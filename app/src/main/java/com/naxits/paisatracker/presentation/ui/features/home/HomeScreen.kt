@@ -172,6 +172,7 @@ fun SharedTransitionScope.HomeScreen(
     onNavigateToNetWorth: () -> Unit = {},
     onNavigateToRecurring: () -> Unit = {},
     onTransactionClick: (Long, String) -> Unit = { _, _ -> },
+    onTransactionViewClick: (Long, String) -> Unit = { _, _ -> },
     onFullResyncClick: () -> Unit = {},
     animatedContentScope: AnimatedContentScope? = null,
 ) {
@@ -736,6 +737,12 @@ fun SharedTransitionScope.HomeScreen(
                                                             mainCurrency = uiState.baseCurrency,
                                                             onClick = {
                                                                 onTransactionClick(
+                                                                    transaction.id,
+                                                                    "transaction_${transaction.id}"
+                                                                )
+                                                            },
+                                                            onViewClick = {
+                                                                onTransactionViewClick(
                                                                     transaction.id,
                                                                     "transaction_${transaction.id}"
                                                                 )

@@ -272,6 +272,7 @@ import dev.chrisbanes.haze.hazeEffect
 fun SharedTransitionScope.TransactionDetailScreen(
     transactionId: Long,
     sharedElementKey: String? = null,
+    startInEditMode: Boolean = false,
     onNavigateBack: () -> Unit,
     onNavigateToPersonDetail: (personId: Long) -> Unit = {},
     transactionDetailViewModel: TransactionDetailViewModel = hiltViewModel(),
@@ -397,6 +398,16 @@ fun SharedTransitionScope.TransactionDetailScreen(
 
     LaunchedEffect(transactionId) {
         transactionDetailViewModel.loadTransaction(transactionId)
+    }
+
+    // Tapping a transaction opens it ready to edit, once it has loaded. Saved across rotation so
+    // coming back to the read-only view is not undone.
+    var openedForEditing by androidx.compose.runtime.saveable.rememberSaveable(transactionId) { mutableStateOf(false) }
+    LaunchedEffect(transaction?.id, startInEditMode) {
+        if (startInEditMode && !openedForEditing && transaction != null && !isEditMode) {
+            openedForEditing = true
+            transactionDetailViewModel.enterEditMode()
+        }
     }
 
     // Handle delete success

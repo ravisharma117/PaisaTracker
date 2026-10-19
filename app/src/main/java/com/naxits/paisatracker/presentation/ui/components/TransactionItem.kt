@@ -16,7 +16,9 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -91,6 +93,7 @@ fun SharedTransitionScope.TransactionItem(
     isSelected: Boolean = false,
     onSelectionToggle: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
+    onViewClick: (() -> Unit)? = null,
     convertedAmount: BigDecimal? = null,
     mainCurrency: String? = null,
     currentAccountContext: String? = null,
@@ -430,88 +433,103 @@ fun SharedTransitionScope.TransactionItem(
             },
             leading = leadingContent,
             trailing = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        if (subtitleOverride == null) {
-                            when (finalType) {
-                                TransactionType.CREDIT -> Icon(
-                                    Iconax.Card,
-                                    contentDescription = stringResource(R.string.type_credit_card),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) credit_light else credit_dark
-                                )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        ) {
+                            if (subtitleOverride == null) {
+                                when (finalType) {
+                                    TransactionType.CREDIT -> Icon(
+                                        Iconax.Card,
+                                        contentDescription = stringResource(R.string.type_credit_card),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) credit_light else credit_dark
+                                    )
 
-                                TransactionType.TRANSFER -> Icon(
-                                    Icons.Rounded.SwapHoriz,
-                                    contentDescription = stringResource(R.string.type_transfer),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
-                                )
+                                    TransactionType.TRANSFER -> Icon(
+                                        Icons.Rounded.SwapHoriz,
+                                        contentDescription = stringResource(R.string.type_transfer),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+                                    )
 
-                                TransactionType.INVESTMENT -> Icon(
-                                    Icons.AutoMirrored.Filled.ShowChart,
-                                    contentDescription = stringResource(R.string.type_investment),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) investment_light else investment_dark
-                                )
+                                    TransactionType.INVESTMENT -> Icon(
+                                        Icons.AutoMirrored.Filled.ShowChart,
+                                        contentDescription = stringResource(R.string.type_investment),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) investment_light else investment_dark
+                                    )
 
-                                TransactionType.INCOME -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingUp,
-                                    contentDescription = stringResource(R.string.type_income),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) income_light else income_dark
-                                )
+                                    TransactionType.INCOME -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingUp,
+                                        contentDescription = stringResource(R.string.type_income),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) income_light else income_dark
+                                    )
 
-                                TransactionType.EXPENSE -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingDown,
-                                    contentDescription = stringResource(R.string.type_expense),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
-                                )
+                                    TransactionType.EXPENSE -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingDown,
+                                        contentDescription = stringResource(R.string.type_expense),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
+                                    )
 
-                                TransactionType.BALANCE_UPDATE -> Icon(
-                                    Icons.Rounded.SwapHoriz,
-                                    contentDescription = stringResource(R.string.type_balance_update),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
-                                )
+                                    TransactionType.BALANCE_UPDATE -> Icon(
+                                        Icons.Rounded.SwapHoriz,
+                                        contentDescription = stringResource(R.string.type_balance_update),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) transfer_light else transfer_dark
+                                    )
 
-                                TransactionType.LENT -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingDown,
-                                    contentDescription = stringResource(R.string.type_lent),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
-                                )
+                                    TransactionType.LENT -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingDown,
+                                        contentDescription = stringResource(R.string.type_lent),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) expense_light else expense_dark
+                                    )
 
-                                TransactionType.BORROWED -> Icon(
-                                    Icons.AutoMirrored.Filled.TrendingUp,
-                                    contentDescription = stringResource(R.string.type_borrowed),
-                                    modifier = Modifier.size(Dimensions.Icon.small),
-                                    tint = if (!isSystemInDarkTheme()) income_light else income_dark
-                                )
+                                    TransactionType.BORROWED -> Icon(
+                                        Icons.AutoMirrored.Filled.TrendingUp,
+                                        contentDescription = stringResource(R.string.type_borrowed),
+                                        modifier = Modifier.size(Dimensions.Icon.small),
+                                        tint = if (!isSystemInDarkTheme()) income_light else income_dark
+                                    )
+                                }
                             }
+                            Text(
+                                text = amountText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = amountColor
+                            )
                         }
-                        Text(
-                            text = amountText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = amountColor
-                        )
-                    }
 
-                    if (convertedAmount != null && mainCurrency != null && transaction?.currency != mainCurrency) {
-                        Text(
-                            text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, mainCurrency)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Normal
-                        )
+                        if (convertedAmount != null && mainCurrency != null && transaction?.currency != mainCurrency) {
+                            Text(
+                                text = "≈ ${CurrencyFormatter.formatCurrency(convertedAmount, mainCurrency)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
+                    }
+                    if (onViewClick != null && !isSelectionMode) {
+                        IconButton(
+                            onClick = onViewClick,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Visibility,
+                                contentDescription = stringResource(R.string.view_transaction),
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             },

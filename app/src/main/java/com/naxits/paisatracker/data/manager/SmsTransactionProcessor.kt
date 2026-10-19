@@ -31,7 +31,8 @@ class SmsTransactionProcessor @Inject constructor(
     private val ruleEngine: RuleEngine,
     private val balanceUpdateProcessor: BalanceUpdateProcessor,
     private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService,
-    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
+    private val accountResolver: AccountResolver
 ) {
     companion object {
         private const val TAG = "SmsTransactionProcessor"
@@ -198,7 +199,23 @@ class SmsTransactionProcessor @Inject constructor(
             } else {
                 entityWithRules
             }
-            val finalEntityForInsert = accountBalanceRepository.resolveEntityAccountNumber(finalEntity, parsedTransaction)
+            val numberedEntity = accountBalanceRepository.resolveEntityAccountNumber(finalEntity, parsedTransaction)
+
+            // The message names the bank its own way; the user may have named the account something
+            // else. Join the account that already ends in those digits instead of starting a second.
+            val accountBank = if (parsedTransaction.isFromCard) null else numberedEntity.bankName?.let {
+                accountResolver.bankFor(it, numberedEntity.accountNumber)
+            }
+            val finalEntityForInsert = if (accountBank != null && accountBank != numberedEntity.bankName) {
+                numberedEntity.copy(bankName = accountBank)
+            } else {
+                numberedEntity
+            }
+            val parsedForBalance = if (accountBank != null && accountBank != parsedTransaction.bankName) {
+                parsedTransaction.copy(bankName = accountBank)
+            } else {
+                parsedTransaction
+            }
 
             val rowId = transactionRepository.insertTransaction(finalEntityForInsert)
             if (rowId != -1L) {
@@ -222,7 +239,7 @@ class SmsTransactionProcessor @Inject constructor(
                 }
 
                 // Process balance updates
-                balanceUpdateProcessor.process(parsedTransaction, finalEntityForInsert, rowId)
+                balanceUpdateProcessor.process(parsedForBalance, finalEntityForInsert, rowId)
 
                 return ProcessingResult(true, transactionId = rowId)
             } else {

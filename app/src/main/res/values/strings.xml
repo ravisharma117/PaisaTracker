@@ -1750,4 +1750,5 @@
     <string name="recurring_tolerance_explain">A new entry is suggested the category you used before when it matches an earlier series: same customer, account or payee, a regular rhythm such as monthly, and an amount within this range.</string>
     <string name="recurring_tolerance_option">%1$s</string>
     <string name="cancel_lbl">Cancel</string>
+    <string name="select_transactions">Select transactions</string>
 </resources>

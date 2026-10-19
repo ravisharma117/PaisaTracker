@@ -210,7 +210,12 @@ data class Transactions(
 
 @Serializable object Chat
 
-@Serializable data class TransactionDetail(val transactionId: Long, val sharedElementKey: String? = null)
+/** [startInEditMode]: tapping a transaction opens it ready to edit; a long press opens the read-only view. */
+@Serializable data class TransactionDetail(
+    val transactionId: Long,
+    val sharedElementKey: String? = null,
+    val startInEditMode: Boolean = true
+)
 
 @Serializable data class AddTransaction(val initialTab: Int = 0, val subscriptionId: Long? = null, val type: String? = null)
 

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.naxits.paisatracker.data.manager.AccountRepairBackfill
 import com.naxits.paisatracker.data.manager.AtmWithdrawalBackfill
 import com.naxits.paisatracker.data.manager.BankRelabelBackfill
 import com.naxits.paisatracker.data.manager.ReviewAutoConfirmScheduler
@@ -37,6 +38,9 @@ class CashiroApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var bankRelabelBackfill: BankRelabelBackfill
+
+    @Inject
+    lateinit var accountRepairBackfill: AccountRepairBackfill
 
     @Inject
     lateinit var reviewAutoConfirmScheduler: ReviewAutoConfirmScheduler
@@ -107,6 +111,13 @@ class CashiroApplication : Application(), Configuration.Provider {
                 bankRelabelBackfill.runOnce()
             } catch (e: Exception) {
                 Log.e("CashiroApplication", "Error renaming accounts saved under the wrong bank", e)
+            }
+        }
+        applicationScope.launch {
+            try {
+                accountRepairBackfill.runOnce()
+            } catch (e: Exception) {
+                Log.e("CashiroApplication", "Error moving messages onto their renamed account", e)
             }
         }
         try {

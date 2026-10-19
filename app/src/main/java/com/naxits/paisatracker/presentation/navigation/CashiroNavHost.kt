@@ -263,6 +263,9 @@ fun CashiroNavHost(
                         onTransactionClick = { transactionId, key ->
                             navController.safeNavigate(TransactionDetail(transactionId, key))
                         },
+                        onTransactionViewClick = { transactionId, key ->
+                            navController.safeNavigate(TransactionDetail(transactionId, key, startInEditMode = false))
+                        },
                         onFullResyncClick = { showFullResyncDialog = true },
                         animatedContentScope = this@composable,
                     )
@@ -746,6 +749,7 @@ fun CashiroNavHost(
                     TransactionDetailScreen(
                         transactionId = transactionDetail.transactionId,
                         sharedElementKey = transactionDetail.sharedElementKey,
+                        startInEditMode = transactionDetail.startInEditMode,
                         onNavigateBack = {
                             onEditComplete()
                             navController.safePopBackStack()
@@ -816,6 +820,9 @@ fun CashiroNavHost(
                         onNavigateBack = { navController.safePopBackStack() },
                         onTransactionClick = { transactionId, key ->
                             navController.safeNavigate(TransactionDetail(transactionId, key))
+                        },
+                        onTransactionLongClick = { transactionId, key ->
+                            navController.safeNavigate(TransactionDetail(transactionId, key, startInEditMode = false))
                         },
                         onNavigateToSettings = {
                             navController.safeNavigate(Settings)

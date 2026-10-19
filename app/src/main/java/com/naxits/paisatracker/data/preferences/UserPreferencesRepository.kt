@@ -101,6 +101,8 @@ constructor(@ApplicationContext private val context: Context) {
         val IS_SAMPLE_DATA_SEEDED = booleanPreferencesKey("is_sample_data_seeded")
         // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
+        // Set once messages saved under an account's old name have been moved onto the account
+        val ACCOUNT_REPAIR_BACKFILL_DONE = booleanPreferencesKey("account_repair_backfill_done")
         // How far an amount may differ, in tenths of a percent, for entries to count as a series
         val RECURRING_TOLERANCE_TENTHS = intPreferencesKey("recurring_tolerance_tenths")
         // Set once accounts the SMS parser labelled with the wrong bank have been renamed
@@ -963,6 +965,17 @@ constructor(@ApplicationContext private val context: Context) {
     suspend fun markAtmTransferBackfillDone() {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] = true
+        }
+    }
+
+    suspend fun isAccountRepairBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.ACCOUNT_REPAIR_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markAccountRepairBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ACCOUNT_REPAIR_BACKFILL_DONE] = true
         }
     }
 

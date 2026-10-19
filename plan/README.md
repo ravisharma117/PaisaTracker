@@ -119,6 +119,12 @@ Installed on Ravi's phone (model `21091116I`) over USB on 2026-10-17 from `featu
 - **Recurring suggestions:** categorise a monthly entry yourself (for example salary) three times, then replay a fourth monthly test SMS with a similar amount: it should arrive in that category with a red Review badge and a reason; Confirm, Change and Dismiss should each settle it. Settings, Recurring suggestions should offer 5, 7.5 and 10%.
 - **Auto-confirm:** the daily worker only acts on reviews 3 months old; to see it work, back-date a review's `created_at` in a copy of the database or wait.
 
+## Follow-ups from Ravi's testing (2026-10-19, built and unit tested, NOT committed yet)
+
+- **Messages attached to the wrong account.** On the phone, 337 HDFC messages were stored under bank "State Bank of India" with the digits of the account now called "HDFC Bank Jahu" (the old rename only changed balances, so renaming an account orphaned its transactions), and new messages parsed as "HDFC Bank" did not join that account. Fix: `AccountMatcher` (exact name, else the single related name on the same digits), `AccountResolver` (used by `SmsTransactionProcessor` so a new message joins the account the user named, and balance rows use the same name), and `AccountRepair` / `AccountRepairBackfill` (one-time, flag `account_repair_backfill_done`) that moves orphaned messages onto the account their sender's bank and digits point to. Cards are left as they were. New DAO queries are in `AccountRenameDao`; tests are `AccountMatcherTest`, `AccountRepairTest`, and a regression `HDFCSenderRoutingTest` in parser-core.
+- **Tap and long press.** Tapping a transaction now opens it ready to edit (`TransactionDetail.startInEditMode` defaults to true); a long press in the Transactions list opens the read-only view. Because long press no longer starts batch selection, the Transactions top bar has a Select button.
+- 611 app unit tests and the parser-core suite pass. Install over USB and check: an HDFC message with the account digits lands in "HDFC Bank Jahu"; the account page now lists the old HDFC transactions; tap edits, long press views, Select starts batch mode.
+
 ## Things noticed along the way (not part of this plan)
 
 - `SanitizationUtils.TransactionEntity.sanitize()` does not copy `reference`, so UPI references are lost when a backup is restored (can cause duplicate detection to miss).
