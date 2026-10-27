@@ -17,6 +17,12 @@ data class TransactionDetailUiState(
     val saveSuccess: Boolean = false,
     val errorMessage: String? = null,
     val applyToAllFromMerchant: Boolean = false,
+    /** The tick-box is offered only for a company, firm or brand; a person's payments are never filed under one category. */
+    val vendorIsBusiness: Boolean = false,
+    /** The vendor already has a remembered category, so unticking the box forgets it. */
+    val vendorRemembered: Boolean = false,
+    /** The user has used the tick-box themselves, so changing the category no longer ticks it for them. */
+    val applyToAllTouched: Boolean = false,
     val updateExistingTransactions: Boolean = false,
     val existingTransactionCount: Int = 0,
     val showDeleteDialog: Boolean = false,

@@ -1751,4 +1751,29 @@
     <string name="recurring_tolerance_option">%1$s</string>
     <string name="cancel_lbl">Cancel</string>
     <string name="select_transactions">Select transactions</string>
+    <string name="vendors_title">Remembered vendors</string>
+    <string name="vendors_subtitle">Companies whose category is applied to every future entry</string>
+    <string name="vendors_suggested_header">Suggested to remember</string>
+    <string name="vendors_suggested_hint">Companies you keep paying under one category. Add them so future entries get it automatically.</string>
+    <string name="vendors_suggested_empty">No suggestions right now. A company you pay again and again will show up here.</string>
+    <string name="vendors_remembered_header">Remembered vendors</string>
+    <string name="vendors_remembered_hint">Future entries from these get the category shown. Remove one to stop that; entries already saved keep their category.</string>
+    <string name="vendors_remembered_empty">Nothing remembered yet.</string>
+    <string name="vendors_loading">Loading…</string>
+    <string name="vendor_add">Add</string>
+    <string name="vendor_add_new">Add a vendor</string>
+    <string name="vendor_name_label">Vendor name</string>
+    <string name="vendor_category_label">Category</string>
+    <string name="vendor_category_pick">Choose a category</string>
+    <string name="vendor_add_hint">Every entry from this vendor, now and later, will be filed under this category.</string>
+    <string name="vendor_save">Remember</string>
+    <plurals name="vendor_refiled">
+        <item quantity="one">%2$s: %1$d entry updated</item>
+        <item quantity="other">%2$s: %1$d entries updated</item>
+    </plurals>
+    <string name="vendor_remove">Remove %1$s</string>
+    <plurals name="vendor_entries">
+        <item quantity="one">%1$d entry</item>
+        <item quantity="other">%1$d entries</item>
+    </plurals>
 </resources>

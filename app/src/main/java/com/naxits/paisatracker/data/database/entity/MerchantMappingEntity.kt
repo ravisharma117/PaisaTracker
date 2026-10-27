@@ -18,5 +18,13 @@ data class MerchantMappingEntity(
     val createdAt: LocalDateTime = LocalDateTime.now(),
     
     @ColumnInfo(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
+
+    /** The sub-category that goes with [category]. */
+    @ColumnInfo(name = "subcategory")
+    val subcategory: String? = null,
+
+    /** The vendor's name in a spelling-independent form, so "Shakti Fuel Station" finds "Shaktifuelstation". */
+    @ColumnInfo(name = "match_key")
+    val matchKey: String? = null
 )

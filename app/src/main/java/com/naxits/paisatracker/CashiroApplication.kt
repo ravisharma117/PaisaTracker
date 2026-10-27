@@ -10,6 +10,8 @@ import androidx.work.Configuration
 import com.naxits.paisatracker.data.manager.AccountRepairBackfill
 import com.naxits.paisatracker.data.manager.AtmWithdrawalBackfill
 import com.naxits.paisatracker.data.manager.BankRelabelBackfill
+import com.naxits.paisatracker.data.manager.KeywordCategoryBackfill
+import com.naxits.paisatracker.data.manager.SbiDepositFixBackfill
 import com.naxits.paisatracker.data.manager.ReviewAutoConfirmScheduler
 import com.naxits.paisatracker.data.repository.AppLockRepository
 import com.naxits.paisatracker.data.webhook.WebhookSyncScheduler
@@ -41,6 +43,12 @@ class CashiroApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var accountRepairBackfill: AccountRepairBackfill
+
+    @Inject
+    lateinit var sbiDepositFixBackfill: SbiDepositFixBackfill
+
+    @Inject
+    lateinit var keywordCategoryBackfill: KeywordCategoryBackfill
 
     @Inject
     lateinit var reviewAutoConfirmScheduler: ReviewAutoConfirmScheduler
@@ -118,6 +126,20 @@ class CashiroApplication : Application(), Configuration.Provider {
                 accountRepairBackfill.runOnce()
             } catch (e: Exception) {
                 Log.e("CashiroApplication", "Error moving messages onto their renamed account", e)
+            }
+        }
+        applicationScope.launch {
+            try {
+                sbiDepositFixBackfill.runOnce()
+            } catch (e: Exception) {
+                Log.e("CashiroApplication", "Error fixing SBI deposits", e)
+            }
+        }
+        applicationScope.launch {
+            try {
+                keywordCategoryBackfill.runOnce()
+            } catch (e: Exception) {
+                Log.e("CashiroApplication", "Error categorising entries from keywords", e)
             }
         }
         try {

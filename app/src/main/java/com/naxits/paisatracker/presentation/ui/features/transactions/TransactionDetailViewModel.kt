@@ -1,6 +1,8 @@
 package com.naxits.paisatracker.presentation.ui.features.transactions
 
 import com.naxits.paisatracker.domain.service.CashEntryRules
+import com.naxits.paisatracker.domain.service.MerchantKey
+import com.naxits.paisatracker.domain.service.MerchantKind
 import com.naxits.paisatracker.R
 import com.naxits.paisatracker.domain.service.TransferConversion
 import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
@@ -376,6 +378,21 @@ class TransactionDetailViewModel @Inject constructor(
             _editableAttachments.value = attachmentService.parseAttachments(txn.attachments)
         }
 
+        // Whether this vendor can be remembered, and whether it already is
+        _uiState.value.transaction?.let { txn ->
+            viewModelScope.launch {
+                val remembered = merchantMappingRepository.findForVendor(txn.merchantName) != null
+                _uiState.update {
+                    it.copy(
+                        vendorIsBusiness = remembered || MerchantKind.isBusiness(txn.merchantName),
+                        vendorRemembered = remembered,
+                        applyToAllFromMerchant = remembered,
+                        applyToAllTouched = false
+                    )
+                }
+            }
+        }
+
         // Load count of other transactions from same merchant (always, not just for SMS)
         _uiState.value.transaction?.let { txn ->
             viewModelScope.launch {
@@ -399,6 +416,9 @@ class TransactionDetailViewModel @Inject constructor(
                 isEditMode = false,
                 errorMessage = null,
                 applyToAllFromMerchant = false,
+                vendorIsBusiness = false,
+                vendorRemembered = false,
+                applyToAllTouched = false,
                 updateExistingTransactions = false,
                 existingTransactionCount = 0
             )
@@ -407,7 +427,15 @@ class TransactionDetailViewModel @Inject constructor(
     }
 
     fun toggleApplyToAllFromMerchant() {
-        _uiState.update { it.copy(applyToAllFromMerchant = !it.applyToAllFromMerchant) }
+        _uiState.update { it.copy(applyToAllFromMerchant = !it.applyToAllFromMerchant, applyToAllTouched = true) }
+    }
+
+    /** Choosing a category for a company ticks "remember for this vendor", unless the user has already decided. */
+    private fun rememberVendorOnCategoryChange(state: TransactionDetailUiState, edited: TransactionEntity?): TransactionDetailUiState {
+        val original = state.transaction
+        val changed = original != null && edited != null &&
+            (!original.category.equals(edited.category, ignoreCase = true) || original.subcategory != edited.subcategory)
+        return if (changed && state.vendorIsBusiness && !state.applyToAllTouched) state.copy(applyToAllFromMerchant = true) else state
     }
 
     fun toggleUpdateExistingTransactions() {
@@ -597,17 +625,19 @@ class TransactionDetailViewModel @Inject constructor(
     fun updateCategory(category: String) {
         _uiState.update { state ->
             val current = state.editableTransaction
-            state.copy(
-                editableTransaction = current?.copy(
-                    category = category.ifEmpty { "Miscellaneous" },
-                    subcategory = if (current.category != category) null else current.subcategory
-                )
+            val edited = current?.copy(
+                category = category.ifEmpty { "Miscellaneous" },
+                subcategory = if (current.category != category) null else current.subcategory
             )
+            rememberVendorOnCategoryChange(state.copy(editableTransaction = edited), edited)
         }
     }
 
     fun updateSubcategory(subcategory: String?) {
-        _uiState.update { it.copy(editableTransaction = it.editableTransaction?.copy(subcategory = subcategory)) }
+        _uiState.update { state ->
+            val edited = state.editableTransaction?.copy(subcategory = subcategory)
+            rememberVendorOnCategoryChange(state.copy(editableTransaction = edited), edited)
+        }
     }
 
     fun updateDateTime(dateTime: LocalDateTime) {
@@ -766,12 +796,22 @@ class TransactionDetailViewModel @Inject constructor(
                 } ?: false
                 if (categoryChanged) reviewService.userCategorised(normalizedTransaction)
 
-                // Save merchant mapping if checkbox is checked
-                if (state.applyToAllFromMerchant) {
-                    merchantMappingRepository.setMapping(
-                        normalizedTransaction.merchantName,
-                        normalizedTransaction.category
-                    )
+                // Remember the vendor's category when the box is ticked; forget it when the user unticked it
+                if (state.vendorIsBusiness) {
+                    if (state.applyToAllFromMerchant) {
+                        merchantMappingRepository.setMapping(
+                            normalizedTransaction.merchantName,
+                            normalizedTransaction.category,
+                            normalizedTransaction.subcategory
+                        )
+                        userPreferencesRepository.setVendorIgnored(MerchantKey.normalize(normalizedTransaction.merchantName), false)
+                    } else if (state.vendorRemembered) {
+                        // Entries already saved keep their category; only later ones go without it
+                        val vendorName = originalTransaction?.merchantName ?: normalizedTransaction.merchantName
+                        merchantMappingRepository.removeMapping(vendorName)
+                        // So the Remembered vendors screen does not offer it again
+                        userPreferencesRepository.setVendorIgnored(MerchantKey.normalize(vendorName), true)
+                    }
                 }
 
                 // Update existing transactions if checkbox is checked (fuzzy/contains match)
@@ -791,6 +831,9 @@ class TransactionDetailViewModel @Inject constructor(
                         editableTransaction = null,
                         errorMessage = null,
                         applyToAllFromMerchant = false,
+                        vendorIsBusiness = false,
+                        vendorRemembered = false,
+                        applyToAllTouched = false,
                         updateExistingTransactions = false,
                         existingTransactionCount = 0,
                         matchedTransactions = emptyList(),

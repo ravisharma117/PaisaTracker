@@ -45,6 +45,10 @@ class ReviewService @Inject constructor(
         reviewDao = reviewDao,
         toleranceTenths = { preferences.recurringToleranceTenths.first() }
     )
+    private val keywordSuggester = KeywordCategorySuggester(
+        patternDao = patternDao,
+        reviewDao = reviewDao
+    )
     private val learner = CategoryLearner(
         patternDao = patternDao,
         reviewDao = reviewDao,
@@ -73,7 +77,11 @@ class ReviewService @Inject constructor(
         try {
             val partyReview = detector.detect(transactionId, transaction)
             if (!categoryChosenByUser) {
-                suggester.suggest(transactionId, transaction.copy(partyId = partyReview?.suggestedPartyId ?: transaction.partyId))
+                val withParty = transaction.copy(partyId = partyReview?.suggestedPartyId ?: transaction.partyId)
+                // History of the same series is stronger evidence than a word in the name
+                if (suggester.suggest(transactionId, withParty) == null) {
+                    keywordSuggester.suggest(transactionId, withParty)
+                }
             }
         } catch (e: CancellationException) {
             throw e

@@ -232,7 +232,7 @@ class BackupImporter @Inject constructor(
                 }
                 
                 backup.database.merchantMappings.forEach { mapping ->
-                    database.merchantMappingDao().insertMapping(mapping)
+                    database.merchantMappingDao().insertMapping(withVendorKey(mapping))
                 }
                 
                 backup.database.unrecognizedSms.forEach { sms ->
@@ -741,13 +741,19 @@ class BackupImporter @Inject constructor(
         }
     }
     
+    /** Backups from before vendor spellings were folded together carry no key; give them one. */
+    private fun withVendorKey(mapping: MerchantMappingEntity): MerchantMappingEntity =
+        mapping.copy(
+            matchKey = mapping.matchKey ?: com.naxits.paisatracker.domain.service.MerchantKey.normalize(mapping.merchantName)
+        )
+
     /**
      * Import merchant mappings with merge
      */
     private suspend fun importMerchantMappingsWithMerge(mappings: List<MerchantMappingEntity>) {
         mappings.forEach { mapping ->
             // Merchant mappings use merchant name as primary key, so just insert/replace
-            database.merchantMappingDao().insertMapping(mapping)
+            database.merchantMappingDao().insertMapping(withVendorKey(mapping))
         }
     }
 

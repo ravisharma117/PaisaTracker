@@ -242,7 +242,13 @@ interface TransactionDao {
         SELECT * FROM transactions
         WHERE is_deleted = 0
         AND (
-            (bank_name = :bankName AND (account_number = :accountLast4 OR account_number IS NULL))
+            (bank_name = :bankName AND (
+                account_number = :accountLast4
+                -- A message with no digits can only be placed when the bank has a single account
+                OR (account_number IS NULL AND (
+                    SELECT COUNT(DISTINCT account_last4) FROM account_balances WHERE bank_name = :bankName
+                ) = 1)
+            ))
             OR
             (transaction_type = 'TRANSFER' AND to_account = :accountLast4)
         )

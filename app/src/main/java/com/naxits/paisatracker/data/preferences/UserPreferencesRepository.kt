@@ -103,6 +103,9 @@ constructor(@ApplicationContext private val context: Context) {
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
         // Set once messages saved under an account's old name have been moved onto the account
         val ACCOUNT_REPAIR_BACKFILL_DONE = booleanPreferencesKey("account_repair_backfill_done")
+        val SBI_DEPOSIT_FIX_DONE = booleanPreferencesKey("sbi_deposit_fix_done")
+        val KEYWORD_CATEGORY_BACKFILL_DONE = booleanPreferencesKey("keyword_category_backfill_done")
+        val IGNORED_VENDOR_KEYS = androidx.datastore.preferences.core.stringSetPreferencesKey("ignored_vendor_keys")
         // How far an amount may differ, in tenths of a percent, for entries to count as a series
         val RECURRING_TOLERANCE_TENTHS = intPreferencesKey("recurring_tolerance_tenths")
         // Set once accounts the SMS parser labelled with the wrong bank have been renamed
@@ -965,6 +968,40 @@ constructor(@ApplicationContext private val context: Context) {
     suspend fun markAtmTransferBackfillDone() {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] = true
+        }
+    }
+
+    suspend fun isSbiDepositFixDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.SBI_DEPOSIT_FIX_DONE] ?: false
+        }.first()
+
+    suspend fun markSbiDepositFixDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SBI_DEPOSIT_FIX_DONE] = true
+        }
+    }
+
+    /** Vendors (by [com.naxits.paisatracker.domain.service.MerchantKey]) the user removed, so they are not suggested again. */
+    val ignoredVendorKeys: kotlinx.coroutines.flow.Flow<Set<String>> =
+        context.dataStore.data.map { preferences -> preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] ?: emptySet() }
+
+    suspend fun setVendorIgnored(key: String, ignored: Boolean) {
+        if (key.isEmpty()) return
+        context.dataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] ?: emptySet()
+            preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] = if (ignored) current + key else current - key
+        }
+    }
+
+    suspend fun isKeywordCategoryBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.KEYWORD_CATEGORY_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markKeywordCategoryBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.KEYWORD_CATEGORY_BACKFILL_DONE] = true
         }
     }
 

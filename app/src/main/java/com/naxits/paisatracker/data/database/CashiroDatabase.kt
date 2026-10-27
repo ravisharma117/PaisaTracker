@@ -96,7 +96,7 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class,
             com.naxits.paisatracker.data.database.entity.CategoryPatternEntity::class
         ],
-        version = 71,
+        version = 72,
     exportSchema = true,
     autoMigrations =
         [
@@ -687,6 +687,26 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_71_72 =
+            object : Migration(71, 72) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A remembered vendor also keeps its sub-category, and a spelling-independent key (copied from the exported schema 72)
+                    db.execSQL("ALTER TABLE `merchant_mappings` ADD COLUMN `subcategory` TEXT")
+                    db.execSQL("ALTER TABLE `merchant_mappings` ADD COLUMN `match_key` TEXT")
+                    // Mappings made before this keep working under their exact name; give them a key too
+                    val names = mutableListOf<String>()
+                    db.query("SELECT `merchant_name` FROM `merchant_mappings`").use { cursor ->
+                        while (cursor.moveToNext()) names.add(cursor.getString(0))
+                    }
+                    for (name in names) {
+                        db.execSQL(
+                            "UPDATE `merchant_mappings` SET `match_key` = ? WHERE `merchant_name` = ?",
+                            arrayOf<Any>(com.naxits.paisatracker.domain.service.MerchantKey.normalize(name), name)
+                        )
+                    }
                 }
             }
 

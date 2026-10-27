@@ -149,10 +149,11 @@ class SmsTransactionProcessor @Inject constructor(
             }
 
             // Check for custom merchant mapping
-            val customCategory = merchantMappingRepository.getCategoryForMerchant(entity.merchantName)
-            val entityWithMapping = if (customCategory != null) {
-                Log.d(TAG, "Found custom category mapping: ${entity.merchantName} -> $customCategory")
-                entity.copy(category = customCategory)
+            val vendorMapping = merchantMappingRepository.findForVendor(entity.merchantName)
+            val customCategory = vendorMapping?.category
+            val entityWithMapping = if (vendorMapping != null) {
+                Log.d(TAG, "Found custom category mapping: ${entity.merchantName} -> ${vendorMapping.category}")
+                entity.copy(category = vendorMapping.category, subcategory = vendorMapping.subcategory)
             } else {
                 entity
             }

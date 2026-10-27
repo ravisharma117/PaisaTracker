@@ -95,6 +95,7 @@ import com.naxits.paisatracker.presentation.ui.features.lendborrow.PersonDetailS
 import com.naxits.paisatracker.presentation.ui.features.onboarding.OnBoardingScreen
 import com.naxits.paisatracker.presentation.ui.features.networth.NetWorthScreen
 import com.naxits.paisatracker.presentation.ui.features.parties.PartiesScreen
+import com.naxits.paisatracker.presentation.ui.features.vendors.RememberedVendorsScreen
 import com.naxits.paisatracker.presentation.ui.features.profile.ProfileScreen
 import com.naxits.paisatracker.presentation.ui.features.recurring.RecurringTransactionsScreen
 import com.naxits.paisatracker.presentation.ui.features.settings.SettingsScreen
@@ -373,6 +374,7 @@ fun CashiroNavHost(
                         onNavigateToManageAccounts = { navController.safeNavigate(ManageAccounts) },
                         onNavigateToRules = { navController.safeNavigate(Rules) },
                         onNavigateToParties = { navController.safeNavigate(Parties) },
+                        onNavigateToRememberedVendors = { navController.safeNavigate(RememberedVendors) },
                         onNavigateToAppearance = { navController.safeNavigate(Appearance) },
                         onNavigateToProfile = { navController.safeNavigate(Profile) },
                         onNavigateToSms = { navController.safeNavigate(SmsSettings) },
@@ -585,6 +587,15 @@ fun CashiroNavHost(
                     popExitTransition = CashiroTransitions.horizontalSlidePopExit
                 ) {
                     PartiesScreen(onNavigateBack = { navController.safePopBackStack() })
+                }
+
+                composable<RememberedVendors>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) {
+                    RememberedVendorsScreen(onNavigateBack = { navController.safePopBackStack() })
                 }
 
                 composable<NetWorth>(
