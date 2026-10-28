@@ -33,7 +33,7 @@ class HomeWidgetLayoutTest {
             listOf(
                 HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
                 HomeWidget.RECENT_TRANSACTIONS, HomeWidget.NETWORTH_SUMMARY, HomeWidget.MONTHLY_SUMMARY,
-                HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
+                HomeWidget.TOP_CATEGORIES, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
             ),
             result
         )
@@ -65,6 +65,31 @@ class HomeWidgetLayoutTest {
         assertEquals(true, result[HomeWidget.RECENT_TRANSACTIONS])
         assertEquals(true, result[HomeWidget.MONTHLY_SUMMARY])
         assertEquals(true, result[HomeWidget.RECURRING])
+    }
+
+    @Test
+    fun topExpensesComeRightAfterTheMonthlySummaryByDefault() {
+        val order = names(HomeWidgetLayout.resolve(emptyList(), emptySet()))
+        assertEquals(order.indexOf(HomeWidget.MONTHLY_SUMMARY) + 1, order.indexOf(HomeWidget.TOP_CATEGORIES))
+    }
+
+    @Test
+    fun topExpensesAreAddedVisibleToALayoutSavedBeforeTheyExisted() {
+        val saved = listOf(HomeWidget.RECENT_TRANSACTIONS, HomeWidget.MONTHLY_SUMMARY, HomeWidget.ACCOUNT_CAROUSEL)
+
+        val result = HomeWidgetLayout.resolve(saved, emptySet())
+        val order = names(result)
+
+        assertEquals(order.indexOf(HomeWidget.MONTHLY_SUMMARY) + 1, order.indexOf(HomeWidget.TOP_CATEGORIES))
+        assertTrue(result.first { it.widget == HomeWidget.TOP_CATEGORIES }.isVisible)
+    }
+
+    @Test
+    fun theWeekStartsOnMonday() {
+        val monday = java.time.LocalDate.of(2026, 10, 26)
+        assertEquals(monday, HomeWeek.start(monday))
+        assertEquals(monday, HomeWeek.start(java.time.LocalDate.of(2026, 10, 28)))
+        assertEquals(monday, HomeWeek.start(java.time.LocalDate.of(2026, 11, 1)))
     }
 
     @Test

@@ -96,7 +96,7 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class,
             com.naxits.paisatracker.data.database.entity.CategoryPatternEntity::class
         ],
-        version = 72,
+        version = 73,
     exportSchema = true,
     autoMigrations =
         [
@@ -687,6 +687,14 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_72_73 =
+            object : Migration(72, 73) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A lent or borrowed entry can be kept only as a reminder (copied from the exported schema 73)
+                    db.execSQL("ALTER TABLE `lend_borrow_transactions` ADD COLUMN `remember_only` INTEGER NOT NULL DEFAULT 0")
                 }
             }
 

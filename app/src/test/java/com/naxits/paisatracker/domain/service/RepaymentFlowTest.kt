@@ -35,6 +35,9 @@ private class FakeLendDao : LendBorrowDao {
     override suspend fun updateReminderMarks(id: Long, pre: LocalDate?, due: LocalDate?, overdue: LocalDate?) {
         entries[id]?.let { entries[id] = it.copy(preRemindedFor = pre, dueRemindedFor = due, overdueRemindedFor = overdue) }
     }
+    override suspend fun setRememberOnly(id: Long, rememberOnly: Boolean, updatedAt: java.time.LocalDateTime) {
+        entries[id]?.let { entries[id] = it.copy(rememberOnly = rememberOnly, updatedAt = updatedAt) }
+    }
     override fun getPersonById(id: Long): Flow<LendBorrowPersonEntity?> = flowOf(persons[id])
     override suspend fun getPersonByIdSync(id: Long) = persons[id]
     override suspend fun insertPerson(person: LendBorrowPersonEntity): Long {

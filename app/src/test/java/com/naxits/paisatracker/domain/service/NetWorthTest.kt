@@ -223,6 +223,31 @@ class NetWorthHistoryTest {
     }
 
     @Test
+    fun moneyLentAsRememberOnlyIsNotCounted() {
+        val lend = listOf(
+            entry(1, LendBorrowType.LENT, "20000", "2026-08-01"),
+            entry(1, LendBorrowType.LENT, "7000", "2026-08-02").copy(rememberOnly = true)
+        )
+        assertEquals(bd("20000"), at("2026-08-31", lend = lend).netWorth)
+    }
+
+    @Test
+    fun moneyBorrowedAsRememberOnlyIsNotADebt() {
+        val lend = listOf(entry(1, LendBorrowType.BORROWED, "4000", "2026-08-01").copy(rememberOnly = true))
+        assertEquals(0, at("2026-08-31", lend = lend).netWorth.signum())
+    }
+
+    @Test
+    fun aRepaymentReducesTheCountedLendingFirst() {
+        val lend = listOf(
+            entry(1, LendBorrowType.LENT, "10000", "2026-08-01"),
+            entry(1, LendBorrowType.LENT, "5000", "2026-08-02").copy(rememberOnly = true),
+            entry(1, LendBorrowType.SETTLEMENT_LENT, "4000", "2026-08-10")
+        )
+        assertEquals(bd("6000"), at("2026-08-31", lend = lend).netWorth)
+    }
+
+    @Test
     fun anArchivedPersonIsLeftOut() {
         val lend = listOf(entry(2, LendBorrowType.LENT, "20000", "2026-08-01"))
         assertEquals(0, at("2026-08-31", lend = lend, persons = setOf(1L)).netWorth.signum())

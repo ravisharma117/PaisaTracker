@@ -164,4 +164,44 @@ class CategoryAnalysisCalculatorTest {
         assertEquals(BigDecimal("30"), CategoryAnalysisCalculator.monthTotal(entries, october))
         assertEquals(mapOf(food to 2, "Travel" to 1), CategoryAnalysisCalculator.countsByCategory(entries, october))
     }
+
+    @Test
+    fun topCategoriesAreTheBiggestFirstLimitedToFive() {
+        val entries = listOf("A" to "10", "B" to "60", "C" to "30", "D" to "50", "E" to "20", "F" to "40")
+            .map { (c, a) -> entry(c, a, "2026-10-05") }
+
+        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+
+        assertEquals(listOf("B", "D", "F", "C", "E"), top.map { it.category })
+        assertEquals(BigDecimal("60"), top.first().total)
+    }
+
+    @Test
+    fun topCategoriesShowEachShareOfTheWholeMonth() {
+        val entries = listOf(entry(food, "75", "2026-10-02"), entry("Travel", "25", "2026-10-03"))
+
+        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+
+        assertEquals(listOf(75.0f, 25.0f), top.map { it.percentOfMonth })
+    }
+
+    @Test
+    fun topCategoriesCountOnlyThisMonthAndLeaveOutNothingSpent() {
+        val entries = listOf(
+            entry(food, "100", "2026-10-02"),
+            entry("Travel", "500", "2026-09-30"),
+            entry("Refunded", "-20", "2026-10-04"),
+            entry("Zero", "0", "2026-10-04")
+        )
+
+        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+
+        assertEquals(listOf(food), top.map { it.category })
+        assertEquals(100.0f, top.single().percentOfMonth)
+    }
+
+    @Test
+    fun aMonthWithNoSpendingHasNoTopCategories() {
+        assertTrue(CategoryAnalysisCalculator.topCategories(emptyList(), october).isEmpty())
+    }
 }

@@ -167,6 +167,7 @@ fun SharedTransitionScope.HomeScreen(
     onNavigateToBudgetHistory: (Long) -> Unit = {},
     onNavigateToLendBorrow: (String?) -> Unit = { _ -> },
     onNavigateToAnalytics: () -> Unit = {},
+    onOpenCategory: (String) -> Unit = {},
     onNavigateToMonthlyTracker: () -> Unit = {},
     onNavigateToNetWorth: () -> Unit = {},
     onNavigateToRecurring: () -> Unit = {},
@@ -463,6 +464,18 @@ fun SharedTransitionScope.HomeScreen(
                                     )
                                 }
                             }
+                            HomeWidget.TOP_CATEGORIES -> {
+                                item(key = "top_categories") {
+                                    TopCategoriesCard(
+                                        categories = uiState.topCategories,
+                                        currency = uiState.topCategoriesCurrency,
+                                        categoriesMap = categoriesMap,
+                                        onOpenCategory = onOpenCategory,
+                                        onClick = onNavigateToAnalytics,
+                                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
+                                    )
+                                }
+                            }
                             HomeWidget.RECURRING -> {
                                 if (uiState.upcomingRecurring.isNotEmpty()) {
                                     item(key = "recurring") {
@@ -615,7 +628,7 @@ fun SharedTransitionScope.HomeScreen(
                                         ) {
                                             Column {
                                                 SectionHeader(
-                                                    title = stringResource(R.string.recent),
+                                                    title = stringResource(R.string.home_this_week),
                                                     action = {
                                                         Row(
                                                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -691,7 +704,7 @@ fun SharedTransitionScope.HomeScreen(
                                                             )
                                                             Spacer(modifier = Modifier.height(Spacing.md))
                                                             Text(
-                                                                text = stringResource(R.string.no_transactions_yet),
+                                                                text = stringResource(R.string.home_no_transactions_this_week),
                                                                 style = MaterialTheme.typography.bodyLarge,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )

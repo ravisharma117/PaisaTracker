@@ -22,6 +22,13 @@ data class SubcategoryShare(
     val count: Int
 )
 
+/** One of the month's biggest expense categories, with its share of all that month's spending. */
+data class CategoryRank(
+    val category: String,
+    val total: BigDecimal,
+    val percentOfMonth: Float
+)
+
 data class CategoryAnalysis(
     val category: String,
     val month: YearMonth,
@@ -121,6 +128,22 @@ object CategoryAnalysisCalculator {
             subcategories = subcategories
         )
     }
+
+    /**
+     * The [limit] categories with the most spent in [month], biggest first, each with its share of
+     * everything spent that month. Categories with nothing (or less than nothing) spent are left out.
+     */
+    fun topCategories(entries: List<SpendEntry>, month: YearMonth, limit: Int = TOP_CATEGORIES): List<CategoryRank> {
+        val totals = totalsByCategory(entries, month).filterValues { it.signum() > 0 }
+        val monthTotal = totals.values.fold(BigDecimal.ZERO) { acc, v -> acc.add(v) }
+        if (monthTotal.signum() == 0) return emptyList()
+        return totals.entries
+            .sortedWith(compareByDescending<Map.Entry<String, BigDecimal>> { it.value }.thenBy { it.key })
+            .take(limit)
+            .map { CategoryRank(it.key, it.value, percent(it.value, monthTotal)) }
+    }
+
+    const val TOP_CATEGORIES = 5
 
     private fun SpendEntry.inMonth(month: YearMonth) = YearMonth.from(date) == month
 

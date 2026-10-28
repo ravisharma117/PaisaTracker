@@ -255,6 +255,10 @@ fun CashiroNavHost(
                         },
                         onNavigateToLendBorrow = { filter -> navController.safeNavigate(LendBorrow(filter)) },
                         onNavigateToAnalytics = { navController.safeNavigate(Analytics) },
+                        onOpenCategory = { name ->
+                            val now = java.time.YearMonth.now()
+                            navController.safeNavigate(CategoryDetail(name, now.year, now.monthValue))
+                        },
                         onNavigateToMonthlyTracker = {
                             val now = java.time.YearMonth.now()
                             navController.safeNavigate(MonthlyTracker(now.year, now.monthValue))

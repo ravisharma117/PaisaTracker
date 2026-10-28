@@ -2,6 +2,7 @@ package com.naxits.paisatracker.data.repository
 
 import com.naxits.paisatracker.data.currency.CurrencyConversionService
 import com.naxits.paisatracker.data.database.dao.LendBorrowDao
+import com.naxits.paisatracker.domain.service.LendingBalance
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
 import com.naxits.paisatracker.data.database.entity.LendBorrowPersonEntity
 import com.naxits.paisatracker.data.database.entity.LendBorrowTransactionEntity
@@ -43,6 +44,8 @@ class LendBorrowRepository @Inject constructor(
 
                 var totalLent = BigDecimal.ZERO
                 var totalBorrowed = BigDecimal.ZERO
+                var rememberLent = BigDecimal.ZERO
+                var rememberBorrowed = BigDecimal.ZERO
                 var totalSettledLent = BigDecimal.ZERO
                 var totalSettledBorrowed = BigDecimal.ZERO
                 var hasOverdue = false
@@ -66,17 +69,16 @@ class LendBorrowRepository @Inject constructor(
                         }
                     }
                     when (tx.type) {
-                        LendBorrowType.LENT -> totalLent += convertedAmount
-                        LendBorrowType.BORROWED -> totalBorrowed += convertedAmount
+                        LendBorrowType.LENT -> if (tx.rememberOnly) rememberLent += convertedAmount else totalLent += convertedAmount
+                        LendBorrowType.BORROWED -> if (tx.rememberOnly) rememberBorrowed += convertedAmount else totalBorrowed += convertedAmount
                         LendBorrowType.SETTLEMENT_LENT -> totalSettledLent += convertedAmount
                         LendBorrowType.SETTLEMENT_BORROWED -> totalSettledBorrowed += convertedAmount
                     }
                 }
 
-                // Remaining Lent = total LENT - total SETTLEMENT_LENT
-                val remainingLent = (totalLent - totalSettledLent).coerceAtLeast(BigDecimal.ZERO)
-                // Remaining Borrowed = total BORROWED - total SETTLEMENT_BORROWED
-                val remainingBorrowed = (totalBorrowed - totalSettledBorrowed).coerceAtLeast(BigDecimal.ZERO)
+                // What is still owed, leaving out entries kept only as a reminder (repayments go to counted ones first)
+                val remainingLent = LendingBalance.outstanding(totalLent, rememberLent, totalSettledLent).counted
+                val remainingBorrowed = LendingBalance.outstanding(totalBorrowed, rememberBorrowed, totalSettledBorrowed).counted
                 // Net balance: positive = they owe you, negative = you owe them
                 val netBalance = remainingLent - remainingBorrowed
 
@@ -101,6 +103,11 @@ class LendBorrowRepository @Inject constructor(
                 )
             }
         }
+    }
+
+    /** Marks a lent or borrowed entry as kept only as a reminder, or counts it again. */
+    suspend fun setRememberOnly(entryId: Long, rememberOnly: Boolean) {
+        lendBorrowDao.setRememberOnly(entryId, rememberOnly, LocalDateTime.now())
     }
 
     fun getPersonById(personId: Long): Flow<LendBorrowPerson?> {
@@ -416,6 +423,7 @@ class LendBorrowRepository @Inject constructor(
         accountId = accountId,
         category = category,
         merchant = merchant,
-        attachments = attachments
+        attachments = attachments,
+        rememberOnly = rememberOnly
     )
 }

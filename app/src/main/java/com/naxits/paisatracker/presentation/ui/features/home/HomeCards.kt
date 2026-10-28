@@ -1,5 +1,11 @@
 package com.naxits.paisatracker.presentation.ui.features.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -126,6 +132,90 @@ fun RecurringHomeCard(
                     CurrencyFormatter.formatCurrency(item.amount, item.currency),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+/** This month's biggest expense categories, one per line with a bar for its share of the month. */
+@Composable
+fun TopCategoriesCard(
+    categories: List<com.naxits.paisatracker.domain.usecase.CategoryRank>,
+    currency: String,
+    categoriesMap: Map<String, com.naxits.paisatracker.data.database.entity.CategoryEntity>,
+    onOpenCategory: (String) -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    CashiroCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.home_widget_top_categories),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = YearMonth.now().displayName(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        if (categories.isEmpty()) {
+            Text(
+                text = stringResource(R.string.home_top_categories_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        categories.forEach { rank ->
+            val fallback = MaterialTheme.colorScheme.primary
+            val color = remember(rank.category, categoriesMap) {
+                categoriesMap[rank.category]?.color?.let {
+                    try {
+                        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it))
+                    } catch (_: IllegalArgumentException) {
+                        null
+                    }
+                } ?: fallback
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenCategory(rank.category) }
+                    .padding(vertical = Spacing.xs)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(color, CircleShape)
+                    )
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(
+                        text = rank.category,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = CurrencyFormatter.formatTotal(rank.total, currency),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Spacer(Modifier.height(Spacing.xs))
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { (rank.percentOfMonth / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp),
+                    color = color,
+                    trackColor = color.copy(alpha = 0.15f)
                 )
             }
         }

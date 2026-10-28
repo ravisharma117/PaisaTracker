@@ -51,7 +51,9 @@ data class LendBorrowTransactionItem(
     val accountId: Long? = null,
     val category: String? = null,
     val merchant: String? = null,
-    val attachments: List<String> = emptyList()
+    val attachments: List<String> = emptyList(),
+    /** Kept only as a reminder: left out of net worth and the totals. */
+    val rememberOnly: Boolean = false
 )
 
 /**

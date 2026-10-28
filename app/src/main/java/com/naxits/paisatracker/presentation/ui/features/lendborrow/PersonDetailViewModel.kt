@@ -59,6 +59,7 @@ class PersonDetailViewModel @Inject constructor(
     private val currencyRepository: CurrencyRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
     private val accountOrderUseCase: AccountOrderUseCase,
+    private val lendBorrowRepository: com.naxits.paisatracker.data.repository.LendBorrowRepository,
     private val categoryRepository: CategoryRepository,
     val attachmentService: AttachmentService
 ) : ViewModel() {
@@ -142,6 +143,14 @@ class PersonDetailViewModel @Inject constructor(
 
     fun hideEditTransactionSheet() {
         _uiState.update { it.copy(showEditTransactionSheet = false, transactionToEdit = null) }
+    }
+
+    /** Keep the entry only as a reminder (out of net worth and totals), or count it again. */
+    fun toggleRememberOnly(transaction: LendBorrowTransactionItem) {
+        _uiState.update { it.copy(showTransactionActionDialog = false) }
+        viewModelScope.launch {
+            lendBorrowRepository.setRememberOnly(transaction.id, !transaction.rememberOnly)
+        }
     }
 
     fun deleteTransactionRequested(transaction: LendBorrowTransactionItem) {

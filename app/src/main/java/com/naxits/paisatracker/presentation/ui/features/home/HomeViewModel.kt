@@ -1,6 +1,9 @@
 package com.naxits.paisatracker.presentation.ui.features.home
 
 import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
+import com.naxits.paisatracker.domain.usecase.CategoryAnalysisCalculator
+import com.naxits.paisatracker.domain.usecase.CategoryKind
+import com.naxits.paisatracker.domain.usecase.GetCategoryAnalysisUseCase
 import android.content.Context
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -73,13 +76,11 @@ class HomeViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val recurringRepository: com.naxits.paisatracker.data.repository.RecurringTransactionRepository,
     private val lendBorrowRepository: com.naxits.paisatracker.data.repository.LendBorrowRepository,
+    private val categoryAnalysis: GetCategoryAnalysisUseCase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     companion object {
-        /** How many of the latest transactions Home lists. */
-        const val RECENT_TRANSACTIONS_SHOWN = 10
-
         /** How many upcoming payments Home lists, one per line. */
         const val UPCOMING_PAYMENTS_SHOWN = 3
     }
@@ -384,9 +385,28 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Load the latest transactions and react to base currency changes
+            // This month's biggest expense categories, counted the way Analysis counts them
+            val month = java.time.YearMonth.now()
+            categoryAnalysis.window(CategoryKind.EXPENSE, month, monthsBack = 0).collectLatest { window ->
+                _uiState.update {
+                    it.copy(
+                        topCategories = CategoryAnalysisCalculator.topCategories(window.entries, month),
+                        topCategoriesCurrency = window.currency
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            // This week's transactions (Monday to today), newest first, and react to base currency changes
+            val today = java.time.LocalDate.now()
+            val thisWeek = transactionRepository.getTransactionsBetweenDates(HomeWeek.start(today), today)
+                .map { list ->
+                    list.filter { it.transactionType != TransactionType.BALANCE_UPDATE }
+                        .sortedByDescending { it.dateTime }
+                }
             combine(
-                transactionRepository.getRecentTransactions(limit = RECENT_TRANSACTIONS_SHOWN),
+                thisWeek,
                 selectedCurrencyCombined,
                 currencyConversionService.rateChangeTrigger
             ) { transactions, selectedCurrency, _ ->

@@ -15,6 +15,10 @@ data class HomeUiState(
     val currentYearTotal: BigDecimal = BigDecimal.ZERO,
     val currentMonthIncome: BigDecimal = BigDecimal.ZERO,
     val currentMonthExpenses: BigDecimal = BigDecimal.ZERO,
+    /** This month's biggest expense categories, biggest first. */
+    val topCategories: List<com.naxits.paisatracker.domain.usecase.CategoryRank> = emptyList(),
+    /** The currency [topCategories] are in (the base currency, as in Analysis). */
+    val topCategoriesCurrency: String = "INR",
     val currentYearExpenses: BigDecimal = BigDecimal.ZERO,
     val currentMonthCreditCard: BigDecimal = BigDecimal.ZERO,
     val currentMonthTransfer: BigDecimal = BigDecimal.ZERO,

@@ -561,6 +561,11 @@ fun SharedTransitionScope.PersonDetailScreen(
                 onDismiss = { viewModel.dismissTransactionActions() },
                 onEdit = { viewModel.openTransactionEdit(transaction) },
                 onDelete = { viewModel.deleteTransactionRequested(transaction) },
+                rememberOnly = transaction.rememberOnly.takeIf {
+                    transaction.type == com.naxits.paisatracker.data.database.entity.LendBorrowType.LENT ||
+                        transaction.type == com.naxits.paisatracker.data.database.entity.LendBorrowType.BORROWED
+                },
+                onToggleRememberOnly = { viewModel.toggleRememberOnly(transaction) },
                 onSelectMultiple = {
                     viewModel.enterSelectionMode(transaction.id)
                     viewModel.dismissTransactionActions()
@@ -1010,6 +1015,14 @@ fun SharedTransitionScope.LendBorrowTransactionListItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (item.rememberOnly) {
+                    Text(
+                        text = stringResource(R.string.lend_remember_only_tag),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 if (item.dueDate != null) {
                     Text(
                         text = stringResource(R.string.due_on_format, item.dueDate.format(dueDateFormatter)),
