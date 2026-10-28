@@ -1599,6 +1599,8 @@
     <string name="nw_group_investments">Investments</string>
     <string name="nw_group_lent">Money lent</string>
     <string name="nw_group_other_assets">Other assets</string>
+    <string name="nw_group_property">Property &amp; land</string>
+    <string name="nw_group_gold">Gold &amp; jewellery</string>
     <string name="nw_group_cards">Credit cards</string>
     <string name="nw_group_overdraft">Overdrafts</string>
     <string name="nw_group_borrowed">Money borrowed</string>
@@ -1624,8 +1626,10 @@
     <string name="nw_type_mutual_fund">Mutual fund</string>
     <string name="nw_type_stocks">Stocks</string>
     <string name="nw_type_fixed_deposit">Fixed deposit</string>
-    <string name="nw_type_gold">Gold</string>
-    <string name="nw_type_property">Property</string>
+    <string name="nw_type_gold">Gold / jewellery</string>
+    <string name="nw_type_house">Home / house</string>
+    <string name="nw_type_plot">Plot / land</string>
+    <string name="nw_type_property">Other property</string>
     <string name="nw_type_vehicle">Vehicle</string>
     <string name="nw_type_other_asset">Other asset</string>
     <string name="nw_type_home_loan">Home loan</string>
@@ -1785,4 +1789,5 @@
     <string name="lend_remember_only">Remember only (don\'t count)</string>
     <string name="lend_count_again">Count in totals again</string>
     <string name="lend_remember_only_tag">Remember only</string>
+    <string name="lend_remember_only_amount">Remember only: %1$s</string>
 </resources>

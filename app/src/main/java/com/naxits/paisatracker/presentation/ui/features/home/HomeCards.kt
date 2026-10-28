@@ -63,7 +63,7 @@ fun MonthlySummaryCard(
             Figure(stringResource(R.string.income), summary.income, currency, MaterialTheme.colorScheme.primary)
             Figure(stringResource(R.string.expense), summary.expenses, currency, MaterialTheme.colorScheme.error)
             Figure(
-                label = stringResource(R.string.home_savings),
+                label = stringResource(R.string.balance_label),
                 amount = summary.savings,
                 currency = currency,
                 color = if (summary.savings.signum() < 0) MaterialTheme.colorScheme.error

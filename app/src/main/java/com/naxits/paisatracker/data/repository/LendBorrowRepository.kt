@@ -77,8 +77,11 @@ class LendBorrowRepository @Inject constructor(
                 }
 
                 // What is still owed, leaving out entries kept only as a reminder (repayments go to counted ones first)
-                val remainingLent = LendingBalance.outstanding(totalLent, rememberLent, totalSettledLent).counted
-                val remainingBorrowed = LendingBalance.outstanding(totalBorrowed, rememberBorrowed, totalSettledBorrowed).counted
+                val lentLeft = LendingBalance.outstanding(totalLent, rememberLent, totalSettledLent)
+                val borrowedLeft = LendingBalance.outstanding(totalBorrowed, rememberBorrowed, totalSettledBorrowed)
+                // The person shows everything still owed; only the overall totals leave reminders out
+                val remainingLent = lentLeft.counted + lentLeft.rememberOnly
+                val remainingBorrowed = borrowedLeft.counted + borrowedLeft.rememberOnly
                 // Net balance: positive = they owe you, negative = you owe them
                 val netBalance = remainingLent - remainingBorrowed
 
@@ -99,7 +102,9 @@ class LendBorrowRepository @Inject constructor(
                     totalBorrowed = remainingBorrowed,
                     netBalance = netBalance,
                     activeTransactionsCount = activeTxCount,
-                    hasOverdue = hasOverdue
+                    hasOverdue = hasOverdue,
+                    rememberOnlyLent = lentLeft.rememberOnly,
+                    rememberOnlyBorrowed = borrowedLeft.rememberOnly
                 )
             }
         }
@@ -126,8 +131,9 @@ class LendBorrowRepository @Inject constructor(
             var overdueCount = 0
 
             activePersons.forEach { person ->
-                totalLentRemaining += person.totalLent
-                totalBorrowedRemaining += person.totalBorrowed
+                // Money kept only as a reminder is shown on the person but not counted in the totals
+                totalLentRemaining += person.totalLent - person.rememberOnlyLent
+                totalBorrowedRemaining += person.totalBorrowed - person.rememberOnlyBorrowed
                 if (person.totalLent > BigDecimal.ZERO) lentPersonsList.add(person)
                 if (person.totalBorrowed > BigDecimal.ZERO) borrowedPersonsList.add(person)
                 if (person.hasOverdue) {

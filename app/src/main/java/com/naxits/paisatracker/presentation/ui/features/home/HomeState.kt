@@ -40,6 +40,7 @@ data class HomeUiState(
     val upcomingRecurring: List<com.naxits.paisatracker.data.database.entity.RecurringTransactionEntity> = emptyList(),
     val accountBalances: List<AccountBalanceEntity> = emptyList(),
     val creditCards: List<AccountBalanceEntity> = emptyList(),
+    /** Net worth, calculated as on the Net Worth screen. */
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,
     val selectedCurrency: String = "INR",

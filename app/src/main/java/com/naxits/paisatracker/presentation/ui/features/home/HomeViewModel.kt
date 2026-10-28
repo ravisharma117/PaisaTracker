@@ -77,6 +77,7 @@ class HomeViewModel @Inject constructor(
     private val recurringRepository: com.naxits.paisatracker.data.repository.RecurringTransactionRepository,
     private val lendBorrowRepository: com.naxits.paisatracker.data.repository.LendBorrowRepository,
     private val categoryAnalysis: GetCategoryAnalysisUseCase,
+    private val netWorthService: com.naxits.paisatracker.domain.service.NetWorthService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -135,6 +136,12 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             userPreferencesRepository.moveRecentTransactionsToTopOnce(HomeWidgetLayout::recentFirst)
+        }
+        viewModelScope.launch {
+            // The same net worth as the Net Worth screen: accounts, holdings, property, gold and lending
+            netWorthService.observeCurrent(selectedCurrencyCombined).collectLatest { breakdown ->
+                _uiState.update { it.copy(totalBalance = breakdown.netWorth) }
+            }
         }
         loadHomeData()
         loadUserData()
@@ -294,7 +301,6 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         accountBalances = regularAccounts,
                         creditCards = creditCards,
-                        totalBalance = totalBalanceInSelectedCurrency,
                         totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                         selectedCurrency = selectedCurrency
                     )
@@ -639,7 +645,6 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
-                    totalBalance = regularAccounts.sumOfBigDecimal { acc: AccountBalanceEntity -> acc.balance },
                     totalAvailableCredit = creditCards.sumOfBigDecimal { card: AccountBalanceEntity ->
                         // Available = Credit Limit - Outstanding Balance
                         (card.creditLimit ?: BigDecimal.ZERO) - card.balance
@@ -769,7 +774,6 @@ class HomeViewModel @Inject constructor(
                 it.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
-                    totalBalance = totalBalanceInSelectedCurrency,
                     totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                     availableCurrencies = updatedAvailableCurrencies,
                     selectedCurrency = selectedCurrency

@@ -801,6 +801,15 @@ private fun SharedTransitionScope.PersonHeaderCard(
             fontWeight = FontWeight.Bold
         )
 
+        if (person.hasRememberOnly) {
+            Text(
+                text = rememberOnlyText(person, currency),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
+
         if (!person.phoneNumber.isNullOrBlank()) {
             Text(
                 text = person.phoneNumber,
