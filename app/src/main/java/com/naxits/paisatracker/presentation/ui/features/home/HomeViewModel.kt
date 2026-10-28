@@ -76,6 +76,14 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    companion object {
+        /** How many of the latest transactions Home lists. */
+        const val RECENT_TRANSACTIONS_SHOWN = 10
+
+        /** How many upcoming payments Home lists, one per line. */
+        const val UPCOMING_PAYMENTS_SHOWN = 3
+    }
+
     private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -124,6 +132,9 @@ class HomeViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "INR")
 
     init {
+        viewModelScope.launch {
+            userPreferencesRepository.moveRecentTransactionsToTopOnce(HomeWidgetLayout::recentFirst)
+        }
         loadHomeData()
         loadUserData()
     }
@@ -373,9 +384,9 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Load recent transactions (last 3) and react to base currency changes
+            // Load the latest transactions and react to base currency changes
             combine(
-                transactionRepository.getRecentTransactions(limit = 3),
+                transactionRepository.getRecentTransactions(limit = RECENT_TRANSACTIONS_SHOWN),
                 selectedCurrencyCombined,
                 currencyConversionService.rateChangeTrigger
             ) { transactions, selectedCurrency, _ ->
@@ -429,6 +440,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         upcomingSubscriptions = (upcoming.overdue + upcoming.thisWeek + upcoming.later)
                             .map { item -> item.subscription },
+                        upcomingPayments = (upcoming.overdue + upcoming.thisWeek + upcoming.later).take(UPCOMING_PAYMENTS_SHOWN),
                         upcomingSubscriptionsTotal = upcoming.total,
                         upcomingSubscriptionsCurrency = targetCurrency,
                         upcomingOverdueCount = upcoming.overdue.size

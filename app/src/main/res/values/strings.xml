@@ -1776,4 +1776,6 @@
         <item quantity="one">%1$d entry</item>
         <item quantity="other">%1$d entries</item>
     </plurals>
+    <string name="upcoming_row_due">Due %1$s</string>
+    <string name="upcoming_row_overdue">Overdue \u2022 %1$s</string>
 </resources>

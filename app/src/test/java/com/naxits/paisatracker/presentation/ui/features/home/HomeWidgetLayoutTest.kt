@@ -23,7 +23,7 @@ class HomeWidgetLayoutTest {
     fun aSavedOrderIsKeptAndTheNewCardsAreSlottedInNextToTheirNeighbours() {
         // An order saved before Net Worth became movable and before the new cards existed
         val saved = listOf(
-            HomeWidget.LOANS, HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS,
+            HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS,
             HomeWidget.RECENT_TRANSACTIONS, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
         )
 
@@ -31,9 +31,9 @@ class HomeWidgetLayoutTest {
 
         assertEquals(
             listOf(
-                HomeWidget.NETWORTH_SUMMARY, HomeWidget.MONTHLY_SUMMARY, HomeWidget.LOANS,
                 HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
-                HomeWidget.RECENT_TRANSACTIONS, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
+                HomeWidget.RECENT_TRANSACTIONS, HomeWidget.NETWORTH_SUMMARY, HomeWidget.MONTHLY_SUMMARY,
+                HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
             ),
             result
         )
@@ -56,15 +56,31 @@ class HomeWidgetLayoutTest {
 
     @Test
     fun hiddenCardsStayHiddenAndNewOnesAreVisible() {
-        val saved = listOf(HomeWidget.LOANS, HomeWidget.RECENT_TRANSACTIONS)
-        val hidden = setOf(HomeWidget.LOANS)
+        val saved = listOf(HomeWidget.BUDGET_CAROUSEL, HomeWidget.RECENT_TRANSACTIONS)
+        val hidden = setOf(HomeWidget.BUDGET_CAROUSEL)
 
         val result = HomeWidgetLayout.resolve(saved, hidden).associate { it.widget to it.isVisible }
 
-        assertEquals(false, result[HomeWidget.LOANS])
+        assertEquals(false, result[HomeWidget.BUDGET_CAROUSEL])
         assertEquals(true, result[HomeWidget.RECENT_TRANSACTIONS])
         assertEquals(true, result[HomeWidget.MONTHLY_SUMMARY])
         assertEquals(true, result[HomeWidget.RECURRING])
+    }
+
+    @Test
+    fun recentTransactionsAreFirstByDefault() {
+        assertEquals(HomeWidget.RECENT_TRANSACTIONS, names(HomeWidgetLayout.resolve(emptyList(), emptySet())).first())
+    }
+
+    @Test
+    fun recentFirstMovesItToTheTopOfASavedOrderAndKeepsTheRest() {
+        val saved = listOf(HomeWidget.BUDGET_CAROUSEL, HomeWidget.NETWORTH_SUMMARY, HomeWidget.RECENT_TRANSACTIONS)
+
+        assertEquals(
+            listOf(HomeWidget.RECENT_TRANSACTIONS, HomeWidget.BUDGET_CAROUSEL, HomeWidget.NETWORTH_SUMMARY),
+            HomeWidgetLayout.recentFirst(saved)
+        )
+        assertEquals(emptyList(), HomeWidgetLayout.recentFirst(emptyList()))
     }
 
     @Test
@@ -75,9 +91,9 @@ class HomeWidgetLayoutTest {
 
     @Test
     fun aRepeatedNameInTheSavedOrderIsListedOnce() {
-        val saved = listOf(HomeWidget.LOANS, HomeWidget.LOANS, HomeWidget.BUDGET_CAROUSEL)
+        val saved = listOf(HomeWidget.RECURRING, HomeWidget.RECURRING, HomeWidget.BUDGET_CAROUSEL)
         val result = names(HomeWidgetLayout.resolve(saved, emptySet()))
-        assertEquals(1, result.count { it == HomeWidget.LOANS })
+        assertEquals(1, result.count { it == HomeWidget.RECURRING })
         assertEquals(HomeWidget.entries.size, result.size)
     }
 }

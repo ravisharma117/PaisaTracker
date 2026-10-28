@@ -5,6 +5,10 @@ import com.naxits.paisatracker.data.preferences.HomeWidget
 /** Turns the saved order and hidden set into the list Home shows and the edit sheet edits. */
 object HomeWidgetLayout {
 
+    /** [saved] with Recent Transactions moved to the top; an empty order (the default) is left empty. */
+    fun recentFirst(saved: List<HomeWidget>): List<HomeWidget> =
+        if (saved.isEmpty()) saved else listOf(HomeWidget.RECENT_TRANSACTIONS) + saved.filter { it != HomeWidget.RECENT_TRANSACTIONS }
+
     /**
      * - Cards in [saved] keep their saved order; names that no longer exist were dropped on read.
      * - A card missing from [saved] (new in this version, or never reordered) is slotted in after

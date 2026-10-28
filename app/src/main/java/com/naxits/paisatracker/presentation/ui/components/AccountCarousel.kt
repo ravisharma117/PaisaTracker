@@ -54,7 +54,11 @@ fun SharedTransitionScope.AccountCarousel(
     hazeState: HazeState = remember { HazeState() }
 ) {
     val totalAccounts = bankAccounts.size + creditCards.size
-    val allAccounts = bankAccounts + creditCards
+    // Cash is always the last card, after the bank accounts and the credit cards
+    val (cashAccounts, otherBankAccounts) = bankAccounts.partition {
+        com.naxits.paisatracker.domain.model.CashAccount.isCash(it.bankName, it.accountLast4)
+    }
+    val allAccounts = otherBankAccounts + creditCards + cashAccounts
     
     val isTransitioning = animatedContentScope?.transition?.let { 
         it.currentState != it.targetState 

@@ -148,8 +148,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import androidx.compose.ui.res.stringResource
-import com.naxits.paisatracker.presentation.ui.components.LendBorrowCard
-import com.naxits.paisatracker.presentation.ui.features.lendborrow.LendBorrowFilter
+import com.naxits.paisatracker.domain.service.UpcomingItem
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class,
     ExperimentalHazeApi::class
@@ -475,21 +474,6 @@ fun SharedTransitionScope.HomeScreen(
                                     }
                                 }
                             }
-                            HomeWidget.LOANS -> {
-                                item(key = "loans") {
-                                    LendBorrowCard(
-                                        summary = uiState.lendBorrowSummary,
-                                        onClick = { onNavigateToLendBorrow(null) },
-                                        onLentClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_GET.name) },
-                                        onBorrowedClick = { onNavigateToLendBorrow(LendBorrowFilter.YOU_OWE.name) },
-                                        modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
-                                        currency = uiState.baseCurrency,
-                                        blurEffects = blurEffects && uiState.showBannerImage,
-                                        hazeState = hazeStateBanner,
-                                        animatedContentScope = animatedContentScope
-                                    )
-                                }
-                            }
                             HomeWidget.TRANSACTION_HEATMAP -> {
                                 item(key = "transaction_heatmap") {
                                     HeatmapWidget(
@@ -558,7 +542,7 @@ fun SharedTransitionScope.HomeScreen(
 
                                         if (animatedContentScope != null) {
                                             UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcomingSubscriptions,
+                                                payments = uiState.upcomingPayments,
                                                 totalAmount = uiState.upcomingSubscriptionsTotal,
                                                 overdueCount = uiState.upcomingOverdueCount,
                                                 currency = uiState.upcomingSubscriptionsCurrency,
@@ -586,7 +570,7 @@ fun SharedTransitionScope.HomeScreen(
                                             )
                                         } else {
                                             UpcomingSubscriptionsCard(
-                                                subscriptions = uiState.upcomingSubscriptions,
+                                                payments = uiState.upcomingPayments,
                                                 totalAmount = uiState.upcomingSubscriptionsTotal,
                                                 overdueCount = uiState.upcomingOverdueCount,
                                                 currency = uiState.upcomingSubscriptionsCurrency,
@@ -1093,7 +1077,7 @@ private fun BreakdownRow(
 @Composable
 private fun UpcomingSubscriptionsCard(
     modifier: Modifier = Modifier,
-    subscriptions: List<SubscriptionEntity>,
+    payments: List<UpcomingItem>,
     totalAmount: BigDecimal,
     currency: String,
     overdueCount: Int = 0,
@@ -1130,65 +1114,90 @@ private fun UpcomingSubscriptionsCard(
         ),
         onClick = onClick,
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth().padding(Dimensions.Padding.content),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            Column(
-                modifier = Modifier.padding(start = 12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = androidx.compose.ui.res.pluralStringResource(
-                        R.plurals.home_upcoming_payments_count,
-                        subscriptions.size,
-                        subscriptions.size
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = Dimensions.Alpha.subtitle
-                    )
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
+                Column {
                     Text(
-                        text =
-                            CurrencyFormatter.formatCurrency(
-                                totalAmount,
-                                currency
-                            ).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
+                        text = stringResource(R.string.home_widget_upcoming_payments),
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = Dimensions.Alpha.subtitle)
                     )
-                    Text(
-                        text =
-                            (if (overdueCount > 0) stringResource(R.string.home_upcoming_overdue, overdueCount)
-                            else stringResource(R.string.upcoming_payments_subtitle)).uppercase(),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = Dimensions.Alpha.subtitle
-                        ),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
+                    if (overdueCount > 0) {
+                        Text(
+                            text = stringResource(R.string.home_upcoming_overdue, overdueCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
-
+                Text(
+                    text = CurrencyFormatter.formatCurrency(totalAmount, currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
 
-            SubscriptionIconsStack(
-                subscriptions = subscriptions,
-                iconSize = 38.dp,
-                modifier = Modifier.padding(end = Spacing.sm),
-                borderColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                categoriesMap = categoriesMap,
-                subcategoriesMap = subcategoriesMap
+            // One payment per line, the one due first on top
+            payments.forEach { item ->
+                UpcomingPaymentRow(item, categoriesMap, subcategoriesMap)
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpcomingPaymentRow(
+    item: UpcomingItem,
+    categoriesMap: Map<String, CategoryEntity>,
+    subcategoriesMap: Map<String, SubcategoryEntity>
+) {
+    val subscription = item.subscription
+    val category = categoriesMap[subscription.category]
+    val subcategory = if (category != null && subscription.subcategory != null) subcategoriesMap[subscription.subcategory] else null
+    val overdue = item.daysUntil < 0
+    val date = item.dueDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        com.naxits.paisatracker.presentation.ui.components.BrandIcon(
+            merchantName = subscription.merchantName,
+            size = 40.dp,
+            showBackground = true,
+            categoryEntity = category,
+            subcategoryEntity = subcategory
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = subscription.merchantName,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Text(
+                text = stringResource(if (overdue) R.string.upcoming_row_overdue else R.string.upcoming_row_due, date),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Text(
+            text = CurrencyFormatter.formatCurrency(subscription.amount, subscription.currency),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 

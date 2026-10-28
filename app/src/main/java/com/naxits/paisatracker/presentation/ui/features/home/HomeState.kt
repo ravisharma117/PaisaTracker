@@ -26,6 +26,8 @@ data class HomeUiState(
     val monthlyChangePercent: Int = 0,
     val recentTransactions: List<TransactionEntity> = emptyList(),
     val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
+    /** The next three payments, soonest due first (overdue ones lead). */
+    val upcomingPayments: List<com.naxits.paisatracker.domain.service.UpcomingItem> = emptyList(),
     val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
     val upcomingSubscriptionsCurrency: String = "INR",
     /** How many of the upcoming payments are past due and unpaid. */

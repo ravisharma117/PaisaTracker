@@ -105,6 +105,7 @@ constructor(@ApplicationContext private val context: Context) {
         val ACCOUNT_REPAIR_BACKFILL_DONE = booleanPreferencesKey("account_repair_backfill_done")
         val SBI_DEPOSIT_FIX_DONE = booleanPreferencesKey("sbi_deposit_fix_done")
         val KEYWORD_CATEGORY_BACKFILL_DONE = booleanPreferencesKey("keyword_category_backfill_done")
+        val HOME_RECENT_FIRST_DONE = booleanPreferencesKey("home_recent_first_done")
         val IGNORED_VENDOR_KEYS = androidx.datastore.preferences.core.stringSetPreferencesKey("ignored_vendor_keys")
         // How far an amount may differ, in tenths of a percent, for entries to count as a series
         val RECURRING_TOLERANCE_TENTHS = intPreferencesKey("recurring_tolerance_tenths")
@@ -899,6 +900,18 @@ constructor(@ApplicationContext private val context: Context) {
                 ?.toSet()
                 ?: emptySet()
         }
+
+    /** Once: puts Recent Transactions at the top of an order the user had already saved. */
+    suspend fun moveRecentTransactionsToTopOnce(recentFirst: (List<HomeWidget>) -> List<HomeWidget>) {
+        context.dataStore.edit { preferences ->
+            if (preferences[PreferencesKeys.HOME_RECENT_FIRST_DONE] == true) return@edit
+            preferences[PreferencesKeys.HOME_WIDGETS_ORDER]?.let { saved ->
+                val order = saved.split(",").mapNotNull { HomeWidget.fromName(it) }
+                preferences[PreferencesKeys.HOME_WIDGETS_ORDER] = recentFirst(order).joinToString(",") { it.name }
+            }
+            preferences[PreferencesKeys.HOME_RECENT_FIRST_DONE] = true
+        }
+    }
 
     suspend fun updateHomeWidgetsOrder(order: List<HomeWidget>) {
         context.dataStore.edit { preferences ->
