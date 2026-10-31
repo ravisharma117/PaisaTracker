@@ -327,6 +327,12 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideArchiveDao(database: CashiroDatabase): com.naxits.paisatracker.data.database.dao.ArchiveDao {
+        return database.archiveDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideAccountRenameDao(database: CashiroDatabase): com.naxits.paisatracker.data.database.dao.AccountRenameDao {
         return database.accountRenameDao()
     }

@@ -1790,4 +1790,6 @@
     <string name="lend_count_again">Count in totals again</string>
     <string name="lend_remember_only_tag">Remember only</string>
     <string name="lend_remember_only_amount">Remember only: %1$s</string>
+    <string name="export_archive">Export all as CSV</string>
+    <string name="export_archive_sub">Every transaction and lending entry, with the original SMS, for your records. Not password protected, so keep the file safe.</string>
 </resources>

@@ -154,6 +154,8 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun transactionReviewDao(): com.naxits.paisatracker.data.database.dao.TransactionReviewDao
     abstract fun categoryPatternDao(): com.naxits.paisatracker.data.database.dao.CategoryPatternDao
 
+    abstract fun archiveDao(): com.naxits.paisatracker.data.database.dao.ArchiveDao
+
     companion object {
         const val DATABASE_NAME = "pennywise_database"
 
