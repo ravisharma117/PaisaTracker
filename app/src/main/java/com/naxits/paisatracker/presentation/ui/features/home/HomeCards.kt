@@ -23,12 +23,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.naxits.paisatracker.R
+import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
 import com.naxits.paisatracker.data.database.entity.RecurringTransactionEntity
 import com.naxits.paisatracker.domain.service.MonthlySavings
 import com.naxits.paisatracker.presentation.ui.components.CashiroCard
 import com.naxits.paisatracker.presentation.ui.features.categories.displayName
 import com.naxits.paisatracker.presentation.ui.theme.Spacing
 import com.naxits.paisatracker.utils.CurrencyFormatter
+import com.naxits.paisatracker.utils.formatBalance
 import java.math.BigDecimal
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -92,6 +94,30 @@ private fun Figure(
         )
         if (note != null) {
             Text(note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** The Cash balance on its own, shown above the transactions. Totals follow the hide-totals setting. */
+@Composable
+fun CashHomeCard(
+    account: AccountBalanceEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    CashiroCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.home_widget_cash),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = account.formatBalance(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

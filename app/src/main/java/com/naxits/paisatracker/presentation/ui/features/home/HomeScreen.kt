@@ -148,6 +148,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import androidx.compose.ui.res.stringResource
+import com.naxits.paisatracker.domain.model.CashAccount
 import com.naxits.paisatracker.domain.service.UpcomingItem
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class,
@@ -440,6 +441,24 @@ fun SharedTransitionScope.HomeScreen(
                 homeWidgets.forEach { widgetModel ->
                     if (widgetModel.isVisible) {
                         when (widgetModel.widget) {
+                            HomeWidget.CASH -> {
+                                uiState.cashAccount?.let { cash ->
+                                    item(key = "cash") {
+                                        CashHomeCard(
+                                            account = cash,
+                                            onClick = {
+                                                navController.safeNavigate(
+                                                    AccountDetail(
+                                                        bankName = cash.bankName,
+                                                        accountLast4 = cash.accountLast4
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
+                                        )
+                                    }
+                                }
+                            }
                             HomeWidget.NETWORTH_SUMMARY -> {
                                 item(key = "net_worth") {
                                     NetworthSummaryCards(
@@ -523,13 +542,15 @@ fun SharedTransitionScope.HomeScreen(
                                 }
                             }
                             HomeWidget.ACCOUNT_CAROUSEL -> {
-                                if (uiState.creditCards.isNotEmpty() ||
-                                    uiState.accountBalances.isNotEmpty()
-                                ) {
+                                // Cash has its own card above the transactions, so it is left out of this row
+                                val rowAccounts = uiState.accountBalances.filterNot {
+                                    CashAccount.isCash(it.bankName, it.accountLast4)
+                                }
+                                if (uiState.creditCards.isNotEmpty() || rowAccounts.isNotEmpty()) {
                                     item(key = "account_carousel") {
                                         AccountCarousel(
                                             creditCards = uiState.creditCards,
-                                            bankAccounts = uiState.accountBalances,
+                                            bankAccounts = rowAccounts,
                                             onAccountClick = { bankName, accountLast4 ->
                                                 navController.safeNavigate(
                                                     AccountDetail(

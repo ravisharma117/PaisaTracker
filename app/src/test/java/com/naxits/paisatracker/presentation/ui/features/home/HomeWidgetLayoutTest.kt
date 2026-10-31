@@ -31,7 +31,7 @@ class HomeWidgetLayoutTest {
 
         assertEquals(
             listOf(
-                HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
+                HomeWidget.CASH, HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
                 HomeWidget.RECENT_TRANSACTIONS, HomeWidget.NETWORTH_SUMMARY, HomeWidget.MONTHLY_SUMMARY,
                 HomeWidget.TOP_CATEGORIES, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
             ),
@@ -93,8 +93,21 @@ class HomeWidgetLayoutTest {
     }
 
     @Test
-    fun recentTransactionsAreFirstByDefault() {
-        assertEquals(HomeWidget.RECENT_TRANSACTIONS, names(HomeWidgetLayout.resolve(emptyList(), emptySet())).first())
+    fun cashComesFirstAndTransactionsRightAfterByDefault() {
+        val order = names(HomeWidgetLayout.resolve(emptyList(), emptySet()))
+        assertEquals(HomeWidget.CASH, order[0])
+        assertEquals(HomeWidget.RECENT_TRANSACTIONS, order[1])
+    }
+
+    @Test
+    fun cashIsAddedAtTheTopOfALayoutSavedBeforeItExisted() {
+        val saved = listOf(HomeWidget.RECENT_TRANSACTIONS, HomeWidget.BUDGET_CAROUSEL)
+
+        val result = HomeWidgetLayout.resolve(saved, emptySet())
+
+        assertEquals(HomeWidget.CASH, result.first().widget)
+        assertTrue(result.first().isVisible)
+        assertEquals(HomeWidget.RECENT_TRANSACTIONS, result[1].widget)
     }
 
     @Test

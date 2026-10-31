@@ -1784,6 +1784,7 @@
     <string name="upcoming_row_overdue">Overdue \u2022 %1$s</string>
     <string name="home_widget_top_categories">Top Expenses</string>
     <string name="home_this_week">This Week</string>
+    <string name="home_widget_cash">Cash</string>
     <string name="home_no_transactions_this_week">No transactions this week</string>
     <string name="home_top_categories_empty">No expenses yet this month</string>
     <string name="lend_remember_only">Remember only (don\'t count)</string>

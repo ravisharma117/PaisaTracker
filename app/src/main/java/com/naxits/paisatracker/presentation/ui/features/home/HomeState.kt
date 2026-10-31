@@ -40,6 +40,8 @@ data class HomeUiState(
     val upcomingRecurring: List<com.naxits.paisatracker.data.database.entity.RecurringTransactionEntity> = emptyList(),
     val accountBalances: List<AccountBalanceEntity> = emptyList(),
     val creditCards: List<AccountBalanceEntity> = emptyList(),
+    /** The Cash account, shown on its own above the transactions; set even when its balance is zero. */
+    val cashAccount: AccountBalanceEntity? = null,
     /** Net worth, calculated as on the Net Worth screen. */
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,

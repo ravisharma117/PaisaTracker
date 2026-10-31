@@ -35,6 +35,7 @@ import com.naxits.paisatracker.data.repository.SubcategoryRepository
 import com.naxits.paisatracker.data.repository.SubscriptionRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
 import com.naxits.paisatracker.data.repository.UnrecognizedSmsRepository
+import com.naxits.paisatracker.domain.model.CashAccount
 import com.naxits.paisatracker.domain.model.PersonInfo
 import com.naxits.paisatracker.presentation.ui.components.BalancePoint
 import com.naxits.paisatracker.worker.OptimizedSmsReaderWorker
@@ -301,6 +302,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         accountBalances = regularAccounts,
                         creditCards = creditCards,
+                        cashAccount = balances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                         totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                         selectedCurrency = selectedCurrency
                     )
@@ -645,6 +647,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
+                    cashAccount = visibleBalances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                     totalAvailableCredit = creditCards.sumOfBigDecimal { card: AccountBalanceEntity ->
                         // Available = Credit Limit - Outstanding Balance
                         (card.creditLimit ?: BigDecimal.ZERO) - card.balance
@@ -774,6 +777,7 @@ class HomeViewModel @Inject constructor(
                 it.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
+                    cashAccount = balances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                     totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                     availableCurrencies = updatedAvailableCurrencies,
                     selectedCurrency = selectedCurrency
