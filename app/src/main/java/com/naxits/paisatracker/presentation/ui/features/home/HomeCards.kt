@@ -31,6 +31,8 @@ import com.naxits.paisatracker.presentation.ui.features.categories.displayName
 import com.naxits.paisatracker.presentation.ui.theme.Spacing
 import com.naxits.paisatracker.utils.CurrencyFormatter
 import com.naxits.paisatracker.utils.formatBalance
+import ir.ehsannarmani.compose_charts.PieChart
+import ir.ehsannarmani.compose_charts.models.Pie
 import java.math.BigDecimal
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -164,16 +166,31 @@ fun RecurringHomeCard(
     }
 }
 
-/** This month's biggest expense categories, one per line with a bar for its share of the month. */
+/**
+ * This month's expenses: a pie of the categories, then every category with its subcategories.
+ * Only categories and subcategories with something spent are listed.
+ */
 @Composable
-fun TopCategoriesCard(
-    categories: List<com.naxits.paisatracker.domain.usecase.CategoryRank>,
+fun CategoryBreakdownCard(
+    categories: List<com.naxits.paisatracker.domain.usecase.CategoryBreakdown>,
     currency: String,
     categoriesMap: Map<String, com.naxits.paisatracker.data.database.entity.CategoryEntity>,
     onOpenCategory: (String) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val fallback = MaterialTheme.colorScheme.primary
+    val colors = remember(categories, categoriesMap, fallback) {
+        categories.associate { rank ->
+            rank.category to (categoriesMap[rank.category]?.color?.let {
+                try {
+                    androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it))
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            } ?: fallback)
+        }
+    }
     CashiroCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -195,18 +212,34 @@ fun TopCategoriesCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            return@CashiroCard
         }
-        categories.forEach { rank ->
-            val fallback = MaterialTheme.colorScheme.primary
-            val color = remember(rank.category, categoriesMap) {
-                categoriesMap[rank.category]?.color?.let {
-                    try {
-                        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it))
-                    } catch (_: IllegalArgumentException) {
-                        null
-                    }
-                } ?: fallback
+
+        val pies = remember(categories, colors) {
+            categories.map { rank ->
+                val color = colors.getValue(rank.category)
+                Pie(
+                    label = rank.category,
+                    data = rank.total.toDouble(),
+                    color = color,
+                    selectedColor = color
+                )
             }
+        }
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            PieChart(
+                modifier = Modifier.size(160.dp),
+                data = pies,
+                style = Pie.Style.Stroke(width = 28.dp)
+            )
+        }
+        Spacer(Modifier.height(Spacing.sm))
+
+        categories.forEach { rank ->
+            val color = colors.getValue(rank.category)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -243,6 +276,30 @@ fun TopCategoriesCard(
                     color = color,
                     trackColor = color.copy(alpha = 0.15f)
                 )
+                // A category with no named subcategory has nothing more to say than its own line
+                if (rank.subcategories.any { it.name != null }) {
+                    rank.subcategories.forEach { sub ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = Spacing.md + Spacing.sm, top = Spacing.xs)
+                        ) {
+                            Text(
+                                text = sub.name ?: stringResource(R.string.category_no_subcategory),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = CurrencyFormatter.formatTotal(sub.total, currency),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
         }
     }

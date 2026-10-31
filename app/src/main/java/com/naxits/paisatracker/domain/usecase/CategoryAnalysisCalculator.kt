@@ -22,11 +22,15 @@ data class SubcategoryShare(
     val count: Int
 )
 
-/** One of the month's biggest expense categories, with its share of all that month's spending. */
-data class CategoryRank(
+/**
+ * One category with something spent in the month: its share of all that month's spending, and the
+ * subcategories that make up its total (largest first, nothing-spent ones left out).
+ */
+data class CategoryBreakdown(
     val category: String,
     val total: BigDecimal,
-    val percentOfMonth: Float
+    val percentOfMonth: Float,
+    val subcategories: List<SubcategoryShare>
 )
 
 data class CategoryAnalysis(
@@ -100,18 +104,7 @@ object CategoryAnalysisCalculator {
             MonthTotal(m, inCategory.filter { it.inMonth(m) }.sumAmounts())
         }
 
-        val subcategories = thisMonth
-            .groupBy { it.subcategory?.takeIf { name -> name.isNotBlank() } }
-            .map { (name, list) ->
-                val sub = list.sumAmounts()
-                SubcategoryShare(
-                    name = name,
-                    total = sub,
-                    percentOfCategory = if (total.signum() == 0) 0f else percent(sub, total),
-                    count = list.size
-                )
-            }
-            .sortedByDescending { it.total }
+        val subcategories = subcategoryShares(thisMonth, total)
 
         return CategoryAnalysis(
             category = category,
@@ -130,20 +123,43 @@ object CategoryAnalysisCalculator {
     }
 
     /**
-     * The [limit] categories with the most spent in [month], biggest first, each with its share of
-     * everything spent that month. Categories with nothing (or less than nothing) spent are left out.
+     * Every category with something spent in [month], biggest first (ties by name), each with its
+     * share of everything spent that month and its subcategories. Categories and subcategories with
+     * nothing (or less than nothing) spent are left out.
      */
-    fun topCategories(entries: List<SpendEntry>, month: YearMonth, limit: Int = TOP_CATEGORIES): List<CategoryRank> {
-        val totals = totalsByCategory(entries, month).filterValues { it.signum() > 0 }
+    fun categoryBreakdown(entries: List<SpendEntry>, month: YearMonth): List<CategoryBreakdown> {
+        val thisMonth = entries.filter { it.inMonth(month) }
+        val totals = thisMonth.groupBy { it.category }
+            .mapValues { (_, list) -> list.sumAmounts() }
+            .filterValues { it.signum() > 0 }
         val monthTotal = totals.values.fold(BigDecimal.ZERO) { acc, v -> acc.add(v) }
         if (monthTotal.signum() == 0) return emptyList()
         return totals.entries
             .sortedWith(compareByDescending<Map.Entry<String, BigDecimal>> { it.value }.thenBy { it.key })
-            .take(limit)
-            .map { CategoryRank(it.key, it.value, percent(it.value, monthTotal)) }
+            .map { (category, total) ->
+                CategoryBreakdown(
+                    category = category,
+                    total = total,
+                    percentOfMonth = percent(total, monthTotal),
+                    subcategories = subcategoryShares(thisMonth.filter { it.category == category }, total)
+                        .filter { it.total.signum() > 0 }
+                )
+            }
     }
 
-    const val TOP_CATEGORIES = 5
+    private fun subcategoryShares(inCategory: List<SpendEntry>, categoryTotal: BigDecimal): List<SubcategoryShare> =
+        inCategory
+            .groupBy { it.subcategory?.takeIf { name -> name.isNotBlank() } }
+            .map { (name, list) ->
+                val sub = list.sumAmounts()
+                SubcategoryShare(
+                    name = name,
+                    total = sub,
+                    percentOfCategory = if (categoryTotal.signum() == 0) 0f else percent(sub, categoryTotal),
+                    count = list.size
+                )
+            }
+            .sortedByDescending { it.total }
 
     private fun SpendEntry.inMonth(month: YearMonth) = YearMonth.from(date) == month
 

@@ -166,27 +166,27 @@ class CategoryAnalysisCalculatorTest {
     }
 
     @Test
-    fun topCategoriesAreTheBiggestFirstLimitedToFive() {
+    fun breakdownListsEveryCategoryBiggestFirst() {
         val entries = listOf("A" to "10", "B" to "60", "C" to "30", "D" to "50", "E" to "20", "F" to "40")
             .map { (c, a) -> entry(c, a, "2026-10-05") }
 
-        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+        val result = CategoryAnalysisCalculator.categoryBreakdown(entries, october)
 
-        assertEquals(listOf("B", "D", "F", "C", "E"), top.map { it.category })
-        assertEquals(BigDecimal("60"), top.first().total)
+        assertEquals(listOf("B", "D", "F", "C", "E", "A"), result.map { it.category })
+        assertEquals(BigDecimal("60"), result.first().total)
     }
 
     @Test
-    fun topCategoriesShowEachShareOfTheWholeMonth() {
+    fun breakdownShowsEachShareOfTheWholeMonth() {
         val entries = listOf(entry(food, "75", "2026-10-02"), entry("Travel", "25", "2026-10-03"))
 
-        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+        val result = CategoryAnalysisCalculator.categoryBreakdown(entries, october)
 
-        assertEquals(listOf(75.0f, 25.0f), top.map { it.percentOfMonth })
+        assertEquals(listOf(75.0f, 25.0f), result.map { it.percentOfMonth })
     }
 
     @Test
-    fun topCategoriesCountOnlyThisMonthAndLeaveOutNothingSpent() {
+    fun breakdownCountsOnlyThisMonthAndLeavesOutNothingSpent() {
         val entries = listOf(
             entry(food, "100", "2026-10-02"),
             entry("Travel", "500", "2026-09-30"),
@@ -194,14 +194,30 @@ class CategoryAnalysisCalculatorTest {
             entry("Zero", "0", "2026-10-04")
         )
 
-        val top = CategoryAnalysisCalculator.topCategories(entries, october)
+        val result = CategoryAnalysisCalculator.categoryBreakdown(entries, october)
 
-        assertEquals(listOf(food), top.map { it.category })
-        assertEquals(100.0f, top.single().percentOfMonth)
+        assertEquals(listOf(food), result.map { it.category })
+        assertEquals(100.0f, result.single().percentOfMonth)
     }
 
     @Test
-    fun aMonthWithNoSpendingHasNoTopCategories() {
-        assertTrue(CategoryAnalysisCalculator.topCategories(emptyList(), october).isEmpty())
+    fun breakdownSplitsACategoryIntoItsSubcategoriesAndSkipsOnesWithNothingSpent() {
+        val entries = listOf(
+            entry(food, "30", "2026-10-02", sub = "Snacks"),
+            entry(food, "70", "2026-10-03", sub = "Groceries"),
+            entry(food, "10", "2026-10-04"),
+            entry(food, "50", "2026-10-05", sub = "Dining"),
+            entry(food, "-50", "2026-10-06", sub = "Dining")
+        )
+
+        val subs = CategoryAnalysisCalculator.categoryBreakdown(entries, october).single().subcategories
+
+        assertEquals(listOf("Groceries", "Snacks", null), subs.map { it.name })
+        assertEquals(BigDecimal("70"), subs.first().total)
+    }
+
+    @Test
+    fun aMonthWithNoSpendingHasNoBreakdown() {
+        assertTrue(CategoryAnalysisCalculator.categoryBreakdown(emptyList(), october).isEmpty())
     }
 }

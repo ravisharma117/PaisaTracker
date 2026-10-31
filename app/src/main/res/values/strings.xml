@@ -1781,14 +1781,14 @@
     </plurals>
     <string name="upcoming_row_due">Due %1$s</string>
     <string name="upcoming_row_overdue">Overdue \u2022 %1$s</string>
-    <string name="home_widget_top_categories">Top Expenses</string>
+    <string name="home_widget_top_categories">Expenses by Category</string>
     <string name="home_this_week">This Week</string>
     <string name="home_widget_cash">Cash</string>
     <string name="home_widget_cash_desc">Your Cash balance, shown above the transactions</string>
     <string name="home_widget_recent_desc">Transactions from Monday to today, newest first</string>
     <string name="home_widget_networth_desc">Your net worth today, as on the Net Worth screen</string>
     <string name="home_widget_monthly_summary_desc">This month’s income, expenses and balance</string>
-    <string name="home_widget_top_categories_desc">This month’s five biggest expense categories</string>
+    <string name="home_widget_top_categories_desc">This month’s spending as a pie chart, then every category with its subcategories</string>
     <string name="home_widget_accounts_desc">Bank accounts and credit cards, apart from Cash</string>
     <string name="home_widget_upcoming_payments_desc">The next three payments due; shown only when a payment is set up</string>
     <string name="home_widget_recurring_desc">Recurring transactions coming up; shown only when some are due</string>

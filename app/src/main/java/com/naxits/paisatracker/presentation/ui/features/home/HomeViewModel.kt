@@ -393,13 +393,13 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // This month's biggest expense categories, counted the way Analysis counts them
+            // This month's expenses by category and subcategory, counted the way Analysis counts them
             val month = java.time.YearMonth.now()
             categoryAnalysis.window(CategoryKind.EXPENSE, month, monthsBack = 0).collectLatest { window ->
                 _uiState.update {
                     it.copy(
-                        topCategories = CategoryAnalysisCalculator.topCategories(window.entries, month),
-                        topCategoriesCurrency = window.currency
+                        categoryBreakdown = CategoryAnalysisCalculator.categoryBreakdown(window.entries, month),
+                        categoryBreakdownCurrency = window.currency
                     )
                 }
             }

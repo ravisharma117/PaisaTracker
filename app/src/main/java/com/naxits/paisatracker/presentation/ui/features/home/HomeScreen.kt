@@ -485,9 +485,9 @@ fun SharedTransitionScope.HomeScreen(
                             }
                             HomeWidget.TOP_CATEGORIES -> {
                                 item(key = "top_categories") {
-                                    TopCategoriesCard(
-                                        categories = uiState.topCategories,
-                                        currency = uiState.topCategoriesCurrency,
+                                    CategoryBreakdownCard(
+                                        categories = uiState.categoryBreakdown,
+                                        currency = uiState.categoryBreakdownCurrency,
                                         categoriesMap = categoriesMap,
                                         onOpenCategory = onOpenCategory,
                                         onClick = onNavigateToAnalytics,

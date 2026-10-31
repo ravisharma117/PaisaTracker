@@ -16,9 +16,9 @@ data class HomeUiState(
     val currentMonthIncome: BigDecimal = BigDecimal.ZERO,
     val currentMonthExpenses: BigDecimal = BigDecimal.ZERO,
     /** This month's biggest expense categories, biggest first. */
-    val topCategories: List<com.naxits.paisatracker.domain.usecase.CategoryRank> = emptyList(),
-    /** The currency [topCategories] are in (the base currency, as in Analysis). */
-    val topCategoriesCurrency: String = "INR",
+    val categoryBreakdown: List<com.naxits.paisatracker.domain.usecase.CategoryBreakdown> = emptyList(),
+    /** The currency [categoryBreakdown] is in (the base currency, as in Analysis). */
+    val categoryBreakdownCurrency: String = "INR",
     val currentYearExpenses: BigDecimal = BigDecimal.ZERO,
     val currentMonthCreditCard: BigDecimal = BigDecimal.ZERO,
     val currentMonthTransfer: BigDecimal = BigDecimal.ZERO,
