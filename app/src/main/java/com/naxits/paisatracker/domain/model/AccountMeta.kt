@@ -2,14 +2,15 @@ package com.naxits.paisatracker.domain.model
 
 import com.naxits.paisatracker.data.database.entity.AccountMetaEntity
 
-/** The user's own notes on an account: a custom icon, tags and a description. */
+/** The user's own notes on an account: a custom icon, tags, a description and whether to list it on Home. */
 data class AccountMeta(
     val customIconName: String? = null,
     val tags: List<String> = emptyList(),
-    val description: String = ""
+    val description: String = "",
+    val showOnHome: Boolean = false
 ) {
     val isBusiness: Boolean get() = AccountTags.hasBusiness(tags)
-    val isEmpty: Boolean get() = customIconName == null && tags.isEmpty() && description.isBlank()
+    val isEmpty: Boolean get() = customIconName == null && tags.isEmpty() && description.isBlank() && !showOnHome
 
     companion object {
         val NONE = AccountMeta()
@@ -49,5 +50,6 @@ object AccountTags {
 fun AccountMetaEntity.toDomain() = AccountMeta(
     customIconName = customIconName?.takeIf { it.isNotBlank() },
     tags = AccountTags.parse(tags),
-    description = description
+    description = description,
+    showOnHome = showOnHome
 )

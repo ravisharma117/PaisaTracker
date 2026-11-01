@@ -96,7 +96,7 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class,
             com.naxits.paisatracker.data.database.entity.CategoryPatternEntity::class
         ],
-        version = 73,
+        version = 74,
     exportSchema = true,
     autoMigrations =
         [
@@ -689,6 +689,14 @@ MIGRATION_55_56,
                         )
                         """.trimIndent()
                     )
+                }
+            }
+
+        val MIGRATION_73_74 =
+            object : Migration(73, 74) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A bank account can be listed on Home (copied from the exported schema 74)
+                    db.execSQL("ALTER TABLE `account_meta` ADD COLUMN `show_on_home` INTEGER NOT NULL DEFAULT 0")
                 }
             }
 

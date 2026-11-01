@@ -124,6 +124,45 @@ fun CashHomeCard(
     }
 }
 
+/** The bank accounts ticked "Show on homepage": one line each with its last 4 digits and balance. */
+@Composable
+fun ShowBanksCard(
+    banks: List<AccountBalanceEntity>,
+    onBankClick: (AccountBalanceEntity) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    CashiroCard(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.home_widget_show_banks),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        banks.forEach { bank ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onBankClick(bank) }
+                    .padding(vertical = Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${bank.bankName} \u2022\u2022${bank.accountLast4}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Text(
+                    text = bank.formatBalance(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
 /** The next few recurring transactions that are due. */
 @Composable
 fun RecurringHomeCard(

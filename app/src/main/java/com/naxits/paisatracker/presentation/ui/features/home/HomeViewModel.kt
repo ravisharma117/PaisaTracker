@@ -65,6 +65,7 @@ class HomeViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
     private val accountOrderUseCase: AccountOrderUseCase,
+    private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
     private val llmRepository: LlmRepository,
     private val currencyConversionService: CurrencyConversionService,
     private val currencyRepository: CurrencyRepository,
@@ -390,6 +391,19 @@ class HomeViewModel @Inject constructor(
             ) { breakdownByCurrency, selectedCurrency, _ ->
                 updateBreakdownForSelectedCurrency(breakdownByCurrency, period = FinancialPeriod.CURRENT_YEAR, selectedCurrency = selectedCurrency)
             }.collectLatest { }
+        }
+
+        viewModelScope.launch {
+            // Bank accounts the user ticked "Show on homepage" for
+            combine(
+                accountOrderUseCase.orderedAccounts(),
+                accountMetaRepository.observeAll()
+            ) { accounts, meta ->
+                val hidden = sharedPrefs.getStringSet("hidden_accounts", emptySet()) ?: emptySet()
+                com.naxits.paisatracker.domain.service.HomeBanks.select(accounts, meta, hidden)
+            }.collectLatest { banks ->
+                _uiState.update { it.copy(shownBanks = banks) }
+            }
         }
 
         viewModelScope.launch {

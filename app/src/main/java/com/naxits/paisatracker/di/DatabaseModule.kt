@@ -93,7 +93,8 @@ object DatabaseModule {
                     CashiroDatabase.MIGRATION_69_70,
                     CashiroDatabase.MIGRATION_70_71,
                     CashiroDatabase.MIGRATION_71_72,
-                    CashiroDatabase.MIGRATION_72_73
+                    CashiroDatabase.MIGRATION_72_73,
+                    CashiroDatabase.MIGRATION_73_74
                 )
 
                 // Enable auto-migrations

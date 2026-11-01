@@ -42,6 +42,8 @@ data class HomeUiState(
     val creditCards: List<AccountBalanceEntity> = emptyList(),
     /** The Cash account, shown on its own above the transactions; set even when its balance is zero. */
     val cashAccount: AccountBalanceEntity? = null,
+    /** Bank accounts ticked "Show on homepage", in the user's account order. */
+    val shownBanks: List<AccountBalanceEntity> = emptyList(),
     /** Net worth, calculated as on the Net Worth screen. */
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,

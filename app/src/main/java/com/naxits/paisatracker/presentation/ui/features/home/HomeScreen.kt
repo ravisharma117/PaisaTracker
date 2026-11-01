@@ -566,6 +566,24 @@ fun SharedTransitionScope.HomeScreen(
                                     }
                                 }
                             }
+                            HomeWidget.SHOW_BANKS -> {
+                                if (uiState.shownBanks.isNotEmpty()) {
+                                    item(key = "show_banks") {
+                                        ShowBanksCard(
+                                            banks = uiState.shownBanks,
+                                            onBankClick = { bank ->
+                                                navController.safeNavigate(
+                                                    AccountDetail(
+                                                        bankName = bank.bankName,
+                                                        accountLast4 = bank.accountLast4
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier.padding(horizontal = Dimensions.Padding.content)
+                                        )
+                                    }
+                                }
+                            }
                             HomeWidget.UPCOMING_SUBSCRIPTIONS -> {
                                 if (uiState.upcomingSubscriptions.isNotEmpty()) {
                                     item(key = "upcoming_subscriptions") {

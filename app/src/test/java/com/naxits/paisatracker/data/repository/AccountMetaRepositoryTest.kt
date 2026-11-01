@@ -44,6 +44,17 @@ class AccountMetaRepositoryTest {
     private val repository = AccountMetaRepository(dao)
 
     @Test
+    fun theShowOnHomeTickIsKeptEvenWithNoOtherNotes() = runTest {
+        repository.save("Test Bank", "1234", AccountMeta(showOnHome = true))
+
+        val meta = repository.observeAll().first().getValue(AccountOrdering.keyOf("Test Bank", "1234"))
+        assertTrue(meta.showOnHome)
+
+        repository.save("Test Bank", "1234", AccountMeta())
+        assertNull(dao.get("Test Bank", "1234"))
+    }
+
+    @Test
     fun savedNotesAreReadBackByTheAccountKey() = runTest {
         repository.save(
             "Test Bank", "1234",

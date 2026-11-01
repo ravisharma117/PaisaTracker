@@ -31,7 +31,8 @@ class HomeWidgetLayoutTest {
 
         assertEquals(
             listOf(
-                HomeWidget.CASH, HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
+                HomeWidget.CASH, HomeWidget.ACCOUNT_CAROUSEL, HomeWidget.SHOW_BANKS,
+                HomeWidget.UPCOMING_SUBSCRIPTIONS, HomeWidget.RECURRING,
                 HomeWidget.RECENT_TRANSACTIONS, HomeWidget.NETWORTH_SUMMARY, HomeWidget.MONTHLY_SUMMARY,
                 HomeWidget.TOP_CATEGORIES, HomeWidget.BUDGET_CAROUSEL, HomeWidget.TRANSACTION_HEATMAP
             ),
@@ -82,6 +83,12 @@ class HomeWidgetLayoutTest {
 
         assertEquals(order.indexOf(HomeWidget.MONTHLY_SUMMARY) + 1, order.indexOf(HomeWidget.TOP_CATEGORIES))
         assertTrue(result.first { it.widget == HomeWidget.TOP_CATEGORIES }.isVisible)
+    }
+
+    @Test
+    fun showBanksComesRightAfterAccountsByDefault() {
+        val order = names(HomeWidgetLayout.resolve(emptyList(), emptySet()))
+        assertEquals(order.indexOf(HomeWidget.ACCOUNT_CAROUSEL) + 1, order.indexOf(HomeWidget.SHOW_BANKS))
     }
 
     @Test

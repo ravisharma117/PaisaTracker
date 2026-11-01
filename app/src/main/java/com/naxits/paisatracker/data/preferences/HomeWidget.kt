@@ -14,10 +14,11 @@ enum class HomeWidget(@StringRes val labelRes: Int, @StringRes val descRes: Int,
     MONTHLY_SUMMARY(R.string.home_widget_monthly_summary, R.string.home_widget_monthly_summary_desc, 3),
     TOP_CATEGORIES(R.string.home_widget_top_categories, R.string.home_widget_top_categories_desc, 4),
     ACCOUNT_CAROUSEL(R.string.home_widget_accounts, R.string.home_widget_accounts_desc, 5),
-    UPCOMING_SUBSCRIPTIONS(R.string.home_widget_upcoming_payments, R.string.home_widget_upcoming_payments_desc, 6),
-    RECURRING(R.string.home_widget_recurring, R.string.home_widget_recurring_desc, 7),
-    BUDGET_CAROUSEL(R.string.home_widget_budgets, R.string.home_widget_budgets_desc, 8),
-    TRANSACTION_HEATMAP(R.string.home_widget_heatmap, R.string.home_widget_heatmap_desc, 9);
+    SHOW_BANKS(R.string.home_widget_show_banks, R.string.home_widget_show_banks_desc, 6),
+    UPCOMING_SUBSCRIPTIONS(R.string.home_widget_upcoming_payments, R.string.home_widget_upcoming_payments_desc, 7),
+    RECURRING(R.string.home_widget_recurring, R.string.home_widget_recurring_desc, 8),
+    BUDGET_CAROUSEL(R.string.home_widget_budgets, R.string.home_widget_budgets_desc, 9),
+    TRANSACTION_HEATMAP(R.string.home_widget_heatmap, R.string.home_widget_heatmap_desc, 10);
 
     companion object {
         fun fromName(name: String): HomeWidget? {

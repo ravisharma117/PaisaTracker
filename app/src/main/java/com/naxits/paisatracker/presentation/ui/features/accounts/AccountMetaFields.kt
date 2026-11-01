@@ -1,7 +1,12 @@
 package com.naxits.paisatracker.presentation.ui.features.accounts
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -91,6 +96,28 @@ fun AccountTagsEditor(
                     Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.account_tag_add))
                 }
             }
+        )
+    }
+}
+
+/** A checkbox row: list this bank account in the Show Banks card on Home. */
+@Composable
+fun ShowOnHomeCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            text = stringResource(R.string.account_show_on_home),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 8.dp)
         )
     }
 }

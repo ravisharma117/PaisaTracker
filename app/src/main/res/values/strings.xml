@@ -1784,6 +1784,9 @@
     <string name="home_widget_top_categories">Expenses by Category</string>
     <string name="home_this_week">This Week</string>
     <string name="home_widget_cash">Cash</string>
+    <string name="home_widget_show_banks">Show Banks</string>
+    <string name="home_widget_show_banks_desc">Bank accounts you ticked Show on homepage for; shown only when you have ticked one</string>
+    <string name="account_show_on_home">Show on homepage</string>
     <string name="home_widget_cash_desc">Your Cash balance, shown above the transactions</string>
     <string name="home_widget_recent_desc">Transactions from Monday to today, newest first</string>
     <string name="home_widget_networth_desc">Your net worth today, as on the Net Worth screen</string>
