@@ -4,7 +4,7 @@ import com.naxits.paisatracker.data.database.entity.NetWorthItemType
 import com.naxits.paisatracker.domain.model.AccountKind
 import java.math.BigDecimal
 
-enum class AssetGroup { BANK, CASH, WALLET, INVESTMENTS, MONEY_LENT, OTHER_ASSETS }
+enum class AssetGroup { BANK, CASH, WALLET, INVESTMENTS, PROPERTY, GOLD, MONEY_LENT, OTHER_ASSETS }
 
 enum class LiabilityGroup { CREDIT_CARDS, OVERDRAFT, MONEY_BORROWED, LOANS, OTHER_LIABILITIES }
 
@@ -98,6 +98,8 @@ object NetWorthCalculator {
                 item.type.isLoan -> liability(LiabilityGroup.LOANS, line)
                 item.type.isLiability -> liability(LiabilityGroup.OTHER_LIABILITIES, line)
                 item.type.isInvestment -> asset(AssetGroup.INVESTMENTS, line)
+                item.type.isProperty -> asset(AssetGroup.PROPERTY, line)
+                item.type == NetWorthItemType.GOLD -> asset(AssetGroup.GOLD, line)
                 else -> asset(AssetGroup.OTHER_ASSETS, line)
             }
         }

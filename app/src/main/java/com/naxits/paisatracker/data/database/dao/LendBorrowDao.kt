@@ -32,6 +32,9 @@ interface LendBorrowDao {
     @Query("SELECT * FROM lend_borrow_transactions WHERE is_settled = 0 AND due_date IS NOT NULL")
     suspend fun getUnsettledWithDueDate(): List<LendBorrowTransactionEntity>
 
+    @Query("UPDATE lend_borrow_transactions SET remember_only = :rememberOnly, updated_at = :updatedAt WHERE id = :id")
+    suspend fun setRememberOnly(id: Long, rememberOnly: Boolean, updatedAt: java.time.LocalDateTime)
+
     @Query("UPDATE lend_borrow_transactions SET pre_reminded_for = :pre, due_reminded_for = :due, overdue_reminded_for = :overdue WHERE id = :id")
     suspend fun updateReminderMarks(id: Long, pre: java.time.LocalDate?, due: java.time.LocalDate?, overdue: java.time.LocalDate?)
 

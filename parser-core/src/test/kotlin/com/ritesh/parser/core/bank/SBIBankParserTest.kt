@@ -132,6 +132,41 @@ class SBIBankParserTest {
                     type = TransactionType.EXPENSE,
                     accountLast4 = "5045"
                 )
+            ),
+            ParserTestCase(
+                name = "Deposit by transfer is money coming in",
+                message = "Your A/C XXXXX345678 Credited INR 1,500.00 on 12/09/26 -Deposit by transfer from Mr. Sample Person. Avl Bal INR 36,000.00-SBI",
+                sender = "AD-CBSSBI-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("1500.00"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    accountLast4 = "5678",
+                    balance = BigDecimal("36000.00")
+                )
+            ),
+            ParserTestCase(
+                name = "Debit transferred to a person stays an expense",
+                message = "Your A/C XXXXX209876 Debited INR 1,500.00 on 12/09/26 -Transferred to Mr. Sample Person. Avl Balance INR 9,31,814.96-SBI",
+                sender = "JM-CBSSBI-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("1500.00"),
+                    currency = "INR",
+                    type = TransactionType.EXPENSE,
+                    accountLast4 = "9876"
+                )
+            ),
+            ParserTestCase(
+                name = "Standing instruction is a credit on the receiving account",
+                message = "Dear Customer, Standing Instruction has been successfully executed for Rs. 1,500.00 from your A/c No.XXXXX209876 to A/c No.XXXXX345678 on 12/10/26.  - SBI.",
+                sender = "VA-CBSSBI-S",
+                expected = ExpectedTransaction(
+                    amount = BigDecimal("1500.00"),
+                    currency = "INR",
+                    type = TransactionType.INCOME,
+                    accountLast4 = "5678",
+                    merchant = "Standing Instruction"
+                )
             )
         )
 

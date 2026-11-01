@@ -145,6 +145,7 @@ fun SharedTransitionScope.TransactionsScreen(
     transactionsViewModel: TransactionsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onTransactionClick: (Long, String) -> Unit = { _, _ -> },
+    onTransactionLongClick: (Long, String) -> Unit = { _, _ -> },
     onNavigateToSettings: () -> Unit = {},
     animatedContentScope: AnimatedVisibilityScope? = null,
     blurEffects: Boolean
@@ -363,6 +364,23 @@ fun SharedTransitionScope.TransactionsScreen(
                     }
                 },
                 actionContent = {
+                    BlurredAnimatedVisibility(!selectionMode) {
+                        IconButton(
+                            onClick = { transactionsViewModel.toggleSelectionMode() },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onBackground
+                            ),
+                            shapes = IconButtonDefaults.shapes(),
+                            modifier = Modifier.padding(end = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.SelectAll,
+                                contentDescription = stringResource(R.string.select_transactions),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                     BlurredAnimatedVisibility(selectionMode) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -762,11 +780,12 @@ fun SharedTransitionScope.TransactionsScreen(
                                         isSelectionMode = selectionMode,
                                         isSelected = selectedTransactionIds.contains(transaction.id),
                                         onSelectionToggle = { transactionsViewModel.toggleTransactionSelection(transaction.id) },
+                                        onViewClick = { onTransactionLongClick(transaction.id, "transaction_${transaction.id}") },
                                         onLongClick = {
                                             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                             if (!selectionMode) {
-                                                transactionsViewModel.toggleSelectionMode()
-                                                transactionsViewModel.selectTransactionSet(setOf(transaction.id))
+                                                // A long press opens the read-only view; a tap opens it for editing
+                                                onTransactionLongClick(transaction.id, "transaction_${transaction.id}")
                                             } else {
                                                 transactionsViewModel.toggleTransactionSelection(transaction.id)
                                             }

@@ -88,7 +88,11 @@ data class LendBorrowTransactionEntity(
     val dueRemindedFor: java.time.LocalDate? = null,
 
     @ColumnInfo(name = "overdue_reminded_for")
-    val overdueRemindedFor: java.time.LocalDate? = null
+    val overdueRemindedFor: java.time.LocalDate? = null,
+
+    /** Kept only as a reminder: left out of net worth and the Lend & Borrow totals. */
+    @ColumnInfo(name = "remember_only", defaultValue = "0")
+    val rememberOnly: Boolean = false
 )
 
 enum class LendBorrowType {

@@ -15,6 +15,8 @@ enum class NetWorthItemType(val isLiability: Boolean, val isLoan: Boolean = fals
     STOCKS(false),
     FIXED_DEPOSIT(false),
     GOLD(false),
+    HOUSE(false),
+    PLOT(false),
     PROPERTY(false),
     VEHICLE(false),
     OTHER_ASSET(false),
@@ -26,6 +28,9 @@ enum class NetWorthItemType(val isLiability: Boolean, val isLoan: Boolean = fals
 
     /** Funds, shares and deposits are shown together as investments. */
     val isInvestment: Boolean get() = this == MUTUAL_FUND || this == STOCKS || this == FIXED_DEPOSIT
+
+    /** A home, a plot of land or other property, shown together in their own section. */
+    val isProperty: Boolean get() = this == HOUSE || this == PLOT || this == PROPERTY
 }
 
 /**

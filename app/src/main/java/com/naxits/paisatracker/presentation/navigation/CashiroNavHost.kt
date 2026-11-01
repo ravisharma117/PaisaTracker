@@ -95,6 +95,7 @@ import com.naxits.paisatracker.presentation.ui.features.lendborrow.PersonDetailS
 import com.naxits.paisatracker.presentation.ui.features.onboarding.OnBoardingScreen
 import com.naxits.paisatracker.presentation.ui.features.networth.NetWorthScreen
 import com.naxits.paisatracker.presentation.ui.features.parties.PartiesScreen
+import com.naxits.paisatracker.presentation.ui.features.vendors.RememberedVendorsScreen
 import com.naxits.paisatracker.presentation.ui.features.profile.ProfileScreen
 import com.naxits.paisatracker.presentation.ui.features.recurring.RecurringTransactionsScreen
 import com.naxits.paisatracker.presentation.ui.features.settings.SettingsScreen
@@ -254,6 +255,10 @@ fun CashiroNavHost(
                         },
                         onNavigateToLendBorrow = { filter -> navController.safeNavigate(LendBorrow(filter)) },
                         onNavigateToAnalytics = { navController.safeNavigate(Analytics) },
+                        onOpenCategory = { name ->
+                            val now = java.time.YearMonth.now()
+                            navController.safeNavigate(CategoryDetail(name, now.year, now.monthValue))
+                        },
                         onNavigateToMonthlyTracker = {
                             val now = java.time.YearMonth.now()
                             navController.safeNavigate(MonthlyTracker(now.year, now.monthValue))
@@ -262,6 +267,9 @@ fun CashiroNavHost(
                         onNavigateToRecurring = { navController.safeNavigate(RecurringTransactions) },
                         onTransactionClick = { transactionId, key ->
                             navController.safeNavigate(TransactionDetail(transactionId, key))
+                        },
+                        onTransactionViewClick = { transactionId, key ->
+                            navController.safeNavigate(TransactionDetail(transactionId, key, startInEditMode = false))
                         },
                         onFullResyncClick = { showFullResyncDialog = true },
                         animatedContentScope = this@composable,
@@ -370,6 +378,7 @@ fun CashiroNavHost(
                         onNavigateToManageAccounts = { navController.safeNavigate(ManageAccounts) },
                         onNavigateToRules = { navController.safeNavigate(Rules) },
                         onNavigateToParties = { navController.safeNavigate(Parties) },
+                        onNavigateToRememberedVendors = { navController.safeNavigate(RememberedVendors) },
                         onNavigateToAppearance = { navController.safeNavigate(Appearance) },
                         onNavigateToProfile = { navController.safeNavigate(Profile) },
                         onNavigateToSms = { navController.safeNavigate(SmsSettings) },
@@ -584,6 +593,15 @@ fun CashiroNavHost(
                     PartiesScreen(onNavigateBack = { navController.safePopBackStack() })
                 }
 
+                composable<RememberedVendors>(
+                    enterTransition = CashiroTransitions.horizontalSlideEnter,
+                    exitTransition = CashiroTransitions.horizontalSlideExit,
+                    popEnterTransition = CashiroTransitions.horizontalSlidePopEnter,
+                    popExitTransition = CashiroTransitions.horizontalSlidePopExit
+                ) {
+                    RememberedVendorsScreen(onNavigateBack = { navController.safePopBackStack() })
+                }
+
                 composable<NetWorth>(
                     enterTransition = CashiroTransitions.horizontalSlideEnter,
                     exitTransition = CashiroTransitions.horizontalSlideExit,
@@ -746,6 +764,7 @@ fun CashiroNavHost(
                     TransactionDetailScreen(
                         transactionId = transactionDetail.transactionId,
                         sharedElementKey = transactionDetail.sharedElementKey,
+                        startInEditMode = transactionDetail.startInEditMode,
                         onNavigateBack = {
                             onEditComplete()
                             navController.safePopBackStack()
@@ -816,6 +835,9 @@ fun CashiroNavHost(
                         onNavigateBack = { navController.safePopBackStack() },
                         onTransactionClick = { transactionId, key ->
                             navController.safeNavigate(TransactionDetail(transactionId, key))
+                        },
+                        onTransactionLongClick = { transactionId, key ->
+                            navController.safeNavigate(TransactionDetail(transactionId, key, startInEditMode = false))
                         },
                         onNavigateToSettings = {
                             navController.safeNavigate(Settings)

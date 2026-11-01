@@ -131,6 +131,7 @@ fun EditAccountSheet(
     var customIcon by remember { mutableStateOf(meta.customIconName) }
     var tags by remember { mutableStateOf(meta.tags) }
     var description by remember { mutableStateOf(meta.description) }
+    var showOnHome by remember { mutableStateOf(meta.showOnHome) }
 
     var showNumberPad by remember { mutableStateOf(false) }
     var editingCreditLimit by remember { mutableStateOf(false) }
@@ -639,6 +640,11 @@ fun EditAccountSheet(
                     AccountTagsEditor(tags = tags, onTagsChange = { tags = it })
                 }
 
+                if (!isWallet && !isCreditCard) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ShowOnHomeCheckbox(checked = showOnHome, onCheckedChange = { showOnHome = it })
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 AccountDescriptionField(description = description, onDescriptionChange = { description = it })
             }
@@ -710,7 +716,9 @@ fun EditAccountSheet(
                             AccountMeta(
                                 customIconName = customIcon,
                                 tags = if (isWallet) emptyList() else tags,
-                                description = description
+                                description = description,
+                                // Only plain bank accounts are listed, whatever the box said before the type changed
+                                showOnHome = showOnHome && !isWallet && !isCreditCard
                             )
                         )
                     },

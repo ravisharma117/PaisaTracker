@@ -69,6 +69,11 @@ class TransactionPartyViewModel @Inject constructor(
         }
     }
 
+    /** Confirms the category the app suggested for [reviewId]. */
+    fun confirmCategory(reviewId: Long) {
+        viewModelScope.launch { reviewService.confirmCategory(reviewId) }
+    }
+
     fun dismiss(reviewId: Long) {
         viewModelScope.launch { reviewService.dismiss(reviewId) }
     }

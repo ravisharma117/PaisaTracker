@@ -180,6 +180,7 @@ class BackupImporter @Inject constructor(
                 database.accountBalanceDao().deleteAllBalances()
                 database.accountMetaDao().deleteAll()
                 database.transactionReviewDao().deleteAll()
+                database.categoryPatternDao().deleteAll()
                 database.partyDao().deleteAll()
                 database.subscriptionDao().deleteAllSubscriptions()
                 database.merchantMappingDao().deleteAllMappings()
@@ -216,6 +217,7 @@ class BackupImporter @Inject constructor(
                 }
 
                 database.transactionReviewDao().upsertAll(backup.database.transactionReviews.orEmpty())
+                database.categoryPatternDao().upsertAll(backup.database.categoryPatterns.orEmpty())
                 
                 backup.database.cards.forEach { card ->
                     database.cardDao().insertCard(card.sanitize())
@@ -230,7 +232,7 @@ class BackupImporter @Inject constructor(
                 }
                 
                 backup.database.merchantMappings.forEach { mapping ->
-                    database.merchantMappingDao().insertMapping(mapping)
+                    database.merchantMappingDao().insertMapping(withVendorKey(mapping))
                 }
                 
                 backup.database.unrecognizedSms.forEach { sms ->
@@ -424,6 +426,7 @@ class BackupImporter @Inject constructor(
                 }
                 
                 importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
+                importPatternsWithMerge(backup.database.categoryPatterns.orEmpty(), partyIdMap)
 
                 // Import rules (merge by name/ID)
                 backup.database.rules.forEach { rule ->
@@ -575,6 +578,7 @@ class BackupImporter @Inject constructor(
 
                 if (filter.includeTransactions) {
                     importReviewsWithMerge(backup.database.transactionReviews.orEmpty(), transactionIdMap, partyIdMap)
+                    importPatternsWithMerge(backup.database.categoryPatterns.orEmpty(), partyIdMap)
                 }
 
                 if (filter.includeRules) {
@@ -673,6 +677,25 @@ class BackupImporter @Inject constructor(
         return idMap
     }
 
+    /**
+     * Adds the learned categories this device does not have yet. A pattern about a customer is keyed
+     * by that customer's id, so the id is mapped to the one it has here (and dropped if unknown).
+     */
+    private suspend fun importPatternsWithMerge(patterns: List<CategoryPatternEntity>, partyIdMap: Map<Long, Long>) {
+        patterns.forEach { pattern ->
+            val key = if (pattern.patternKey.startsWith("party:")) {
+                val newId = pattern.patternKey.removePrefix("party:").toLongOrNull()?.let { partyIdMap[it] }
+                    ?: return@forEach
+                "party:$newId"
+            } else {
+                pattern.patternKey
+            }
+            if (database.categoryPatternDao().get(key, pattern.type) == null) {
+                database.categoryPatternDao().upsert(pattern.copy(patternKey = key))
+            }
+        }
+    }
+
     /** Adds reviews for transactions that were imported, keeping any review already on this device. */
     private suspend fun importReviewsWithMerge(
         reviews: List<TransactionReviewEntity>,
@@ -718,13 +741,19 @@ class BackupImporter @Inject constructor(
         }
     }
     
+    /** Backups from before vendor spellings were folded together carry no key; give them one. */
+    private fun withVendorKey(mapping: MerchantMappingEntity): MerchantMappingEntity =
+        mapping.copy(
+            matchKey = mapping.matchKey ?: com.naxits.paisatracker.domain.service.MerchantKey.normalize(mapping.merchantName)
+        )
+
     /**
      * Import merchant mappings with merge
      */
     private suspend fun importMerchantMappingsWithMerge(mappings: List<MerchantMappingEntity>) {
         mappings.forEach { mapping ->
             // Merchant mappings use merchant name as primary key, so just insert/replace
-            database.merchantMappingDao().insertMapping(mapping)
+            database.merchantMappingDao().insertMapping(withVendorKey(mapping))
         }
     }
 

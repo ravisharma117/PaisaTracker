@@ -99,6 +99,18 @@ class SettingsViewModel @Inject constructor(
 
     val userPreferences = userPreferencesRepository.userPreferences
 
+    /** How far an amount may differ, in tenths of a percent, for entries to count as one series. */
+    val recurringToleranceTenths = userPreferencesRepository.recurringToleranceTenths
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = com.naxits.paisatracker.domain.service.RecurringPatternDetector.DEFAULT_TOLERANCE_TENTHS
+        )
+
+    fun setRecurringTolerance(tenths: Int) {
+        viewModelScope.launch { userPreferencesRepository.setRecurringToleranceTenths(tenths) }
+    }
+
     val totalTransactions = transactionRepository.getTransactionCount()
         .stateIn(
             scope = viewModelScope,

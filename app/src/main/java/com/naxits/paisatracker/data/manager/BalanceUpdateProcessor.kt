@@ -19,7 +19,8 @@ import javax.inject.Singleton
 @Singleton
 class BalanceUpdateProcessor @Inject constructor(
     private val cardRepository: CardRepository,
-    private val accountBalanceRepository: AccountBalanceRepository
+    private val accountBalanceRepository: AccountBalanceRepository,
+    private val accountResolver: AccountResolver
 ) {
     companion object {
         private const val TAG = "BalanceUpdateProcessor"
@@ -99,8 +100,14 @@ class BalanceUpdateProcessor @Inject constructor(
                         cardRepository.getCard(parsedTransaction.bankName, it)?.cardType
                     } == CardType.CREDIT
 
+            // A debit card posts to the account it is linked to, which the user may have named differently
+            val balanceBank = if (isFromCard && targetAccountLast4 != fallbackAccountLast4) {
+                accountResolver.bankFor(parsedTransaction.bankName, targetAccountLast4)
+            } else {
+                parsedTransaction.bankName
+            }
             accountBalanceRepository.insertTransactionBalance(
-                bankName = parsedTransaction.bankName,
+                bankName = balanceBank,
                 accountLast4 = targetAccountLast4,
                 amount = parsedTransaction.amount,
                 transactionType = parsedTransaction.type.toEntityType(),

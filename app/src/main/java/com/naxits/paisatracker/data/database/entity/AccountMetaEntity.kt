@@ -19,5 +19,7 @@ data class AccountMetaEntity(
     /** Comma-joined tags, see [com.naxits.paisatracker.domain.model.AccountTags]. */
     @ColumnInfo(name = "tags", defaultValue = "") val tags: String = "",
     @ColumnInfo(name = "description", defaultValue = "") val description: String = "",
+    /** Whether this bank account is listed in the Show Banks card on Home. */
+    @ColumnInfo(name = "show_on_home", defaultValue = "0") val showOnHome: Boolean = false,
     @ColumnInfo(name = "updated_at") val updatedAt: LocalDateTime = LocalDateTime.now()
 )

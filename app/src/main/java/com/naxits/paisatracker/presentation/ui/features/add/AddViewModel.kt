@@ -58,6 +58,7 @@ constructor(
     private val billRecurringLink: com.naxits.paisatracker.domain.usecase.BillRecurringLinkUseCase,
     private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService,
     private val partyRepository: com.naxits.paisatracker.data.repository.PartyRepository,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
     private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
     private val currencyRepository: CurrencyRepository,
     val attachmentService: AttachmentService,
@@ -395,6 +396,9 @@ constructor(
 
                 // A transaction the user did not tag as a loan may still be a repayment
                 if (!isLoanType) repaymentService.onTransactionSaved(transactionId)
+
+                // The category they picked is remembered for the next entry in the series
+                if (!isLoanType) reviewService.userCategorised(transactionId)
 
                 if (isLoanType && state.selectedPersonId != null) {
                     val selectedPerson = persons.value.find { it.id == state.selectedPersonId }

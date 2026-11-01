@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Palette
@@ -120,6 +121,7 @@ fun SettingsScreen(
     onNavigateToManageAccounts: () -> Unit = {},
     onNavigateToRules: () -> Unit = {},
     onNavigateToParties: () -> Unit = {},
+    onNavigateToRememberedVendors: () -> Unit = {},
     onNavigateToAppearance: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToSms: () -> Unit = {},
@@ -140,6 +142,7 @@ fun SettingsScreen(
     val downloadState = uiState.downloadStatus
     val downloadProgress = uiState.downloadProgress
     val totalTransactionsCount by settingsViewModel.totalTransactions.collectAsStateWithLifecycle()
+    val recurringTolerance by settingsViewModel.recurringToleranceTenths.collectAsStateWithLifecycle()
     val googleDriveEmail by settingsViewModel.googleDriveEmail.collectAsStateWithLifecycle()
     val userPreferences by settingsViewModel.userPreferences.collectAsStateWithLifecycle(initialValue = null)
     val isWebhookModeEnabled = userPreferences?.isWebhookModeEnabled == true
@@ -830,6 +833,57 @@ fun SettingsScreen(
                         onClick = { onNavigateToParties() },
                         shape = ListItemPosition.Middle.toShape(),
                         padding = PaddingValues(0.dp)
+                    )
+
+                    // Remembered vendors
+                    ListItem(
+                        headline = {
+                            Text(
+                                text = stringResource(R.string.vendors_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        supporting = {
+                            Text(
+                                text = stringResource(R.string.vendors_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leading = {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color = orange_light,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Storefront,
+                                    contentDescription = null,
+                                    tint = orange_dark
+                                )
+                            }
+                        },
+                        trailing = {
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        onClick = { onNavigateToRememberedVendors() },
+                        shape = ListItemPosition.Middle.toShape(),
+                        padding = PaddingValues(0.dp)
+                    )
+
+                    // Recurring suggestions
+                    RecurringToleranceRow(
+                        tenths = recurringTolerance,
+                        onSelect = settingsViewModel::setRecurringTolerance
                     )
 
                     // Data Privacy

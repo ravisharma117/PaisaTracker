@@ -1007,7 +1007,10 @@ fun ManageAccountsScreen(
 
     if (selectedCardForLink != null) {
         val card = selectedCardForLink!!
-        val matchingAccounts = uiState.accounts.filter { it.bankName == card.bankName }
+        // The user may have renamed the account ("HDFC Bank Salary"), so a related bank name counts too
+        val matchingAccounts = uiState.accounts.filter {
+            it.bankName == card.bankName || com.naxits.paisatracker.domain.service.AccountMatcher.related(it.bankName, card.bankName)
+        }
         LinkCardDialog(
             card = card,
             accounts = matchingAccounts,

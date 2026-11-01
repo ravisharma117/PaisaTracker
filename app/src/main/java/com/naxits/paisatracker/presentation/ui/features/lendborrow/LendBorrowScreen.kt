@@ -632,6 +632,12 @@ fun SharedTransitionScope.PersonListItemCard(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                if (person.hasRememberOnly) {
+                    SubtitleTag(
+                        text = rememberOnlyText(person, currency),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
         },
         leading = {
@@ -706,4 +712,18 @@ fun categoryColor(category: PersonCategory): Color = when (category) {
     PersonCategory.FAMILY -> Color(0xFFF06292)
     PersonCategory.COLLEAGUE -> Color(0xFF26A69A)
     PersonCategory.OTHER -> Color(0xFF9E9E9E)
+}
+
+/** "Remember only: gets 5,000" and/or "owes 2,000", for money kept only as a reminder. */
+@Composable
+internal fun rememberOnlyText(person: LendBorrowPerson, currency: String): String {
+    val parts = buildList {
+        if (person.rememberOnlyLent.signum() > 0) {
+            add(stringResource(R.string.gets_amount, CurrencyFormatter.formatCurrency(person.rememberOnlyLent, currency)))
+        }
+        if (person.rememberOnlyBorrowed.signum() > 0) {
+            add(stringResource(R.string.owes_amount, CurrencyFormatter.formatCurrency(person.rememberOnlyBorrowed, currency)))
+        }
+    }
+    return stringResource(R.string.lend_remember_only_amount, parts.joinToString(" \u2022 "))
 }

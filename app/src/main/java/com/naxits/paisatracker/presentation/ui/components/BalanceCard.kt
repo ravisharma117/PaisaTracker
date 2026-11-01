@@ -83,13 +83,7 @@ fun BalanceCard(
     blurEffects: Boolean,
     hazeState: HazeState = remember { HazeState() }
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
     val containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "chevron_rotation"
-    )
 
     Box(modifier = Modifier.fillMaxWidth()) {
         CashiroCard(
@@ -119,235 +113,68 @@ fun BalanceCard(
                 containerColor = if (blurEffects) MaterialTheme.colorScheme.surfaceContainerLow.copy(0.5f)
                 else MaterialTheme.colorScheme.surfaceContainerLow
             ),
-            onClick = { if (onOpenNetWorth != null) onOpenNetWorth() else isExpanded = !isExpanded }
+            onClick = { onOpenNetWorth?.invoke() }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Just today's net worth: name and label on the left, the amount (and currency) on the right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedVisibility(
-                    visible = !isExpanded,
-                    enter = fadeIn() + expandVertically(MaterialTheme.motionScheme.fastSpatialSpec()),
-                    exit = fadeOut() + shrinkVertically(MaterialTheme.motionScheme.fastSpatialSpec())
-                ) {
-                    // Collapsed View
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = abbreviatedName.uppercase(),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(start = Spacing.xs)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = if (monthlyChange >= BigDecimal.ZERO) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
-                                    contentDescription = null,
-                                    tint = if (monthlyChange >= BigDecimal.ZERO) success_dark else expense_dark,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = stringResource(R.string.percent_this_month_format, if (monthlyChangePercent >= 0) "+" else "", monthlyChangePercent.toString()),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.alpha(0.6f),
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-
-                        // Sparkline
-                        if (balanceHistory.isNotEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .height(40.dp)
-                            ) {
-                                BalanceSparkline(
-                                    data = balanceHistory.map { it.balance },
-                                    lineColor = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = abbreviatedName.uppercase(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.net_worth_label),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.alpha(0.5f),
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-                AnimatedVisibility(
-                    visible = isExpanded,
-                    enter = fadeIn() + expandVertically(MaterialTheme.motionScheme.fastSpatialSpec()),
-                    exit = fadeOut() + shrinkVertically(MaterialTheme.motionScheme.fastSpatialSpec())
-                ) {
-                    // Expanded View
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = CurrencyFormatter.formatTotal(totalBalance, currency),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    // Currency Selector
+                    BlurredAnimatedVisibility(availableCurrenciesCount > 1) {
+                        Surface(
+                            onClick = onCurrencyClick,
+                            shape = RoundedCornerShape(Dimensions.Radius.sm),
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.8f),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                         ) {
-                            Column {
-                                Text(
-                                    text = abbreviatedName.uppercase(),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.ExtraBold,
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                                ) {
-                                    Text(
-                                        text = userName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.alpha(0.4f),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "•",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.alpha(0.4f),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.net_worth_label),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.alpha(0.4f),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-
-                            }
-                            Column(
-                                verticalArrangement = Arrangement.Top,
-                                horizontalAlignment = Alignment.End
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
-                                    text = CurrencyFormatter.formatTotal(totalBalance, currency),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 24.sp,
+                                    text = currency,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
-                                // Currency Selector
-                                BlurredAnimatedVisibility(availableCurrenciesCount > 1) {
-                                    Surface(
-                                        onClick = onCurrencyClick,
-                                        modifier = Modifier
-                                            .padding(horizontal = 12.dp),
-                                        shape = RoundedCornerShape(Dimensions.Radius.sm),
-                                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(
-                                            alpha = 0.8f
-                                        ),
-                                        border = BorderStroke(
-                                            0.5.dp,
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                        )
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(
-                                                horizontal = 8.dp,
-                                                vertical = 4.dp
-                                            ),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            Text(
-                                                text = currency,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.KeyboardArrowDown,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-
-                        // Large Graph
-                        if (balanceHistory.isNotEmpty()) {
-                            BalanceChart(
-                                primaryCurrency = currency,
-                                balanceHistory = balanceHistory,
-                                backgroundColor = if (blurEffects) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerLow,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp),
-                                height = 180
-                            )
-                            Text(
-                                text = dateRangeLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.align(Alignment.CenterHorizontally).alpha(0.4f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-                        Spacer(modifier = Modifier.height(Spacing.md))
-                        // horizontal summary items
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            SummaryItem(label = stringResource(R.string.this_month_lbl), value = thisMonthValue)
-                            VerticalDivider(
-                                modifier = Modifier.height(30.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                            )
-                            SummaryItem(label = stringResource(R.string.this_year_lbl), value = thisYearValue)
-                            VerticalDivider(
-                                modifier = Modifier.height(30.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                            )
-                            SummaryItem(
-                                label = stringResource(R.string.balance_label),
-                                value = CurrencyFormatter.formatTotal(totalBalance, currency)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(18.dp))
                     }
                 }
             }
         }
-        // Collapse/Expand Icon
-        Icon(
-            imageVector = Iconax.LongArrow,
-            contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp)
-                .height(28.dp)
-                .width(40.dp)
-                .rotate(rotation)
-                .then(
-                    if (onOpenNetWorth != null) {
-                        Modifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { isExpanded = !isExpanded }
-                    } else Modifier
-                )
-        )
     }
 }
 

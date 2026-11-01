@@ -15,6 +15,10 @@ data class HomeUiState(
     val currentYearTotal: BigDecimal = BigDecimal.ZERO,
     val currentMonthIncome: BigDecimal = BigDecimal.ZERO,
     val currentMonthExpenses: BigDecimal = BigDecimal.ZERO,
+    /** This month's biggest expense categories, biggest first. */
+    val categoryBreakdown: List<com.naxits.paisatracker.domain.usecase.CategoryBreakdown> = emptyList(),
+    /** The currency [categoryBreakdown] is in (the base currency, as in Analysis). */
+    val categoryBreakdownCurrency: String = "INR",
     val currentYearExpenses: BigDecimal = BigDecimal.ZERO,
     val currentMonthCreditCard: BigDecimal = BigDecimal.ZERO,
     val currentMonthTransfer: BigDecimal = BigDecimal.ZERO,
@@ -26,6 +30,8 @@ data class HomeUiState(
     val monthlyChangePercent: Int = 0,
     val recentTransactions: List<TransactionEntity> = emptyList(),
     val upcomingSubscriptions: List<SubscriptionEntity> = emptyList(),
+    /** The next three payments, soonest due first (overdue ones lead). */
+    val upcomingPayments: List<com.naxits.paisatracker.domain.service.UpcomingItem> = emptyList(),
     val upcomingSubscriptionsTotal: BigDecimal = BigDecimal.ZERO,
     val upcomingSubscriptionsCurrency: String = "INR",
     /** How many of the upcoming payments are past due and unpaid. */
@@ -34,6 +40,11 @@ data class HomeUiState(
     val upcomingRecurring: List<com.naxits.paisatracker.data.database.entity.RecurringTransactionEntity> = emptyList(),
     val accountBalances: List<AccountBalanceEntity> = emptyList(),
     val creditCards: List<AccountBalanceEntity> = emptyList(),
+    /** The Cash account, shown on its own above the transactions; set even when its balance is zero. */
+    val cashAccount: AccountBalanceEntity? = null,
+    /** Bank accounts ticked "Show on homepage", in the user's account order. */
+    val shownBanks: List<AccountBalanceEntity> = emptyList(),
+    /** Net worth, calculated as on the Net Worth screen. */
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     val totalAvailableCredit: BigDecimal = BigDecimal.ZERO,
     val selectedCurrency: String = "INR",

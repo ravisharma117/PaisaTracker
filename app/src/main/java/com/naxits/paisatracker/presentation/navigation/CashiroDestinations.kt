@@ -197,6 +197,7 @@ data class Transactions(
 @Serializable object NetWorth
 
 @Serializable object Parties
+@Serializable object RememberedVendors
 
 @Serializable data class CategoryDetail(val categoryName: String, val year: Int, val month: Int)
 
@@ -210,7 +211,12 @@ data class Transactions(
 
 @Serializable object Chat
 
-@Serializable data class TransactionDetail(val transactionId: Long, val sharedElementKey: String? = null)
+/** [startInEditMode]: tapping a transaction opens it ready to edit; a long press opens the read-only view. */
+@Serializable data class TransactionDetail(
+    val transactionId: Long,
+    val sharedElementKey: String? = null,
+    val startInEditMode: Boolean = true
+)
 
 @Serializable data class AddTransaction(val initialTab: Int = 0, val subscriptionId: Long? = null, val type: String? = null)
 

@@ -93,9 +93,10 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class,
             com.naxits.paisatracker.data.database.entity.AccountMetaEntity::class,
             com.naxits.paisatracker.data.database.entity.PartyEntity::class,
-            com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class
+            com.naxits.paisatracker.data.database.entity.TransactionReviewEntity::class,
+            com.naxits.paisatracker.data.database.entity.CategoryPatternEntity::class
         ],
-        version = 70,
+        version = 74,
     exportSchema = true,
     autoMigrations =
         [
@@ -151,6 +152,9 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun accountRenameDao(): com.naxits.paisatracker.data.database.dao.AccountRenameDao
     abstract fun partyDao(): com.naxits.paisatracker.data.database.dao.PartyDao
     abstract fun transactionReviewDao(): com.naxits.paisatracker.data.database.dao.TransactionReviewDao
+    abstract fun categoryPatternDao(): com.naxits.paisatracker.data.database.dao.CategoryPatternDao
+
+    abstract fun archiveDao(): com.naxits.paisatracker.data.database.dao.ArchiveDao
 
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -684,6 +688,52 @@ MIGRATION_55_56,
                             datetime('now'), datetime('now')
                         )
                         """.trimIndent()
+                    )
+                }
+            }
+
+        val MIGRATION_73_74 =
+            object : Migration(73, 74) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A bank account can be listed on Home (copied from the exported schema 74)
+                    db.execSQL("ALTER TABLE `account_meta` ADD COLUMN `show_on_home` INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+
+        val MIGRATION_72_73 =
+            object : Migration(72, 73) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A lent or borrowed entry can be kept only as a reminder (copied from the exported schema 73)
+                    db.execSQL("ALTER TABLE `lend_borrow_transactions` ADD COLUMN `remember_only` INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+
+        val MIGRATION_71_72 =
+            object : Migration(71, 72) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // A remembered vendor also keeps its sub-category, and a spelling-independent key (copied from the exported schema 72)
+                    db.execSQL("ALTER TABLE `merchant_mappings` ADD COLUMN `subcategory` TEXT")
+                    db.execSQL("ALTER TABLE `merchant_mappings` ADD COLUMN `match_key` TEXT")
+                    // Mappings made before this keep working under their exact name; give them a key too
+                    val names = mutableListOf<String>()
+                    db.query("SELECT `merchant_name` FROM `merchant_mappings`").use { cursor ->
+                        while (cursor.moveToNext()) names.add(cursor.getString(0))
+                    }
+                    for (name in names) {
+                        db.execSQL(
+                            "UPDATE `merchant_mappings` SET `match_key` = ? WHERE `merchant_name` = ?",
+                            arrayOf<Any>(com.naxits.paisatracker.domain.service.MerchantKey.normalize(name), name)
+                        )
+                    }
+                }
+            }
+
+        val MIGRATION_70_71 =
+            object : Migration(70, 71) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // The category the user files each counterparty under, for suggesting it next time (copied from the exported schema 71)
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `category_patterns` (`pattern_key` TEXT NOT NULL, `type` TEXT NOT NULL, `category` TEXT NOT NULL, `subcategory` TEXT, `count` INTEGER NOT NULL DEFAULT 1, `last_amount` TEXT NOT NULL, `last_date` TEXT NOT NULL, `updated_at` TEXT NOT NULL, PRIMARY KEY(`pattern_key`, `type`))"
                     )
                 }
             }

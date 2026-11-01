@@ -345,6 +345,8 @@ private fun assetGroupLabel(group: AssetGroup): Int = when (group) {
     AssetGroup.CASH -> R.string.nw_group_cash
     AssetGroup.WALLET -> R.string.nw_group_wallet
     AssetGroup.INVESTMENTS -> R.string.nw_group_investments
+    AssetGroup.PROPERTY -> R.string.nw_group_property
+    AssetGroup.GOLD -> R.string.nw_group_gold
     AssetGroup.MONEY_LENT -> R.string.nw_group_lent
     AssetGroup.OTHER_ASSETS -> R.string.nw_group_other_assets
 }

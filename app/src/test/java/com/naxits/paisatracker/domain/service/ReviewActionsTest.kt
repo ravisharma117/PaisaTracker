@@ -159,4 +159,20 @@ class ReviewActionsTest {
         assertFalse(actions.confirmParty(categoryReview))
         assertEquals(ReviewStatus.PENDING, reviews.getById(categoryReview)!!.status)
     }
+
+    @Test
+    fun dismissingACategoryReviewRecordsTheCategoryTheEntryKeeps() = runTest {
+        val reviewId = reviews.insert(
+            TransactionReviewEntity(
+                transactionId = 1, kind = ReviewKind.CATEGORY, suggestedValue = "Salary",
+                reason = "test", createdAt = created
+            )
+        )
+
+        assertTrue(actions.dismiss(reviewId))
+
+        val done = reviews.getById(reviewId)!!
+        assertEquals(ReviewStatus.DISMISSED, done.status)
+        assertEquals("Income", done.resolvedValue, "dismissing leaves the entry's category as it is")
+    }
 }

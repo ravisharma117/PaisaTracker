@@ -252,6 +252,15 @@ fun SharedTransitionScope.AccountDetailScreen(
                                 )
                             )
                         },
+                        onViewClick = {
+                            navController.safeNavigate(
+                                TransactionDetail(
+                                    transactionId = transaction.id,
+                                    sharedElementKey = "transaction_${transaction.id}",
+                                    startInEditMode = false
+                                )
+                            )
+                        },
                         shape = shape,
                         modifier = Modifier.padding(horizontal = Dimensions.Padding.content),
                         animatedContentScope = animatedContentScope,

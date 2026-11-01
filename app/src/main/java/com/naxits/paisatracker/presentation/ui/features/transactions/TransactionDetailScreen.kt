@@ -272,6 +272,7 @@ import dev.chrisbanes.haze.hazeEffect
 fun SharedTransitionScope.TransactionDetailScreen(
     transactionId: Long,
     sharedElementKey: String? = null,
+    startInEditMode: Boolean = false,
     onNavigateBack: () -> Unit,
     onNavigateToPersonDetail: (personId: Long) -> Unit = {},
     transactionDetailViewModel: TransactionDetailViewModel = hiltViewModel(),
@@ -286,6 +287,7 @@ fun SharedTransitionScope.TransactionDetailScreen(
     val saveSuccess = uiState.saveSuccess
     val errorMessage = uiState.errorMessage
     val applyToAllFromMerchant = uiState.applyToAllFromMerchant
+    val vendorIsBusiness = uiState.vendorIsBusiness
     val updateExistingTransactions = uiState.updateExistingTransactions
     val existingTransactionCount = uiState.existingTransactionCount
     val showMatchPreviewSheet = uiState.showMatchPreviewSheet
@@ -397,6 +399,16 @@ fun SharedTransitionScope.TransactionDetailScreen(
 
     LaunchedEffect(transactionId) {
         transactionDetailViewModel.loadTransaction(transactionId)
+    }
+
+    // Tapping a transaction opens it ready to edit, once it has loaded. Saved across rotation so
+    // coming back to the read-only view is not undone.
+    var openedForEditing by androidx.compose.runtime.saveable.rememberSaveable(transactionId) { mutableStateOf(false) }
+    LaunchedEffect(transaction?.id, startInEditMode) {
+        if (startInEditMode && !openedForEditing && transaction != null && !isEditMode) {
+            openedForEditing = true
+            transactionDetailViewModel.enterEditMode()
+        }
     }
 
     // Handle delete success
@@ -514,6 +526,7 @@ fun SharedTransitionScope.TransactionDetailScreen(
                     transaction = txn,
                     isEditMode = isEditMode,
                     applyToAllFromMerchant = applyToAllFromMerchant,
+                    vendorIsBusiness = vendorIsBusiness,
                     updateExistingTransactions = updateExistingTransactions,
                     existingTransactionCount = existingTransactionCount,
                     viewModel = transactionDetailViewModel,
@@ -1005,6 +1018,7 @@ private fun TransactionDetailContent(
     transaction: TransactionEntity,
     isEditMode: Boolean,
     applyToAllFromMerchant: Boolean,
+    vendorIsBusiness: Boolean,
     updateExistingTransactions: Boolean,
     existingTransactionCount: Int,
     viewModel: TransactionDetailViewModel,
@@ -1106,10 +1120,16 @@ private fun TransactionDetailContent(
                     onPartyChanged = viewModel::onPartyChanged,
                     modifier = Modifier.padding(bottom = Spacing.md)
                 )
+                TransactionCategoryReviewSection(
+                    transaction = transaction,
+                    onChangeCategory = onCategoryClick,
+                    modifier = Modifier.padding(bottom = Spacing.md)
+                )
 
                 EditableExtractedInfoCard(
                     transaction = transaction,
                     applyToAllFromMerchant = applyToAllFromMerchant,
+                    vendorIsBusiness = vendorIsBusiness,
                     updateExistingTransactions = updateExistingTransactions,
                     existingTransactionCount = existingTransactionCount,
                     onTargetAccountClick = onTargetAccountClick,
@@ -1267,6 +1287,11 @@ private fun TransactionDetailContent(
                 TransactionPartySection(
                     transaction = transaction,
                     onPartyChanged = viewModel::onPartyChanged,
+                    modifier = Modifier.padding(top = Spacing.md)
+                )
+                TransactionCategoryReviewSection(
+                    transaction = transaction,
+                    onChangeCategory = viewModel::enterEditMode,
                     modifier = Modifier.padding(top = Spacing.md)
                 )
 
@@ -1539,6 +1564,7 @@ private fun EditableTransactionHeader(
 private fun EditableExtractedInfoCard(
     transaction: TransactionEntity,
     applyToAllFromMerchant: Boolean,
+    vendorIsBusiness: Boolean,
     updateExistingTransactions: Boolean,
     existingTransactionCount: Int,
     onCategoryClick: () -> Unit,
@@ -1833,8 +1859,8 @@ private fun EditableExtractedInfoCard(
             // ── Merchant category helpers ─────────────────────────────────
             Spacer(modifier = Modifier.height(Spacing.sm))
 
-            // Option 1: Apply this category to all FUTURE transactions
-            Column(
+            // Option 1: Apply this category to all FUTURE transactions (companies only, never a person)
+            if (vendorIsBusiness) Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .animateContentSize(MaterialTheme.motionScheme.fastSpatialSpec())

@@ -47,6 +47,7 @@ import javax.inject.Inject
 class DataPrivacyViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val backupExporter: BackupExporter,
+    private val archiveExporter: com.naxits.paisatracker.data.export.ArchiveExporter,
     private val backupImporter: BackupImporter,
     private val cashewImporter: CashewImporter,
     private val transactionRepository: TransactionRepository,
@@ -79,6 +80,20 @@ class DataPrivacyViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(importExportMessage = "Export error: ${e.message}") }
+            }
+        }
+    }
+
+    /** Saves every transaction and lending entry to a CSV the user chose, as a long-term record. */
+    fun exportArchive(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val rows = context.contentResolver.openOutputStream(uri)?.use { out ->
+                    archiveExporter.export(out)
+                } ?: throw java.io.IOException("Could not open the file")
+                _uiState.update { it.copy(importExportMessage = "$rows entries saved to CSV") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(importExportMessage = "Failed to save CSV: ${e.message}") }
             }
         }
     }
