@@ -42,7 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import androidx.compose.ui.text.style.TextOverflow
+import com.naxits.paisatracker.domain.model.AccountOrdering
 import com.naxits.paisatracker.presentation.common.icons.IconProvider
+import com.naxits.paisatracker.presentation.common.icons.LocalAccountMeta
 import com.naxits.paisatracker.presentation.ui.icons.Bag
 import com.naxits.paisatracker.presentation.ui.icons.Balance
 import com.naxits.paisatracker.presentation.ui.icons.Edit2
@@ -87,12 +90,14 @@ fun AccountCard(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             val context = LocalContext.current
-            val iconResource = remember(account.bankName, account.iconResId, account.iconName) {
+            val meta = LocalAccountMeta.current[AccountOrdering.keyOf(account)]
+            val iconResource = remember(account.bankName, account.iconResId, account.iconName, meta?.customIconName) {
                 IconProvider.getIconForTransaction(
                     context = context,
                     merchantName = account.bankName,
                     accountIconResId = account.iconResId,
-                    accountIconName = account.iconName
+                    accountIconName = account.iconName,
+                    accountIconOverride = meta?.customIconName
                 )
             }
 
@@ -331,6 +336,23 @@ text = {
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.6f)
                                 )
+                                if (meta != null && meta.tags.isNotEmpty()) {
+                                    Text(
+                                        text = meta.tags.joinToString(" \u2022 "),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                if (meta != null && meta.description.isNotBlank()) {
+                                    Text(
+                                        text = meta.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -362,6 +384,7 @@ text = {
 
                                 BrandIcon(
                                     merchantName = account.bankName,
+                                    accountLast4 = account.accountLast4,
                                     size = 48.dp,
                                     showBackground = true,
                                     accountIconResId = account.iconResId,

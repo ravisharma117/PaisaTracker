@@ -90,9 +90,10 @@ import com.naxits.paisatracker.data.database.entity.WebhookProfileEntity
             com.naxits.paisatracker.data.database.entity.RepaymentSuggestionEntity::class,
             com.naxits.paisatracker.data.database.entity.NetWorthItemEntity::class,
             com.naxits.paisatracker.data.database.entity.NetWorthItemValueEntity::class,
-            com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class
+            com.naxits.paisatracker.data.database.entity.NetWorthSnapshotEntity::class,
+            com.naxits.paisatracker.data.database.entity.AccountMetaEntity::class
         ],
-        version = 68,
+        version = 69,
     exportSchema = true,
     autoMigrations =
         [
@@ -144,6 +145,8 @@ abstract class CashiroDatabase : RoomDatabase() {
     abstract fun billPaymentDao(): com.naxits.paisatracker.data.database.dao.BillPaymentDao
     abstract fun repaymentSuggestionDao(): com.naxits.paisatracker.data.database.dao.RepaymentSuggestionDao
     abstract fun netWorthDao(): com.naxits.paisatracker.data.database.dao.NetWorthDao
+    abstract fun accountMetaDao(): com.naxits.paisatracker.data.database.dao.AccountMetaDao
+    abstract fun accountRenameDao(): com.naxits.paisatracker.data.database.dao.AccountRenameDao
 
     companion object {
         const val DATABASE_NAME = "pennywise_database"
@@ -677,6 +680,16 @@ MIGRATION_55_56,
                             datetime('now'), datetime('now')
                         )
                         """.trimIndent()
+                    )
+                }
+            }
+
+        val MIGRATION_68_69 =
+            object : Migration(68, 69) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Icon, tags and description the user sets on an account (copied from the exported schema 69)
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `account_meta` (`bank_name` TEXT NOT NULL, `account_last4` TEXT NOT NULL, `custom_icon_name` TEXT, `tags` TEXT NOT NULL DEFAULT '', `description` TEXT NOT NULL DEFAULT '', `updated_at` TEXT NOT NULL, PRIMARY KEY(`bank_name`, `account_last4`))"
                     )
                 }
             }

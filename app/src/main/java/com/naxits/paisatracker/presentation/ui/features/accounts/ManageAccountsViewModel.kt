@@ -9,7 +9,11 @@ import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
 import com.naxits.paisatracker.data.database.entity.CardEntity
 import com.naxits.paisatracker.data.database.entity.CardType
 import com.naxits.paisatracker.data.preferences.UserPreferencesRepository
+import com.naxits.paisatracker.data.manager.AccountRenamer
 import com.naxits.paisatracker.data.repository.AccountBalanceRepository
+import com.naxits.paisatracker.data.repository.AccountMetaRepository
+import com.naxits.paisatracker.domain.model.AccountMeta
+import com.naxits.paisatracker.domain.model.AccountOrdering
 import com.naxits.paisatracker.data.repository.CardRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
 import com.naxits.paisatracker.utils.CurrencyFormatter
@@ -33,6 +37,8 @@ data class ManageAccountsUiState(
     val orphanedCards: List<CardEntity> = emptyList(),
     val isLoading: Boolean = false,
     val mainAccountKey: String? = null,
+    /** The user's icon, tags and description per account, keyed like [AccountOrdering.keyOf]. */
+    val accountMeta: Map<String, AccountMeta> = emptyMap(),
     val errorMessage: String? = null,
     val successMessage: String? = null
 )
@@ -66,7 +72,9 @@ constructor(
     private val accountOrderUseCase: AccountOrderUseCase,
     private val cardRepository: CardRepository,
     private val transactionRepository: TransactionRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val accountMetaRepository: AccountMetaRepository,
+    private val accountRenamer: AccountRenamer
 ) : ViewModel() {
 
     private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
@@ -86,6 +94,7 @@ constructor(
 
     init {
         loadAccounts()
+        loadAccountMeta()
         loadHiddenAccounts()
         loadMainAccount()
         loadCards()
@@ -127,6 +136,14 @@ constructor(
         viewModelScope.launch {
             accountOrderUseCase.orderedAccounts().collect { accounts ->
                 _uiState.update { it.copy(accounts = accounts) }
+            }
+        }
+    }
+
+    private fun loadAccountMeta() {
+        viewModelScope.launch {
+            accountMetaRepository.observeAll().collect { meta ->
+                _uiState.update { it.copy(accountMeta = meta) }
             }
         }
     }
@@ -252,7 +269,8 @@ constructor(
         isCreditCard: Boolean = false,
         isWallet: Boolean = false,
         creditLimit: BigDecimal? = null,
-        currency: String = "INR"
+        currency: String = "INR",
+        meta: AccountMeta = AccountMeta.NONE
     ) {
         viewModelScope.launch {
             // Check for duplicates
@@ -283,6 +301,7 @@ constructor(
                     color = colorHex
                 )
             )
+            accountMetaRepository.save(bankName, accountLast4, meta)
 
             _uiState.update { it.copy(successMessage = "Account added successfully") }
             delay(3000)
@@ -548,6 +567,7 @@ constructor(
                 // Delete all balance records for this account
                 val deletedCount = accountBalanceRepository.deleteAccount(bankName, accountLast4)
                 accountOrderUseCase.onAccountRemoved(bankName, accountLast4)
+                accountMetaRepository.delete(bankName, accountLast4)
 
                 // Remove from hidden accounts if present
                 val key = "${bankName}_${accountLast4}"
@@ -591,7 +611,8 @@ constructor(
             newIconResId: Int,
             newIconName: String,
             newColorHex: String,
-            newCurrency: String? = null
+            newCurrency: String? = null,
+            newMeta: AccountMeta? = null
     ) {
         viewModelScope.launch {
             try {
@@ -600,31 +621,12 @@ constructor(
                     ?: latestBalance?.currency
                     ?: resolveDefaultCurrency()
 
-                // Update bank name if changed
+                // Rename everywhere the old bank name was copied (balances, transactions, cards,
+                // bills, recurring entries, notes, order, hidden and main account)
                 if (newBankName != oldBankName) {
-                    accountBalanceRepository.updateAccountBankName(
-                        oldBankName,
-                        accountLast4,
-                        newBankName
-                    )
-                    accountOrderUseCase.onAccountRenamed(oldBankName, newBankName, accountLast4)
-
-                    // Update hidden accounts preference if bank name changed
-                    val oldKey = "${oldBankName}_${accountLast4}"
-                    val newKey = "${newBankName}_${accountLast4}"
-                    val hidden = _uiState.value.hiddenAccounts.toMutableSet()
-                    if (hidden.contains(oldKey)) {
-                        hidden.remove(oldKey)
-                        hidden.add(newKey)
-                        sharedPrefs.edit { putStringSet("hidden_accounts", hidden) }
-                        _uiState.update { it.copy(hiddenAccounts = hidden) }
-                    }
-
-                    // Update main account preference if bank name changed
-                    if (_uiState.value.mainAccountKey == oldKey) {
-                        sharedPrefs.edit { putString("main_account", newKey) }
-                        _uiState.update { it.copy(mainAccountKey = newKey) }
-                    }
+                    accountRenamer.rename(oldBankName, accountLast4, newBankName)
+                    loadHiddenAccounts()
+                    loadMainAccount()
                 }
 
                 // Insert new balance record with updated values
@@ -644,6 +646,7 @@ constructor(
                         color = newColorHex
                     )
                 )
+                newMeta?.let { accountMetaRepository.save(newBankName, accountLast4, it) }
 
                 _uiState.update { it.copy(successMessage = "Account updated successfully") }
 
@@ -697,6 +700,7 @@ constructor(
 
                     // Delete account balances
                     accountBalanceRepository.deleteAccount(source.bankName, source.accountLast4)
+                    accountMetaRepository.delete(source.bankName, source.accountLast4)
                     accountOrderUseCase.onAccountRemoved(source.bankName, source.accountLast4)
                 }
 

@@ -1128,6 +1128,7 @@ private fun getAllIcons(context: Context): List<IconItem> {
     addIcon("onecard", "Brand", R.drawable.ic_brand_onecard)
     addIcon("opay", "Brand", R.drawable.ic_brand_0pay)
     addIcon("parsian bank", "Brand", R.drawable.ic_brand_parsian_bank)
+    addIcon("himachal pradesh state cooperative bank", "Brand", R.drawable.ic_brand_himachal_state_coop_bank)
     addIcon("punjab & sind bank", "Brand", R.drawable.ic_brand_punjab_sind_bank)
     addIcon("sabb bank", "Brand", R.drawable.ic_brand_sabb_bank)
     addIcon("sampath bank", "Brand", R.drawable.ic_brand_sampath_bank)

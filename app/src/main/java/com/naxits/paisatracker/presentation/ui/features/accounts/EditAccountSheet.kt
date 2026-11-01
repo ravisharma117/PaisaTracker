@@ -46,6 +46,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.naxits.paisatracker.R
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import com.naxits.paisatracker.domain.model.AccountMeta
 import com.naxits.paisatracker.presentation.effects.BlurredAnimatedVisibility
 import com.naxits.paisatracker.presentation.ui.components.BrandIcon
 import com.naxits.paisatracker.presentation.ui.components.ColorPickerContent
@@ -91,6 +93,7 @@ fun EditAccountSheet(
     account: AccountBalanceEntity? = null,
     allAccounts: List<AccountBalanceEntity> = emptyList(),
     defaultCurrency: String = "INR",
+    meta: AccountMeta = AccountMeta.NONE,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onSave: (bankName: String,
@@ -102,7 +105,8 @@ fun EditAccountSheet(
         isCreditCard: Boolean,
         isWallet: Boolean,
         creditLimit: BigDecimal?,
-        currency: String
+        currency: String,
+        meta: AccountMeta
     ) -> Unit
 ) {
     val context = LocalContext.current
@@ -123,6 +127,10 @@ fun EditAccountSheet(
         mutableStateOf(account?.iconName ?: IconResolutionUtils.resIdToName(context, iconResId))
     }
     var colorHex by remember { mutableStateOf(account?.color ?: "#33B5E5") }
+    // The icon the user picked stays theirs even if the bank name later matches a different logo
+    var customIcon by remember { mutableStateOf(meta.customIconName) }
+    var tags by remember { mutableStateOf(meta.tags) }
+    var description by remember { mutableStateOf(meta.description) }
 
     var showNumberPad by remember { mutableStateOf(false) }
     var editingCreditLimit by remember { mutableStateOf(false) }
@@ -168,6 +176,7 @@ fun EditAccountSheet(
                 onIconSelected = { name ->
                     iconName = name
                     iconResId = IconResolutionUtils.nameToResId(context, name)
+                    customIcon = name
                     showIconSelector = false
                 }
             )
@@ -317,7 +326,8 @@ fun EditAccountSheet(
                     currency = selectedCurrency,
                     isCreditCard = isCreditCard,
                     isWallet = isWallet,
-                    creditLimit = creditLimit
+                    creditLimit = creditLimit,
+                    iconOverride = customIcon
                 )
                 Text(
                     text = stringResource(R.string.preview_label),
@@ -346,7 +356,8 @@ fun EditAccountSheet(
                             size = 58.dp,
                             accountIconResId = iconResId,
                             accountIconName = iconName,
-                            accountColorHex = colorHex
+                            accountColorHex = colorHex,
+                            accountIconOverride = customIcon
                         )
                         // Edit badge
                         Box(
@@ -607,6 +618,12 @@ fun EditAccountSheet(
                     enabled = false
                 )
 
+                if (customIcon != null) {
+                    TextButton(onClick = { customIcon = null }) {
+                        Text(stringResource(R.string.account_use_bank_logo))
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Color Picker Section
@@ -616,6 +633,14 @@ fun EditAccountSheet(
                         colorHex = String.format("#%06X", 0xFFFFFF and colorInt)
                     }
                 )
+
+                if (!isWallet) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AccountTagsEditor(tags = tags, onTagsChange = { tags = it })
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                AccountDescriptionField(description = description, onDescriptionChange = { description = it })
             }
 
             Spacer(modifier = Modifier.height(80.dp))
@@ -681,7 +706,12 @@ fun EditAccountSheet(
                             isCreditCard,
                             isWallet,
                             if (isCreditCard) creditLimit else null,
-                            selectedCurrency
+                            selectedCurrency,
+                            AccountMeta(
+                                customIconName = customIcon,
+                                tags = if (isWallet) emptyList() else tags,
+                                description = description
+                            )
                         )
                     },
                     enabled = bankName.isNotBlank() && (isWallet || accountLast4.length == 4),
@@ -713,7 +743,8 @@ private fun PreviewAccountCard(
     currency: String,
     isCreditCard: Boolean = false,
     isWallet: Boolean = false,
-    creditLimit: BigDecimal = BigDecimal.ZERO
+    creditLimit: BigDecimal = BigDecimal.ZERO,
+    iconOverride: String? = null
 ) {
     Card(
         modifier = Modifier.padding(bottom = Spacing.sm).fillMaxWidth(),
@@ -804,7 +835,8 @@ private fun PreviewAccountCard(
                         showBackground = true,
                         accountIconResId = iconResId,
                         accountIconName = iconName,
-                        accountColorHex = colorHex
+                        accountColorHex = colorHex,
+                        accountIconOverride = iconOverride
                     )
                 }
             }

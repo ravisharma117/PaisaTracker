@@ -80,6 +80,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.naxits.paisatracker.data.database.entity.AccountBalanceEntity
+import com.naxits.paisatracker.domain.model.AccountMeta
+import com.naxits.paisatracker.domain.model.AccountOrdering
 import com.naxits.paisatracker.data.database.entity.CardEntity
 import com.naxits.paisatracker.data.database.entity.CardType
 import com.naxits.paisatracker.presentation.effects.overScrollVertical
@@ -826,6 +828,7 @@ fun ManageAccountsScreen(
                 account = accountToEdit!!,
                 allAccounts = uiState.accounts,
                 defaultCurrency = defaultCurrency,
+                meta = uiState.accountMeta[AccountOrdering.keyOf(accountToEdit!!)] ?: AccountMeta.NONE,
                 onDismiss = {
                     showEditSheet = false
                     accountToEdit = null
@@ -836,7 +839,7 @@ fun ManageAccountsScreen(
                     accountToEdit = null
                     showDeleteConfirmDialog = true
                 },
-                onSave = { bankName, balance, last4, iconResId, iconName, color, isCC, isWallet, limit, currency ->
+                onSave = { bankName, balance, last4, iconResId, iconName, color, isCC, isWallet, limit, currency, meta ->
                     manageAccountsViewModel.editAccount(
                         oldBankName = accountToEdit!!.bankName,
                         accountLast4 = accountToEdit!!.accountLast4,
@@ -848,7 +851,8 @@ fun ManageAccountsScreen(
                         newIconResId = iconResId,
                         newIconName = iconName,
                         newColorHex = color,
-                        newCurrency = currency
+                        newCurrency = currency,
+                        newMeta = meta
                     )
                     showEditSheet = false
                     accountToEdit = null
@@ -880,7 +884,7 @@ fun ManageAccountsScreen(
                 allAccounts = uiState.accounts,
                 defaultCurrency = defaultCurrency,
                 onDismiss = { showAddSheet = false },
-                onSave = { bankName, balance, last4, iconResId, iconName, color, isCC, isWallet, limit, currency ->
+                onSave = { bankName, balance, last4, iconResId, iconName, color, isCC, isWallet, limit, currency, meta ->
                     manageAccountsViewModel.addAccount(
                         bankName = bankName,
                         balance = balance,
@@ -891,7 +895,8 @@ fun ManageAccountsScreen(
                         isCreditCard = isCC,
                         isWallet = isWallet,
                         creditLimit = limit,
-                        currency = currency
+                        currency = currency,
+                        meta = meta
                     )
                     showAddSheet = false
                 }
@@ -1503,6 +1508,7 @@ private fun LinkCardDialog(
                             ) {
                                 com.naxits.paisatracker.presentation.ui.components.BrandIcon(
                                     merchantName = account.bankName,
+                                    accountLast4 = account.accountLast4,
                                     accountIconResId = account.iconResId,
                                     accountColorHex = account.color,
                                     size = 32.dp

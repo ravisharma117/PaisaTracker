@@ -123,6 +123,7 @@ object BankParserFactory {
         OpayBankParser(),  // Opay (Nigeria)
         // P3-B: Additional Indian Banks
         NSDLPaymentsBankParser(),  // NSDL Payments Bank (India)
+        HimachalStateCoopBankParser(),  // Himachal Pradesh State Cooperative Bank (must be before PunjabSindBankParser)
         PunjabSindBankParser(),  // Punjab & Sind Bank (India)
         KeralaBankParser(),  // Kerala Bank (India)
         CashfreeParser(),  // Cashfree (India)

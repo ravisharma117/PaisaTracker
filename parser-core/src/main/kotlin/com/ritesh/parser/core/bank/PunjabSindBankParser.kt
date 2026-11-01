@@ -11,6 +11,8 @@ class PunjabSindBankParser : BankParser() {
 
     override fun canHandle(sender: String): Boolean {
         val normalized = sender.uppercase()
+        // "HPSBNK" belongs to the Himachal Pradesh State Cooperative Bank
+        if (normalized.contains(HimachalStateCoopBankParser.SENDER_KEY)) return false
         return normalized.contains("PSB") || normalized.contains("PUNJAB SIND")
     }
 

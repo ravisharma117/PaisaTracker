@@ -91,4 +91,35 @@ class AccountOrderingTest {
         val sorted = AccountOrdering.sort(listOf(a, cash, b), listOf(key(cash), key(b)))
         assertEquals(listOf(cash, b, a), sorted)
     }
+
+    @Test
+    fun moveShiftsOneAccountUpOrDown() {
+        val list = listOf(a, b, c)
+        assertEquals(listOf(b, a, c), AccountOrdering.move(list, 1, -1))
+        assertEquals(listOf(a, c, b), AccountOrdering.move(list, 1, 1))
+    }
+
+    @Test
+    fun moveThatWouldLeaveTheListChangesNothing() {
+        val list = listOf(a, b, c)
+        assertSame(list, AccountOrdering.move(list, 0, -1))
+        assertSame(list, AccountOrdering.move(list, 2, 1))
+        assertSame(list, AccountOrdering.move(list, 5, 1))
+        assertSame(list, AccountOrdering.move(list, 1, 0))
+    }
+
+    @Test
+    fun theFirstAccountStaysFirstWhenANewAccountAppears() {
+        val stored = AccountOrdering.orderOf(listOf(c, a, b))
+        val withNewcomer = AccountOrdering.sort(listOf(a, d, b, c), stored)
+        assertEquals(c, withNewcomer.first())
+        assertEquals(d, withNewcomer.last())
+    }
+
+    @Test
+    fun storedOrderIsStableAcrossSortingAndSavingAgain() {
+        val stored = AccountOrdering.orderOf(listOf(b, c, a))
+        val sorted = AccountOrdering.sort(listOf(a, b, c), stored)
+        assertEquals(stored, AccountOrdering.orderOf(sorted))
+    }
 }
