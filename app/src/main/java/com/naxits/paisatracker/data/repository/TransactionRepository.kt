@@ -213,7 +213,7 @@ class TransactionRepository @Inject constructor(
             bankName = bankName,
             accountLast4 = accountLast4,
             balance = reversedBalance,
-            timestamp = LocalDateTime.now(),
+            timestamp = stampAfter(latestBalance.timestamp),
             transactionId = null,
             creditLimit = latestBalance.creditLimit,
             isCreditCard = latestBalance.isCreditCard,
@@ -248,7 +248,7 @@ class TransactionRepository @Inject constructor(
             bankName = bankName,
             accountLast4 = accountLast4,
             balance = newBalance,
-            timestamp = LocalDateTime.now(),
+            timestamp = stampAfter(latestBalance.timestamp),
             transactionId = null,
             creditLimit = latestBalance.creditLimit,
             isCreditCard = latestBalance.isCreditCard,
@@ -291,6 +291,16 @@ class TransactionRepository @Inject constructor(
         }
     }
 
+    /**
+     * Now, but never at or before [latest]. A balance row written at the same moment as the one
+     * before it would not be read back as the latest (and the unique account and time index could
+     * refuse it), so a delete followed at once by an undo must not share a timestamp.
+     */
+    private fun stampAfter(latest: LocalDateTime): LocalDateTime {
+        val now = LocalDateTime.now()
+        return if (now.isAfter(latest)) now else latest.plusNanos(1_000_000)
+    }
+
     private suspend fun shiftLatestBalance(
         bankName: String,
         accountLast4: String,
@@ -299,13 +309,11 @@ class TransactionRepository @Inject constructor(
         sourceType: String
     ) {
         val latest = accountBalanceRepository.getLatestBalance(bankName, accountLast4) ?: return
-        // Stay strictly after the latest row so this one is read back as the latest
-        val now = LocalDateTime.now()
         accountBalanceRepository.insertBalance(
             latest.copy(
                 id = 0,
                 balance = latest.balance + delta,
-                timestamp = if (now.isAfter(latest.timestamp)) now else latest.timestamp.plusNanos(1_000_000),
+                timestamp = stampAfter(latest.timestamp),
                 transactionId = null,
                 currency = currency,
                 sourceType = sourceType

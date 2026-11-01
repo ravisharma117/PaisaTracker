@@ -29,8 +29,14 @@ data class LendBorrowPerson(
     val totalBorrowed: BigDecimal = BigDecimal.ZERO,
     val netBalance: BigDecimal = BigDecimal.ZERO, // positive = person owes user (User gets), negative = user owes person
     val activeTransactionsCount: Int = 0,
-    val hasOverdue: Boolean = false
-)
+    val hasOverdue: Boolean = false,
+    /** Still owed to the user on entries kept only as a reminder (not in the totals above). */
+    val rememberOnlyLent: BigDecimal = BigDecimal.ZERO,
+    /** Still owed by the user on entries kept only as a reminder (not in the totals above). */
+    val rememberOnlyBorrowed: BigDecimal = BigDecimal.ZERO
+) {
+    val hasRememberOnly: Boolean get() = rememberOnlyLent.signum() > 0 || rememberOnlyBorrowed.signum() > 0
+}
 
 /**
  * Domain model representing an individual lending, borrowing, or settlement entry.
@@ -51,7 +57,9 @@ data class LendBorrowTransactionItem(
     val accountId: Long? = null,
     val category: String? = null,
     val merchant: String? = null,
-    val attachments: List<String> = emptyList()
+    val attachments: List<String> = emptyList(),
+    /** Kept only as a reminder: left out of net worth and the totals. */
+    val rememberOnly: Boolean = false
 )
 
 /**

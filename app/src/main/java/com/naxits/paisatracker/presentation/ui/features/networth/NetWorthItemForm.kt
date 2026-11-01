@@ -269,6 +269,8 @@ private fun typeLabel(type: NetWorthItemType): Int = when (type) {
     NetWorthItemType.STOCKS -> R.string.nw_type_stocks
     NetWorthItemType.FIXED_DEPOSIT -> R.string.nw_type_fixed_deposit
     NetWorthItemType.GOLD -> R.string.nw_type_gold
+    NetWorthItemType.HOUSE -> R.string.nw_type_house
+    NetWorthItemType.PLOT -> R.string.nw_type_plot
     NetWorthItemType.PROPERTY -> R.string.nw_type_property
     NetWorthItemType.VEHICLE -> R.string.nw_type_vehicle
     NetWorthItemType.OTHER_ASSET -> R.string.nw_type_other_asset

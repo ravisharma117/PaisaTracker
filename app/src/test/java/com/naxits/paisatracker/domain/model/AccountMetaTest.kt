@@ -49,6 +49,7 @@ class AccountMetaTest {
         assertFalse(AccountMeta(customIconName = "ic_brand_test").isEmpty)
         assertFalse(AccountMeta(tags = listOf("FD")).isEmpty)
         assertFalse(AccountMeta(description = "Household").isEmpty)
+        assertFalse(AccountMeta(showOnHome = true).isEmpty)
         assertTrue(AccountMeta(description = "   ").let { it.description.isBlank() && it.tags.isEmpty() })
     }
 

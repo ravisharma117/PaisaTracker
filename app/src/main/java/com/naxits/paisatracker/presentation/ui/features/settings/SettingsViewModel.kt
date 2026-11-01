@@ -80,6 +80,8 @@ class SettingsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
     private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
+    private val partyRepository: com.naxits.paisatracker.data.repository.PartyRepository,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
     private val cardRepository: CardRepository,
     private val budgetRepository: BudgetRepository,
     private val subscriptionRepository: SubscriptionRepository,
@@ -96,6 +98,18 @@ class SettingsViewModel @Inject constructor(
         get() = database.openHelper.readableDatabase.version
 
     val userPreferences = userPreferencesRepository.userPreferences
+
+    /** How far an amount may differ, in tenths of a percent, for entries to count as one series. */
+    val recurringToleranceTenths = userPreferencesRepository.recurringToleranceTenths
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = com.naxits.paisatracker.domain.service.RecurringPatternDetector.DEFAULT_TOLERANCE_TENTHS
+        )
+
+    fun setRecurringTolerance(tenths: Int) {
+        viewModelScope.launch { userPreferencesRepository.setRecurringToleranceTenths(tenths) }
+    }
 
     val totalTransactions = transactionRepository.getTransactionCount()
         .stateIn(
@@ -1093,6 +1107,8 @@ class SettingsViewModel @Inject constructor(
                 transactionRepository.deleteAllTransactions()
                 accountBalanceRepository.deleteAllBalances()
                 accountMetaRepository.deleteAll()
+                reviewService.deleteAll()
+                partyRepository.deleteAll()
                 budgetRepository.deleteAllBudgets()
                 subscriptionRepository.deleteAllSubscriptions()
                 cardRepository.deleteAllCards()

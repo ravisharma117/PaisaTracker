@@ -101,8 +101,17 @@ constructor(@ApplicationContext private val context: Context) {
         val IS_SAMPLE_DATA_SEEDED = booleanPreferencesKey("is_sample_data_seeded")
         // Set once recent ATM withdrawals saved as expenses have been turned into transfers to Cash
         val ATM_TRANSFER_BACKFILL_DONE = booleanPreferencesKey("atm_transfer_backfill_done")
+        // Set once messages saved under an account's old name have been moved onto the account
+        val ACCOUNT_REPAIR_BACKFILL_DONE = booleanPreferencesKey("account_repair_backfill_done")
+        val SBI_DEPOSIT_FIX_DONE = booleanPreferencesKey("sbi_deposit_fix_done")
+        val KEYWORD_CATEGORY_BACKFILL_DONE = booleanPreferencesKey("keyword_category_backfill_done")
+        val HOME_RECENT_FIRST_DONE = booleanPreferencesKey("home_recent_first_done")
+        val IGNORED_VENDOR_KEYS = androidx.datastore.preferences.core.stringSetPreferencesKey("ignored_vendor_keys")
+        // How far an amount may differ, in tenths of a percent, for entries to count as a series
+        val RECURRING_TOLERANCE_TENTHS = intPreferencesKey("recurring_tolerance_tenths")
         // Set once accounts the SMS parser labelled with the wrong bank have been renamed
-        val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_done")
+        // (v2: also covers transactions that have no account row of their own)
+        val BANK_RELABEL_BACKFILL_DONE = booleanPreferencesKey("bank_relabel_backfill_v2_done")
         val APP_ICON = stringPreferencesKey("app_icon")
         val WEBHOOK_SYNC_MODE = stringPreferencesKey("webhook_sync_mode")
         val WEBHOOK_INTERVAL_HOURS = intPreferencesKey("webhook_interval_hours")
@@ -652,6 +661,18 @@ constructor(@ApplicationContext private val context: Context) {
         context.dataStore.edit { it[PreferencesKeys.LEND_REMINDERS_ENABLED] = enabled }
     }
 
+    /** How far an amount may differ (in tenths of a percent, 100 is 10%) for entries to count as one series. */
+    val recurringToleranceTenths: Flow<Int> =
+            context.dataStore.data.map {
+                it[PreferencesKeys.RECURRING_TOLERANCE_TENTHS]
+                    ?.takeIf { value -> value in com.naxits.paisatracker.domain.service.RecurringPatternDetector.TOLERANCE_CHOICES_TENTHS }
+                    ?: com.naxits.paisatracker.domain.service.RecurringPatternDetector.DEFAULT_TOLERANCE_TENTHS
+            }
+
+    suspend fun setRecurringToleranceTenths(tenths: Int) {
+        context.dataStore.edit { it[PreferencesKeys.RECURRING_TOLERANCE_TENTHS] = tenths }
+    }
+
     /** Notifications for strong possible-repayment matches. Off until the user turns them on. */
     val repaymentNotificationsEnabled: Flow<Boolean> =
             context.dataStore.data.map { it[PreferencesKeys.REPAYMENT_NOTIFICATIONS_ENABLED] ?: false }
@@ -880,6 +901,18 @@ constructor(@ApplicationContext private val context: Context) {
                 ?: emptySet()
         }
 
+    /** Once: puts Recent Transactions at the top of an order the user had already saved. */
+    suspend fun moveRecentTransactionsToTopOnce(recentFirst: (List<HomeWidget>) -> List<HomeWidget>) {
+        context.dataStore.edit { preferences ->
+            if (preferences[PreferencesKeys.HOME_RECENT_FIRST_DONE] == true) return@edit
+            preferences[PreferencesKeys.HOME_WIDGETS_ORDER]?.let { saved ->
+                val order = saved.split(",").mapNotNull { HomeWidget.fromName(it) }
+                preferences[PreferencesKeys.HOME_WIDGETS_ORDER] = recentFirst(order).joinToString(",") { it.name }
+            }
+            preferences[PreferencesKeys.HOME_RECENT_FIRST_DONE] = true
+        }
+    }
+
     suspend fun updateHomeWidgetsOrder(order: List<HomeWidget>) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.HOME_WIDGETS_ORDER] = order.joinToString(",") { it.name }
@@ -948,6 +981,51 @@ constructor(@ApplicationContext private val context: Context) {
     suspend fun markAtmTransferBackfillDone() {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.ATM_TRANSFER_BACKFILL_DONE] = true
+        }
+    }
+
+    suspend fun isSbiDepositFixDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.SBI_DEPOSIT_FIX_DONE] ?: false
+        }.first()
+
+    suspend fun markSbiDepositFixDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SBI_DEPOSIT_FIX_DONE] = true
+        }
+    }
+
+    /** Vendors (by [com.naxits.paisatracker.domain.service.MerchantKey]) the user removed, so they are not suggested again. */
+    val ignoredVendorKeys: kotlinx.coroutines.flow.Flow<Set<String>> =
+        context.dataStore.data.map { preferences -> preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] ?: emptySet() }
+
+    suspend fun setVendorIgnored(key: String, ignored: Boolean) {
+        if (key.isEmpty()) return
+        context.dataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] ?: emptySet()
+            preferences[PreferencesKeys.IGNORED_VENDOR_KEYS] = if (ignored) current + key else current - key
+        }
+    }
+
+    suspend fun isKeywordCategoryBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.KEYWORD_CATEGORY_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markKeywordCategoryBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.KEYWORD_CATEGORY_BACKFILL_DONE] = true
+        }
+    }
+
+    suspend fun isAccountRepairBackfillDone(): Boolean =
+        context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.ACCOUNT_REPAIR_BACKFILL_DONE] ?: false
+        }.first()
+
+    suspend fun markAccountRepairBackfillDone() {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ACCOUNT_REPAIR_BACKFILL_DONE] = true
         }
     }
 

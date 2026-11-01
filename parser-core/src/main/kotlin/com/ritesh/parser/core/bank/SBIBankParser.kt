@@ -50,7 +50,36 @@ class SBIBankParser : BankParser() {
         return null
     }
 
+    // A standing instruction (such as a monthly deposit) executed from one account into another
+    private val standingInstructionPattern = Regex(
+        """Standing\s+Instruction\s+has\s+been\s+successfully\s+executed\s+for\s+(?:Rs\.?|INR)\s*([0-9,]+(?:\.\d{1,2})?)\s+from\s+(?:your\s+)?A/c\s+No\.?\s*[X\*]*(\d+)\s+to\s+A/c\s+No\.?\s*[X\*]*(\d+)""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * The receiving side of a standing instruction. The paying account gets its own debit alert, so
+     * only the account that receives the money is recorded here, as a credit.
+     */
+    private fun parseStandingInstruction(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        val match = standingInstructionPattern.find(smsBody) ?: return null
+        val amount = match.groupValues[1].replace(",", "").toBigDecimalOrNull() ?: return null
+        return ParsedTransaction(
+            amount = amount,
+            type = TransactionType.INCOME,
+            merchant = "Standing Instruction",
+            reference = null,
+            accountLast4 = match.groupValues[3].takeLast(4),
+            balance = null,
+            smsBody = smsBody,
+            sender = sender,
+            timestamp = timestamp,
+            bankName = getBankName(),
+            currency = getCurrency()
+        )
+    }
+
     override fun parse(smsBody: String, sender: String, timestamp: Long): ParsedTransaction? {
+        parseStandingInstruction(smsBody, sender, timestamp)?.let { return it }
         val parsed = super.parse(smsBody, sender, timestamp) ?: return null
 
         // Handle credit card messages
@@ -353,6 +382,10 @@ class SBIBankParser : BankParser() {
 
         // SBI-specific patterns
         return when {
+            // A deposit by transfer says "transfer" but money came in; the debit keyword below must not claim it
+            lowerMessage.contains("credited") && lowerMessage.contains("deposit by transfer") &&
+                !lowerMessage.contains("debit") -> TransactionType.INCOME
+
             // Priority 1: Check for explicit debit indicators first, especially if followed by "credited" (transfers)
             lowerMessage.contains("debited for") -> TransactionType.EXPENSE
             lowerMessage.contains("is debited") -> TransactionType.EXPENSE

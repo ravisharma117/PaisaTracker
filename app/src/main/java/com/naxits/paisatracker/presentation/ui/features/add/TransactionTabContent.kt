@@ -99,6 +99,7 @@ import com.naxits.paisatracker.presentation.ui.components.EntryCountingSelector
 import com.naxits.paisatracker.presentation.ui.components.AccountSelectionSheet
 import com.naxits.paisatracker.presentation.ui.components.AttachmentSection
 import com.naxits.paisatracker.presentation.ui.components.BrandIcon
+import com.naxits.paisatracker.presentation.ui.components.PartyAutocompleteField
 import com.naxits.paisatracker.presentation.ui.components.CategorySelectionSheet
 import com.naxits.paisatracker.presentation.ui.components.DatePicker
 import com.naxits.paisatracker.presentation.ui.components.TimePicker
@@ -135,6 +136,8 @@ fun TransactionTabContent(
     val transactionSubcategories by viewModel.transactionSubcategories.collectAsState()
     val transactionAttachments by viewModel.transactionAttachments.collectAsState()
     val persons by viewModel.persons.collectAsState()
+    val isBusinessAccount by viewModel.isBusinessAccount.collectAsState()
+    val partySuggestions by viewModel.partySuggestions.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -1217,6 +1220,21 @@ fun TransactionTabContent(
                     ),
                     supportingText = uiState.merchantError?.let { { Text(it) } },
                 )
+                }
+
+                // Customer or vendor, for entries on a Business account
+                val showParty = isBusinessAccount && (uiState.transactionType == TransactionType.INCOME ||
+                    uiState.transactionType == TransactionType.EXPENSE ||
+                    uiState.transactionType == TransactionType.CREDIT)
+                BlurredAnimatedVisibility(showParty) {
+                    PartyAutocompleteField(
+                        value = uiState.partyName,
+                        onValueChange = viewModel::updatePartyName,
+                        suggestions = partySuggestions,
+                        onSelect = viewModel::selectParty,
+                        selectedPartyId = uiState.partyId,
+                        shape = RoundedCornerShape(4.dp)
+                    )
                 }
 
                 // Notes/Description (Optional)

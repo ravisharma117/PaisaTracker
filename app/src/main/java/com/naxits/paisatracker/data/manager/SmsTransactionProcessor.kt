@@ -30,7 +30,9 @@ class SmsTransactionProcessor @Inject constructor(
     private val ruleRepository: RuleRepository,
     private val ruleEngine: RuleEngine,
     private val balanceUpdateProcessor: BalanceUpdateProcessor,
-    private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService
+    private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
+    private val accountResolver: AccountResolver
 ) {
     companion object {
         private const val TAG = "SmsTransactionProcessor"
@@ -147,10 +149,11 @@ class SmsTransactionProcessor @Inject constructor(
             }
 
             // Check for custom merchant mapping
-            val customCategory = merchantMappingRepository.getCategoryForMerchant(entity.merchantName)
-            val entityWithMapping = if (customCategory != null) {
-                Log.d(TAG, "Found custom category mapping: ${entity.merchantName} -> $customCategory")
-                entity.copy(category = customCategory)
+            val vendorMapping = merchantMappingRepository.findForVendor(entity.merchantName)
+            val customCategory = vendorMapping?.category
+            val entityWithMapping = if (vendorMapping != null) {
+                Log.d(TAG, "Found custom category mapping: ${entity.merchantName} -> ${vendorMapping.category}")
+                entity.copy(category = vendorMapping.category, subcategory = vendorMapping.subcategory)
             } else {
                 entity
             }
@@ -197,7 +200,23 @@ class SmsTransactionProcessor @Inject constructor(
             } else {
                 entityWithRules
             }
-            val finalEntityForInsert = accountBalanceRepository.resolveEntityAccountNumber(finalEntity, parsedTransaction)
+            val numberedEntity = accountBalanceRepository.resolveEntityAccountNumber(finalEntity, parsedTransaction)
+
+            // The message names the bank its own way; the user may have named the account something
+            // else. Join the account that already ends in those digits instead of starting a second.
+            val accountBank = if (parsedTransaction.isFromCard) null else numberedEntity.bankName?.let {
+                accountResolver.bankFor(it, numberedEntity.accountNumber)
+            }
+            val finalEntityForInsert = if (accountBank != null && accountBank != numberedEntity.bankName) {
+                numberedEntity.copy(bankName = accountBank)
+            } else {
+                numberedEntity
+            }
+            val parsedForBalance = if (accountBank != null && accountBank != parsedTransaction.bankName) {
+                parsedTransaction.copy(bankName = accountBank)
+            } else {
+                parsedTransaction
+            }
 
             val rowId = transactionRepository.insertTransaction(finalEntityForInsert)
             if (rowId != -1L) {
@@ -205,6 +224,11 @@ class SmsTransactionProcessor @Inject constructor(
                     subscriptionRepository.linkPaymentTransaction(matchedSubscription.id, settledDueDate, rowId)
                 }
                 repaymentService.onTransactionSaved(rowId, finalEntityForInsert)
+                reviewService.onTransactionSaved(
+                    rowId,
+                    finalEntityForInsert,
+                    categoryChosenByUser = customCategory != null || ruleApplications.isNotEmpty()
+                )
                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntityForInsert.isRecurring) " (Recurring)" else ""}")
 
                 // Save rule applications if any rules were applied
@@ -216,7 +240,7 @@ class SmsTransactionProcessor @Inject constructor(
                 }
 
                 // Process balance updates
-                balanceUpdateProcessor.process(parsedTransaction, finalEntityForInsert, rowId)
+                balanceUpdateProcessor.process(parsedForBalance, finalEntityForInsert, rowId)
 
                 return ProcessingResult(true, transactionId = rowId)
             } else {

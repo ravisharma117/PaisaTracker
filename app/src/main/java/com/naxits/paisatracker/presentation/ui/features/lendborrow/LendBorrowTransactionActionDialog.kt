@@ -47,6 +47,9 @@ fun LendBorrowTransactionActionDialog(
     onDelete: () -> Unit,
     onSelectMultiple: () -> Unit,
     onDismiss: () -> Unit,
+    /** Shown for lent and borrowed entries; null hides the option (repayments). */
+    rememberOnly: Boolean? = null,
+    onToggleRememberOnly: () -> Unit = {},
     blurEffects: Boolean = LocalBlurEffects.current,
     hazeState: HazeState = remember { HazeState() }
 ) {
@@ -118,6 +121,22 @@ fun LendBorrowTransactionActionDialog(
                             text = stringResource(R.string.edit_record),
                             style = MaterialTheme.typography.titleMedium
                         )
+                    }
+                    if (rememberOnly != null) {
+                        Button(
+                            onClick = onToggleRememberOnly,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surface.copy(0.5f),
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(Dimensions.Radius.xs),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(if (rememberOnly) R.string.lend_count_again else R.string.lend_remember_only),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                     Button(
                         onClick = onDelete,

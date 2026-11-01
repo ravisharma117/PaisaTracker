@@ -42,6 +42,7 @@ class AccountMetaRepository @Inject constructor(
                 customIconName = clean.customIconName,
                 tags = AccountTags.join(clean.tags),
                 description = clean.description,
+                showOnHome = clean.showOnHome,
                 updatedAt = now
             )
         )

@@ -33,6 +33,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -55,6 +57,9 @@ constructor(
     private val updateSubscriptionUseCase: UpdateSubscriptionUseCase,
     private val billRecurringLink: com.naxits.paisatracker.domain.usecase.BillRecurringLinkUseCase,
     private val repaymentService: com.naxits.paisatracker.domain.service.RepaymentService,
+    private val partyRepository: com.naxits.paisatracker.data.repository.PartyRepository,
+    private val reviewService: com.naxits.paisatracker.domain.service.ReviewService,
+    private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
     private val currencyRepository: CurrencyRepository,
     val attachmentService: AttachmentService,
     @ApplicationContext private val context: Context
@@ -93,6 +98,23 @@ constructor(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+
+    // Customers and vendors suggested while typing, for accounts tagged Business
+    private val partyQuery = MutableStateFlow("")
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val partySuggestions: StateFlow<List<com.naxits.paisatracker.domain.model.Party>> = partyQuery
+        .debounce(150)
+        .mapLatest { partyRepository.search(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** True when the chosen account carries the Business tag, which is when a customer can be set. */
+    val isBusinessAccount: StateFlow<Boolean> = combine(
+        _transactionUiState.map { it.selectedAccount }.distinctUntilChanged(),
+        accountMetaRepository.observeAll()
+    ) { account, metas ->
+        account != null && metas[com.naxits.paisatracker.domain.model.AccountOrdering.keyOf(account)]?.isBusiness == true
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Accounts for dropdown
     val accounts = accountOrderUseCase
@@ -176,6 +198,7 @@ constructor(
 
     fun resetAllStates() {
         _transactionUiState.value = TransactionUiState()
+        partyQuery.value = ""
         _subscriptionUiState.value = SubscriptionUiState()
         _transactionAttachments.value = emptyList()
         _subscriptionAttachments.value = emptyList()
@@ -222,6 +245,17 @@ constructor(
 
     fun updateEntryCounting(excludeFromIncome: Boolean, isCashEntry: Boolean) {
         _transactionUiState.update { it.copy(excludeFromIncome = excludeFromIncome, isCashEntry = isCashEntry) }
+    }
+
+    fun updatePartyName(name: String) {
+        // Typing again drops the earlier pick; save turns the text into a party if it is new
+        _transactionUiState.update { it.copy(partyName = name, partyId = null) }
+        partyQuery.value = name
+    }
+
+    fun selectParty(party: com.naxits.paisatracker.domain.model.Party) {
+        _transactionUiState.update { it.copy(partyName = party.name, partyId = party.id) }
+        partyQuery.value = ""
     }
 
     fun updateTransactionMerchant(merchant: String) {
@@ -330,6 +364,15 @@ constructor(
 
                 val amount = BigDecimal(state.amount)
 
+                // Only income and expense entries on a Business account carry a customer
+                val canHaveParty = isBusinessAccount.value && state.partyName.isNotBlank() &&
+                    (state.transactionType == TransactionType.INCOME ||
+                        state.transactionType == TransactionType.EXPENSE ||
+                        state.transactionType == TransactionType.CREDIT)
+                val partyId = if (canHaveParty) {
+                    state.partyId ?: partyRepository.findOrCreate(state.partyName).id
+                } else null
+
                 val transactionId = addTransactionUseCase.execute(
                     amount = amount,
                     merchant = state.merchant.trim(),
@@ -347,11 +390,15 @@ constructor(
                     targetAccountLast4 = state.targetAccount?.accountLast4,
                     attachments = attachmentService.joinAttachments(_transactionAttachments.value),
                     excludeFromIncome = state.excludeFromIncome,
-                    isCashEntry = state.isCashEntry
+                    isCashEntry = state.isCashEntry,
+                    partyId = partyId
                 )
 
                 // A transaction the user did not tag as a loan may still be a repayment
                 if (!isLoanType) repaymentService.onTransactionSaved(transactionId)
+
+                // The category they picked is remembered for the next entry in the series
+                if (!isLoanType) reviewService.userCategorised(transactionId)
 
                 if (isLoanType && state.selectedPersonId != null) {
                     val selectedPerson = persons.value.find { it.id == state.selectedPersonId }
@@ -833,7 +880,10 @@ data class TransactionUiState(
     val selectedPersonId: Long? = null,
     val dueDate: LocalDateTime? = null,
     val excludeFromIncome: Boolean = false,
-    val isCashEntry: Boolean = false
+    val isCashEntry: Boolean = false,
+    /** Customer or vendor typed or picked; only used on a Business account. */
+    val partyName: String = "",
+    val partyId: Long? = null
 ) {
     private val isLoanType: Boolean
         get() = transactionType == TransactionType.LENT ||

@@ -1,0 +1,137 @@
+# Active plan: account metadata, customers/vendors, recurring suggestions, review
+
+Status: **all three phases built and unit tested; waiting on Ravi's hand checks on the phone, then merge.**
+Last updated: 2026-10-17.
+
+## How to resume
+
+When Ravi says to resume this plan:
+
+1. Read this whole file.
+2. `git checkout feature/recurring-suggestions`. It holds all three phases (see "Branches").
+3. `git status` and `git log --oneline -5` to confirm the state matches this file.
+4. Carry on from "On-device checks" and "Finish line"; fix whatever Ravi finds.
+5. Ask Ravi questions as clickable multiple-choice options, never as prose.
+
+Standing rules for this project (from `CLAUDE.md` and Ravi's instructions):
+
+- No personal data in code, comments or tests. Use placeholders such as account `1234`, `TEST LOCATION`. Never write Ravi's real account numbers, card digits, places or balances anywhere in the repo.
+- Parser tests use the shared `ParserTestUtils` (`docs/parser-test-standards.md`) and `@TestFactory`, otherwise the cases never run.
+- Commits I make on my own initiative end with `Co-Authored-By: Ravi Sharma (NAX IT Solutions) <ravi@naxits.com>`. Never add a Claude or Anthropic co-author line.
+- "Commit this task: {note}" means commit with the note verbatim and no trailer.
+- Do not commit or merge unasked, except the per-phase commits this plan already covers.
+
+## The request (10 items, from Ravi's pasted plan)
+
+1. **Bank name and custom icon.** Keep the bank name; a manually chosen account icon must win over the logo found from the bank name.
+2. **Account tags.** Savings, Current, FD, RD and so on, as tags. No separate Personal/Business field.
+3. **Account description.** Shown and editable on the account pages.
+4. **One existing account** (Ravi named its last four digits; they are kept out of the repo on purpose). It is detected as Punjab & Sind Bank; correct it to Himachal Pradesh State Cooperative Bank, with the right logo, without touching other accounts.
+5. **Custom account order.** Persisted, first account stays first until the user changes it.
+6. **Customer on business transactions.** Pick or type a customer with autocomplete, add new, store on the transaction.
+7. **Customer/vendor detection for SMS.** Suggest from history, phone, account number. Otherwise **Unknown**. Suggestions get a visible red **Review** badge, show how they were decided, can be corrected and confirmed, and the reviewed state is recorded.
+8. **Recurring detection and category suggestions**, for all categories, not just salary. Combine account, party, description, monthly interval and amount (configurable 5-10% tolerance). Remember the user's category per pattern, suggest it next time, mark it Review, explain why, never silently assign an uncertain category.
+9. **Auto-confirm after 3 months.** Pending reviews keep their suggested category and are marked auto-confirmed; track manual vs automatic; keep the history; applies to every category.
+10. **Implementation and testing.** Reuse existing code, migrations that keep data, tests for each item, and a summary of changes, database modifications and tests at the end.
+
+## Decisions taken with Ravi
+
+- **Parties:** a new customers/vendors table, separate from Khata (`lend_borrow_persons`).
+- **Himachal bank:** a new parser (not just a relabel). Sender is `HPSBNK`, which contains `PSB`, so the Punjab & Sind parser was claiming it.
+- **Customer field:** shown on Add Transaction only when the chosen account has the **Business** tag.
+- **Delivery:** 3 phases, one branch each, tested and committed before the next.
+- **Assumptions I made (confirm if they come up):**
+  - Party detection (item 7) runs only for SMS on Business-tagged accounts. Otherwise every personal SMS would get a red badge.
+  - Himachal logo is a generated "HP / COOP BANK" monogram; swap in the official logo if Ravi supplies one (replace `app/src/main/res/drawable-nodpi/ic_brand_himachal_state_coop_bank.webp`).
+  - The Himachal relabel is selected by evidence (all SMS-sourced transactions on the account come from `HPSBNK` senders), never by hard-coding the number.
+
+## Branches
+
+- `develop`: has the ATM-withdrawal feature merged (merge commit `b994f069`). Nothing from this plan is on `develop` yet.
+- `feature/account-metadata`: **Phase A**, one commit (`feat: account icon, tags and description, and the Himachal bank fix`), branched from `develop`.
+- `feature/parties-review`: **Phase B**, branched from Phase A (it needs the Business tag). Complete, committed, unit tested.
+- `feature/recurring-suggestions`: **Phase C**, branched from Phase B. Complete, committed, unit tested.
+- Merge order when all is verified: A, then B, then C, into `develop` (each branch contains the one before, so merging C alone brings all three). Nothing has been pushed.
+
+## Database versions
+
+| Version | Phase | Change | State |
+|---|---|---|---|
+| 69 | A | `account_meta(bank_name, account_last4, custom_icon_name, tags, description, updated_at)` | done, committed |
+| 70 | B | `parties`, `transaction_reviews`, column `transactions.party_id` | written, compiles, migration SQL checked against `70.json` |
+| 71 | C | `category_patterns(pattern_key, type, category, subcategory, count, last_amount, last_date, updated_at)` | not started |
+
+Migration pattern: hand-written `MIGRATION_n_m` in `CashiroDatabase.kt`, SQL copied from the exported schema JSON in `app/schemas/...`, registered in `di/DatabaseModule.kt` (the live Hilt builder). Always diff the SQL against the new `NN.json` after a build.
+
+## Phase A: DONE (branch `feature/account-metadata`)
+
+- Himachal parser `HimachalStateCoopBankParser` (parser-core), registered before `PunjabSindBankParser`, which now rejects `HPSBNK`. 11 parser tests pass.
+- One-time `BankRelabelBackfill` / `BankRelabeler` renames only accounts whose SMS all come from `HPSBNK`. Shared `AccountRenamer` + atomic `AccountRenameDao` now rename transactions, cards, bills, recurring entries, notes, order, hidden and main account too (the old edit-sheet rename only changed balances).
+- `AccountMeta` (icon override, tags, description): entity/DAO/repository, `LocalAccountMeta` composition local fed by `AccountMetaViewModel` at the app root, `BrandIcon(accountLast4 = ...)` looks up the override, `IconProvider.getIconForTransaction(accountIconOverride = ...)` checks it first.
+- Edit sheet: tags chips, description field, "Use bank logo" reset. `AccountCard` shows tags and description.
+- Reorder sheet: Move up / Move down buttons plus existing drag. `AccountOrdering.move`.
+- Backups carry `account_meta` (description stripped in non-full exports). Delete-all-data clears it.
+- Tests added: `AccountMetaTest`, `AccountMetaRepositoryTest`, `BankRelabelerTest`, `BackupAccountMetaTest`, extra `AccountOrderingTest` cases, `HimachalStateCoopBankParserTest`.
+- `CLAUDE.md` bank list updated (45 parsers).
+
+**Not yet done for Phase A:** on-device verification (see "On-device checks").
+
+## Phase B: DONE (branch `feature/parties-review`)
+
+- Data: `parties` and `transaction_reviews` tables, `transactions.party_id`, database 70 with `MIGRATION_69_70` (SQL checked against `70.json`). Entities `PartyEntity`, `TransactionReviewEntity`, DAOs `PartyDao`, `TransactionReviewDao`.
+- Logic (pure, tested): `CounterpartyExtractor`, `PartyMatcher`, `PartyLearning`, `PartyReviewDetector`, `ReviewActions` (`confirmParty`, `dismiss`), `ReviewService`, `PartyRepository`.
+- SMS saves call `reviewService.onTransactionSaved(...)` after the repayment hook; only Business-tagged accounts get a party review (Unknown is reviewed too).
+- Backups carry `parties` and `transaction_reviews` (replace, merge and selective paths; party and transaction ids remapped on merge; privacy levels strip names and notes). Delete-all-data clears them.
+- Add Transaction: `PartyAutocompleteField` (suggestions while typing, "Add new customer"), shown only for a Business account on income, expense or credit entries; `AddTransactionUseCase.execute(partyId = ...)`.
+- Review UI: red **Review** badge in `TransactionItem` (plain "Review" text in card style) fed by `LocalPendingReviews`; `TransactionPartySection` on the detail screen (both view and edit mode) with suggested value, reason, confidence, Confirm / Change / Dismiss and the audit lines; "Needs review" chip in the transactions filter sheet; Parties screen (add, edit, merge, archive) reachable from Settings.
+- Tests added: `CounterpartyExtractorTest`, `PartyMatcherTest`, `PartyLearningTest`, `PartyReviewDetectorTest`, `ReviewActionsTest`, `PartyRepositoryTest`, `BackupPartiesTest`, with `PartyFakes.kt`. A test caught and fixed an e-mail address being read as a UPI id.
+- At the end of Phase B: 544 app unit tests and the parser-core suite pass; `:app:assembleStandardDebug` builds.
+
+Still to check by hand for Phase B: the Add screen customer field, the badge, the detail section and the Parties screen on the phone (see "On-device checks").
+
+## Phase C: DONE (branch `feature/recurring-suggestions`)
+
+- Data: `category_patterns` table (database 71, `MIGRATION_70_71`, SQL checked against `71.json`), `CategoryPatternEntity`, `CategoryPatternDao` (also holds the three history queries and `setCategory`, so no existing DAO fake changed).
+- Pure logic: `PatternKeys` (party, upi, acct, phone, merchant keys), `RecurringPatternDetector` (identity 40 or 25, amount up to 25, rhythm 15 plus 10 when steady, wording up to 10; needs 2 earlier entries, a regular period, at least one close amount, score 70+), `RecurrencePeriod` (weekly, fortnightly, monthly, quarterly, yearly with slack for moving pay days).
+- Services: `CategorySuggester` (applies the remembered category and files a CATEGORY review with a plain-words reason; skipped when a rule or saved merchant choice set the category, when the entry already has that category, or when unsure), `CategoryLearner` (learns on user categorisation or confirmation, settles a waiting suggestion), `ReviewAutoConfirmer` (pending reviews 3 months old become `AUTO_CONFIRMED` with `resolved_by = AUTO_3M`; the transaction is never touched), all wired through `ReviewService`.
+- Hooks: `SmsTransactionProcessor` passes `categoryChosenByUser`; `AddViewModel` and `TransactionDetailViewModel.saveChanges` call `reviewService.userCategorised(...)`.
+- Daily check: `ReviewAutoConfirmWorker` + `ReviewAutoConfirmScheduler` (unique periodic work, started in `CashiroApplication.onCreate`).
+- UI: `TransactionCategoryReviewSection` on the detail screen (suggestion, reason, confidence, Confirm / Change / Dismiss, history lines); Settings row "Recurring suggestions" (`RecurringToleranceRow`) to pick 5, 7.5 or 10% (default 10%).
+- Backups carry `category_patterns` (full export only; `party:<id>` keys are remapped on merge). Delete-all-data clears reviews and patterns.
+- Tests added: `RecurringPatternDetectorTest`, `CategorySuggesterTest`, `CategoryLearnerTest`, `ReviewAutoConfirmerTest`, `RecurringToleranceTest`, backup cases, a dismiss-category case, with `PatternFakes.kt`.
+- Also fixed a latent race found by the test run: delete and undo of a non-transfer entry both stamped their balance row with `now()`, so two in the same instant tied (and could be refused by the unique account and time index). They now stamp strictly after the latest row (`TransactionRepository.stampAfter`). `AddTransactionUseCaseTest` had been failing about half the runs; it passed 6 of 6 afterwards.
+- At the end of Phase C: 593 app unit tests and the parser-core suite pass.
+
+## On-device checks
+
+Installed on Ravi's phone (model `21091116I`) over USB on 2026-10-17 from `feature/parties-review`. `adb` is at `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (not on PATH in PowerShell). The arm64 build is `app/build/outputs/apk/standard/debug/app-standard-arm64-v8a-debug.apk`. The database can be copied with `adb exec-out run-as com.naxits.paisatracker cat databases/pennywise_database` (plus the `-wal` and `-shm` files) into the scratchpad for read-only checks; the real data must stay local.
+
+**Verified by comparing the database before and after the update:**
+- Migrations 68 to 69 to 70 ran; `account_meta`, `parties`, `transaction_reviews` exist.
+- The one-time Himachal relabel renamed the misdetected account (6 balance rows, same balances) and all 8 transactions from the Himachal sender, including 2 that had no account row (this is why the relabel also walks transactions, and why its flag is `bank_relabel_backfill_v2_done`). Every other account and transaction is identical to before. No crashes in the log.
+
+**Still to check by hand (nothing automated can see the screens):**
+- **Reorder:** move accounts with the arrows, restart the app, check the order persists and the first account stays first.
+- **Tags, description, icon:** set them on an account; check the card and the detail page, that a custom icon beats the bank-name logo, and that "Use bank logo" resets it.
+- **Himachal logo:** the account card shows the "HP / COOP BANK" monogram.
+- **Business flow:** tag an account Business, add a transaction with a new and an existing customer (autocomplete), and look at the detail screen and the Parties screen under Settings.
+- **Review flow:** replay a test SMS on the Business account to see Unknown or a suggested match with its reason and the red badge, then confirm, change and dismiss; try the "Needs review" filter.
+- **Recurring suggestions:** categorise a monthly entry yourself (for example salary) three times, then replay a fourth monthly test SMS with a similar amount: it should arrive in that category with a red Review badge and a reason; Confirm, Change and Dismiss should each settle it. Settings, Recurring suggestions should offer 5, 7.5 and 10%.
+- **Auto-confirm:** the daily worker only acts on reviews 3 months old; to see it work, back-date a review's `created_at` in a copy of the database or wait.
+
+## Follow-ups from Ravi's testing (2026-10-19, built and unit tested, NOT committed yet)
+
+- **Messages attached to the wrong account.** On the phone, 337 HDFC messages were stored under bank "State Bank of India" with the digits of the account now called "HDFC Bank Jahu" (the old rename only changed balances, so renaming an account orphaned its transactions), and new messages parsed as "HDFC Bank" did not join that account. Fix: `AccountMatcher` (exact name, else the single related name on the same digits), `AccountResolver` (used by `SmsTransactionProcessor` so a new message joins the account the user named, and balance rows use the same name), and `AccountRepair` / `AccountRepairBackfill` (one-time, flag `account_repair_backfill_done`) that moves orphaned messages onto the account their sender's bank and digits point to. Cards are left as they were. New DAO queries are in `AccountRenameDao`; tests are `AccountMatcherTest`, `AccountRepairTest`, and a regression `HDFCSenderRoutingTest` in parser-core.
+- **Tap and long press.** Tapping a transaction now opens it ready to edit (`TransactionDetail.startInEditMode` defaults to true); a long press in the Transactions list opens the read-only view. Because long press no longer starts batch selection, the Transactions top bar has a Select button.
+- 611 app unit tests and the parser-core suite pass. Install over USB and check: an HDFC message with the account digits lands in "HDFC Bank Jahu"; the account page now lists the old HDFC transactions; tap edits, long press views, Select starts batch mode.
+
+## Things noticed along the way (not part of this plan)
+
+- `SanitizationUtils.TransactionEntity.sanitize()` does not copy `reference`, so UPI references are lost when a backup is restored (can cause duplicate detection to miss).
+- `CashiroDatabase.getInstance()` lists migrations only up to 60 to 61; it is used by receivers without Hilt and would fail to open an older database first. The Hilt builder in `DatabaseModule.kt` is complete.
+- About 37 other parser test classes use a plain `@Test` and never run their cases (they need `@TestFactory`).
+- Importing an older backup whose JSON lacks newer list keys (for example net worth) may hit a null list, because Gson ignores Kotlin defaults for `DatabaseSnapshot`.
+
+## Finish line
+
+When all three phases are verified and merged, give Ravi the summary item 10 asks for (changes, database modifications, tests run) and offer a MINOR version bump (`app/build.gradle.kts`, currently 2.1.61-beta, code 94), then update `CLAUDE.md` and delete or archive this file.

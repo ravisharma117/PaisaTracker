@@ -163,6 +163,25 @@ class BackupExporter @Inject constructor(
                 if (config.privacy == ExportPrivacy.FULL) meta else meta.copy(description = "")
             }
         } else emptyList()
+        // Names and notes of customers and vendors are personal detail, so only a full export keeps them
+        val parties = if (config.includeTransactionalData) {
+            database.partyDao().getAll().map { party ->
+                when (config.privacy) {
+                    ExportPrivacy.FULL -> party
+                    ExportPrivacy.MASKED -> party.copy(notes = null, phone = party.phone?.takeLast(4)?.let { "******$it" })
+                    ExportPrivacy.ANONYMOUS -> party.copy(
+                        name = "Party ${party.id}", phone = null, identifiers = "", aliases = "", notes = null
+                    )
+                }
+            }
+        } else emptyList()
+        val transactionReviews = if (config.includeTransactionalData && config.privacy == ExportPrivacy.FULL) {
+            database.transactionReviewDao().getAll()
+        } else emptyList()
+        // Pattern keys hold merchant names, UPI ids and account digits, so only a full export keeps them
+        val categoryPatterns = if (config.includeTransactionalData && config.privacy == ExportPrivacy.FULL) {
+            database.categoryPatternDao().getAll()
+        } else emptyList()
         val subscriptions = if (config.includeBudgets) database.subscriptionDao().getAllSubscriptions().first() else emptyList()
         val merchantMappings = if (config.includeProfileData) database.merchantMappingDao().getAllMappings().first() else emptyList()
         val unrecognizedSms = if (config.includeTransactionalData) database.unrecognizedSmsDao().getAllUnrecognizedSms().first() else emptyList()
@@ -281,6 +300,9 @@ class BackupExporter @Inject constructor(
                 cards = cards,
                 accountBalances = accountBalances,
                 accountMeta = accountMeta,
+                parties = parties,
+                transactionReviews = transactionReviews,
+                categoryPatterns = categoryPatterns,
                 subscriptions = subscriptions,
                 merchantMappings = merchantMappings,
                 unrecognizedSms = if (config.privacy == ExportPrivacy.FULL) unrecognizedSms else emptyList(),

@@ -1,6 +1,9 @@
 package com.naxits.paisatracker.presentation.ui.features.home
 
 import com.naxits.paisatracker.domain.usecase.AccountOrderUseCase
+import com.naxits.paisatracker.domain.usecase.CategoryAnalysisCalculator
+import com.naxits.paisatracker.domain.usecase.CategoryKind
+import com.naxits.paisatracker.domain.usecase.GetCategoryAnalysisUseCase
 import android.content.Context
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -32,6 +35,7 @@ import com.naxits.paisatracker.data.repository.SubcategoryRepository
 import com.naxits.paisatracker.data.repository.SubscriptionRepository
 import com.naxits.paisatracker.data.repository.TransactionRepository
 import com.naxits.paisatracker.data.repository.UnrecognizedSmsRepository
+import com.naxits.paisatracker.domain.model.CashAccount
 import com.naxits.paisatracker.domain.model.PersonInfo
 import com.naxits.paisatracker.presentation.ui.components.BalancePoint
 import com.naxits.paisatracker.worker.OptimizedSmsReaderWorker
@@ -61,6 +65,7 @@ class HomeViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val accountBalanceRepository: AccountBalanceRepository,
     private val accountOrderUseCase: AccountOrderUseCase,
+    private val accountMetaRepository: com.naxits.paisatracker.data.repository.AccountMetaRepository,
     private val llmRepository: LlmRepository,
     private val currencyConversionService: CurrencyConversionService,
     private val currencyRepository: CurrencyRepository,
@@ -73,8 +78,15 @@ class HomeViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val recurringRepository: com.naxits.paisatracker.data.repository.RecurringTransactionRepository,
     private val lendBorrowRepository: com.naxits.paisatracker.data.repository.LendBorrowRepository,
+    private val categoryAnalysis: GetCategoryAnalysisUseCase,
+    private val netWorthService: com.naxits.paisatracker.domain.service.NetWorthService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    companion object {
+        /** How many upcoming payments Home lists, one per line. */
+        const val UPCOMING_PAYMENTS_SHOWN = 3
+    }
 
     private val sharedPrefs = context.getSharedPreferences("account_prefs", Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -124,6 +136,15 @@ class HomeViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "INR")
 
     init {
+        viewModelScope.launch {
+            userPreferencesRepository.moveRecentTransactionsToTopOnce(HomeWidgetLayout::recentFirst)
+        }
+        viewModelScope.launch {
+            // The same net worth as the Net Worth screen: accounts, holdings, property, gold and lending
+            netWorthService.observeCurrent(selectedCurrencyCombined).collectLatest { breakdown ->
+                _uiState.update { it.copy(totalBalance = breakdown.netWorth) }
+            }
+        }
         loadHomeData()
         loadUserData()
     }
@@ -282,7 +303,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         accountBalances = regularAccounts,
                         creditCards = creditCards,
-                        totalBalance = totalBalanceInSelectedCurrency,
+                        cashAccount = balances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                         totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                         selectedCurrency = selectedCurrency
                     )
@@ -373,9 +394,41 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Load recent transactions (last 3) and react to base currency changes
+            // Bank accounts the user ticked "Show on homepage" for
             combine(
-                transactionRepository.getRecentTransactions(limit = 3),
+                accountOrderUseCase.orderedAccounts(),
+                accountMetaRepository.observeAll()
+            ) { accounts, meta ->
+                val hidden = sharedPrefs.getStringSet("hidden_accounts", emptySet()) ?: emptySet()
+                com.naxits.paisatracker.domain.service.HomeBanks.select(accounts, meta, hidden)
+            }.collectLatest { banks ->
+                _uiState.update { it.copy(shownBanks = banks) }
+            }
+        }
+
+        viewModelScope.launch {
+            // This month's expenses by category and subcategory, counted the way Analysis counts them
+            val month = java.time.YearMonth.now()
+            categoryAnalysis.window(CategoryKind.EXPENSE, month, monthsBack = 0).collectLatest { window ->
+                _uiState.update {
+                    it.copy(
+                        categoryBreakdown = CategoryAnalysisCalculator.categoryBreakdown(window.entries, month),
+                        categoryBreakdownCurrency = window.currency
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            // This week's transactions (Monday to today), newest first, and react to base currency changes
+            val today = java.time.LocalDate.now()
+            val thisWeek = transactionRepository.getTransactionsBetweenDates(HomeWeek.start(today), today)
+                .map { list ->
+                    list.filter { it.transactionType != TransactionType.BALANCE_UPDATE }
+                        .sortedByDescending { it.dateTime }
+                }
+            combine(
+                thisWeek,
                 selectedCurrencyCombined,
                 currencyConversionService.rateChangeTrigger
             ) { transactions, selectedCurrency, _ ->
@@ -429,6 +482,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         upcomingSubscriptions = (upcoming.overdue + upcoming.thisWeek + upcoming.later)
                             .map { item -> item.subscription },
+                        upcomingPayments = (upcoming.overdue + upcoming.thisWeek + upcoming.later).take(UPCOMING_PAYMENTS_SHOWN),
                         upcomingSubscriptionsTotal = upcoming.total,
                         upcomingSubscriptionsCurrency = targetCurrency,
                         upcomingOverdueCount = upcoming.overdue.size
@@ -607,7 +661,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
-                    totalBalance = regularAccounts.sumOfBigDecimal { acc: AccountBalanceEntity -> acc.balance },
+                    cashAccount = visibleBalances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                     totalAvailableCredit = creditCards.sumOfBigDecimal { card: AccountBalanceEntity ->
                         // Available = Credit Limit - Outstanding Balance
                         (card.creditLimit ?: BigDecimal.ZERO) - card.balance
@@ -737,7 +791,7 @@ class HomeViewModel @Inject constructor(
                 it.copy(
                     accountBalances = regularAccounts,
                     creditCards = creditCards,
-                    totalBalance = totalBalanceInSelectedCurrency,
+                    cashAccount = balances.firstOrNull { acct -> CashAccount.isCash(acct.bankName, acct.accountLast4) },
                     totalAvailableCredit = totalAvailableCreditInSelectedCurrency,
                     availableCurrencies = updatedAvailableCurrencies,
                     selectedCurrency = selectedCurrency

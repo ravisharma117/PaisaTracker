@@ -184,6 +184,11 @@ fun BackupSyncScreen(
         }
     )
 
+    val archiveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv"),
+        onResult = { uri -> uri?.let { dataPrivacyViewModel.exportArchive(it) } }
+    )
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri -> uri?.let { dataPrivacyViewModel.importBackup(it) } }
@@ -668,7 +673,41 @@ fun BackupSyncScreen(
                                             )
                                         },
                                         onClick = { showExportDialog = true },
-                                        shape = ListItemPosition.Single.toShape(),
+                                        shape = ListItemPosition.Top.toShape(),
+                                        padding = PaddingValues(0.dp)
+                                    )
+
+                                    // Long-term record of every entry, readable without the app
+                                    ListItem(
+                                        headline = { Text(stringResource(R.string.export_archive)) },
+                                        supporting = { Text(stringResource(R.string.export_archive_sub)) },
+                                        leading = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .background(yellow_light, CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    Iconax.DirectboxSend,
+                                                    contentDescription = null,
+                                                    tint = yellow_dark
+                                                )
+                                            }
+                                        },
+                                        trailing = {
+                                            Icon(
+                                                Icons.Rounded.ChevronRight,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        },
+                                        onClick = {
+                                            val date = java.time.LocalDate.now()
+                                                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+                                            archiveLauncher.launch("cashiro_archive_$date.csv")
+                                        },
+                                        shape = ListItemPosition.Bottom.toShape(),
                                         padding = PaddingValues(0.dp)
                                     )
                                 }

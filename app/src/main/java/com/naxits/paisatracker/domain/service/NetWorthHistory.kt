@@ -76,9 +76,16 @@ object NetWorthHistory {
         var lent = BigDecimal.ZERO
         var borrowed = BigDecimal.ZERO
         upToDate.groupBy { it.personId to it.currency }.forEach { (key, rows) ->
-            fun sum(type: LendBorrowType) = rows.filter { it.type == type }.fold(BigDecimal.ZERO) { a, e -> a.add(e.amount) }
-            val owedToUser = sum(LendBorrowType.LENT).subtract(sum(LendBorrowType.SETTLEMENT_LENT)).max(BigDecimal.ZERO)
-            val userOwes = sum(LendBorrowType.BORROWED).subtract(sum(LendBorrowType.SETTLEMENT_BORROWED)).max(BigDecimal.ZERO)
+            fun sum(type: LendBorrowType, rememberOnly: Boolean = false) = rows
+                .filter { it.type == type && it.rememberOnly == rememberOnly }
+                .fold(BigDecimal.ZERO) { a, e -> a.add(e.amount) }
+            // Entries kept only as a reminder are not counted; repayments go to the counted ones first
+            val owedToUser = LendingBalance.outstanding(
+                sum(LendBorrowType.LENT), sum(LendBorrowType.LENT, rememberOnly = true), sum(LendBorrowType.SETTLEMENT_LENT)
+            ).counted
+            val userOwes = LendingBalance.outstanding(
+                sum(LendBorrowType.BORROWED), sum(LendBorrowType.BORROWED, rememberOnly = true), sum(LendBorrowType.SETTLEMENT_BORROWED)
+            ).counted
             lent = lent.add(convert(owedToUser, key.second))
             borrowed = borrowed.add(convert(userOwes, key.second))
         }

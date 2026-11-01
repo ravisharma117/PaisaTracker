@@ -144,6 +144,7 @@ private fun WidgetItem(
     ) {
         PreferenceSwitch(
             title = stringResource(widgetModel.widget.labelRes),
+            subtitle = stringResource(widgetModel.widget.descRes),
             checked = widgetModel.isVisible,
             onCheckedChange = onToggleVisibility,
             leadingIcon = {

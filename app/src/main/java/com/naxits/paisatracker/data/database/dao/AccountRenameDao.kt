@@ -1,8 +1,16 @@
 package com.naxits.paisatracker.data.database.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
+
+/** A bank name and account that transactions point at, though no account of that name exists. */
+data class OrphanGroup(
+    @ColumnInfo(name = "bank_name") val bankName: String?,
+    @ColumnInfo(name = "account_number") val accountNumber: String,
+    @ColumnInfo(name = "sms_sender") val sender: String
+)
 
 /**
  * Everything that has to change together when an account gets a new bank name.
@@ -13,9 +21,49 @@ import androidx.room.Transaction
 @Dao
 abstract class AccountRenameDao {
 
-    /** Last 4 digits of every account that currently carries [bankName]. */
-    @Query("SELECT DISTINCT account_last4 FROM account_balances WHERE bank_name = :bankName")
+    /**
+     * Last 4 digits of every account that currently carries [bankName], including ones that only
+     * have transactions: a message can be saved before its account gets a balance row.
+     */
+    @Query(
+        """
+        SELECT account_last4 FROM account_balances WHERE bank_name = :bankName
+        UNION
+        SELECT account_number FROM transactions
+        WHERE bank_name = :bankName AND account_number IS NOT NULL AND account_number != ''
+        """
+    )
     abstract suspend fun accountsOf(bankName: String): List<String>
+
+    /** The bank names of the accounts that end in [accountLast4]. */
+    @Query("SELECT DISTINCT bank_name FROM account_balances WHERE account_last4 = :accountLast4")
+    abstract suspend fun bankNamesWithLast4(accountLast4: String): List<String>
+
+    /**
+     * Messages saved under a bank and account that no account row matches, with the sender each
+     * came from. The account was most likely renamed afterwards, or the message named it a little
+     * differently from how the user does.
+     */
+    @Query(
+        """
+        SELECT DISTINCT bank_name, account_number, sms_sender FROM transactions
+        WHERE sms_sender IS NOT NULL AND sms_sender != ''
+          AND account_number IS NOT NULL AND account_number != ''
+          AND NOT EXISTS (
+              SELECT 1 FROM account_balances b
+              WHERE b.bank_name = transactions.bank_name AND b.account_last4 = transactions.account_number
+          )
+        """
+    )
+    abstract suspend fun orphanGroups(): List<OrphanGroup>
+
+    @Query(
+        """
+        UPDATE transactions SET bank_name = :newBank
+        WHERE bank_name IS :oldBank AND account_number = :accountLast4 AND sms_sender = :sender
+        """
+    )
+    abstract suspend fun moveOrphans(oldBank: String?, accountLast4: String, sender: String, newBank: String)
 
     /** Sender of every SMS-sourced transaction on the account. Manual entries have none. */
     @Query(

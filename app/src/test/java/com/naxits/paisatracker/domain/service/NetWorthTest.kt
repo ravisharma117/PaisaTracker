@@ -109,13 +109,46 @@ class NetWorthCalculatorTest {
         assertEquals(bd("52400"), result.totalLiabilities)
         assertEquals(bd("-30900"), result.netWorth)
         assertEquals(
-            listOf(AssetGroup.BANK, AssetGroup.CASH, AssetGroup.WALLET, AssetGroup.INVESTMENTS, AssetGroup.MONEY_LENT, AssetGroup.OTHER_ASSETS),
+            listOf(AssetGroup.BANK, AssetGroup.CASH, AssetGroup.WALLET, AssetGroup.INVESTMENTS, AssetGroup.GOLD, AssetGroup.MONEY_LENT),
             result.assets.map { it.group }
         )
         assertEquals(
             listOf(LiabilityGroup.CREDIT_CARDS, LiabilityGroup.OVERDRAFT, LiabilityGroup.MONEY_BORROWED, LiabilityGroup.LOANS, LiabilityGroup.OTHER_LIABILITIES),
             result.liabilities.map { it.group }
         )
+    }
+
+    @Test
+    fun aHomeAndAPlotAreTheirOwnPropertySection() {
+        val result = NetWorthCalculator.calculate(
+            NetWorthInput(
+                accounts = emptyList(),
+                moneyLent = BigDecimal.ZERO,
+                moneyBorrowed = BigDecimal.ZERO,
+                items = listOf(
+                    item(1, NetWorthItemType.HOUSE, "Home", "4000000"),
+                    item(2, NetWorthItemType.PLOT, "Plot", "1500000"),
+                    item(3, NetWorthItemType.PROPERTY, "Shop", "800000"),
+                    item(4, NetWorthItemType.VEHICLE, "Car", "500000")
+                )
+            ),
+            "INR"
+        )
+
+        assertEquals(listOf(AssetGroup.PROPERTY, AssetGroup.OTHER_ASSETS), result.assets.map { it.group })
+        assertEquals(bd("6300000"), result.assets.first { it.group == AssetGroup.PROPERTY }.total)
+        assertEquals(bd("6800000"), result.netWorth)
+    }
+
+    @Test
+    fun goldHasItsOwnSectionAndCountsTowardsNetWorth() {
+        val result = NetWorthCalculator.calculate(
+            NetWorthInput(emptyList(), BigDecimal.ZERO, BigDecimal.ZERO, listOf(item(1, NetWorthItemType.GOLD, "Coins", "250000"))),
+            "INR"
+        )
+
+        assertEquals(listOf(AssetGroup.GOLD), result.assets.map { it.group })
+        assertEquals(bd("250000"), result.netWorth)
     }
 
     @Test
@@ -220,6 +253,31 @@ class NetWorthHistoryTest {
         assertEquals(bd("20000"), at("2026-08-31", lend = lend).netWorth)
         assertEquals(bd("15000"), at("2026-09-30", lend = lend).netWorth)
         assertEquals(0, at("2026-07-31", lend = lend).netWorth.signum())
+    }
+
+    @Test
+    fun moneyLentAsRememberOnlyIsNotCounted() {
+        val lend = listOf(
+            entry(1, LendBorrowType.LENT, "20000", "2026-08-01"),
+            entry(1, LendBorrowType.LENT, "7000", "2026-08-02").copy(rememberOnly = true)
+        )
+        assertEquals(bd("20000"), at("2026-08-31", lend = lend).netWorth)
+    }
+
+    @Test
+    fun moneyBorrowedAsRememberOnlyIsNotADebt() {
+        val lend = listOf(entry(1, LendBorrowType.BORROWED, "4000", "2026-08-01").copy(rememberOnly = true))
+        assertEquals(0, at("2026-08-31", lend = lend).netWorth.signum())
+    }
+
+    @Test
+    fun aRepaymentReducesTheCountedLendingFirst() {
+        val lend = listOf(
+            entry(1, LendBorrowType.LENT, "10000", "2026-08-01"),
+            entry(1, LendBorrowType.LENT, "5000", "2026-08-02").copy(rememberOnly = true),
+            entry(1, LendBorrowType.SETTLEMENT_LENT, "4000", "2026-08-10")
+        )
+        assertEquals(bd("6000"), at("2026-08-31", lend = lend).netWorth)
     }
 
     @Test

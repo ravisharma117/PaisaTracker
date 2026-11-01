@@ -21,7 +21,8 @@ fun SubtitleTag(
     color: Color,
     alpha: Float = 0.2f,
     modifier: Modifier = Modifier,
-    icon: (@Composable () -> Unit)? = null
+    icon: (@Composable () -> Unit)? = null,
+    textColor: Color? = null
 ) {
     Surface(
         color = color.copy(alpha = alpha),
@@ -37,7 +38,7 @@ fun SubtitleTag(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.85f),
+                color = textColor ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(0.85f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
